@@ -36,33 +36,24 @@ def sendAndWait(host, line, send=True, debug=True):
         print(ret)
     return ret
 
-# def runCmd(host, lines):
-#     lines = iter(lines)
-#     for line in lines:
-#         line = line.strip()
-#         if line.lower().startswith('if'):
-#             line += ' echo 1;else echo 0;fi'
-#             vsend = int(sendAndWait(host, line, debug=False))
-#             line = next(lines, None).strip()
-#             while line and not line.lower().startswith('fi'):
-#                 sendAndWait(host, line, vsend)
-#                 line = next(lines, None).strip()
-#         elif line != '':
-#             sendAndWait(host, line)
-
 class MyTopo(Topo):
     def build(self):
         switch = self.addSwitch('s1')
+        segment_id = 0
         with open('{}/machine_server.json'.format(json_path), 'r') as f:
             servers = json.load(f)
             for name in servers.keys():
                 if 'internal_ip1' in servers[name]:
-                    host = self.addHost(name)
+                    # host = self.addHost(name)
+                    host = self.addHost(name, ip='10.0.%s.2/24' % str(segment_id))
+                    segment_id += 1
                     self.addLink(host, switch)
         with open('{}/machine_client.json'.format(json_path), 'r') as f:
             clients = json.load(f)
             for i in range(len(clients)):
-                host = self.addHost('cl%s'%(i+1))
+                # host = self.addHost('cl%s'%(i+1))
+                host = self.addHost('cl%s'%(i+1), ip='10.0.%s.2/24' % str(segment_id))
+                segment_id += 1
                 self.addLink(host, switch)
 
 if __name__ == '__main__':
@@ -105,8 +96,8 @@ if __name__ == '__main__':
     #             sendAndWait(host, "bash %s ./gre_setup_router.sh" % bash_path)
 
     ## 必须先server后router，server有删除旧的路由表的操作
-    os.system("bash %sgre_setup_server_all.sh" % bash_path)
-    print("gre_setup_server done!")
+    # os.system("bash %sgre_setup_server_all.sh" % bash_path)
+    # print("gre_setup_server done!")
     # os.system("bash %sgre_setup_router_all.sh" % bash_path)
     # print("gre_setup_router done!")
     
