@@ -13,24 +13,27 @@ def myNetwork():
     net = Mininet( topo=None,
                    build=False,
                    ipBase='10.0.0.0/8')
- 
+    
+    ''' 
+        ip地址：
+            client: 10.0.0.0/16
+                    10.0.x.1 clientx ip
+                    10.0.x.2 clientx->switch0 网卡
+        路由表（table）:
+            client: 1-5
+            switch: 11
+    '''
+
     info( '*** Adding controller\n' )
     info( '*** Add switches\n')
     switch0 = net.addHost('switch0', cls=Node, ip='0.0.0.0')
-    # s1 = net.addHost('s1', cls=Node, ip='0.0.0.0')
-    # s2 = net.addHost('s2', cls=Node, ip='0.0.0.0')
-    # s3 = net.addHost('s3', cls=Node, ip='0.0.0.0')
+
     info( '*** Add hosts\n')
     client = []
     for i in range(2):
-        client.append(net.addHost('client%s'%str(i), cls=Host, ip='10.0.%s.2/24'%str(i), defaultRoute=None))
+        client.append(net.addHost('client%s'%str(i), cls=Host, ip='10.0.%s.1/24'%str(i), defaultRoute=None))
     
     info( '*** Add links\n')
-    # net.addLink(client[0], s1)
-    # net.addLink(client[0], s3)
-    # net.addLink(s1, s2)
-    # net.addLink(s2, client[1])
-    # net.addLink(s3, s2)
     for i in range(2):
         net.addLink(switch0, client[i])
     
@@ -43,62 +46,42 @@ def myNetwork():
     info( '*** Starting switches\n')
     ## 定义网卡
     client[0].cmd('ifconfig client0-eth0 0')
-    client[0].cmd('ifconfig client0-eth1 0')
     client[1].cmd('ifconfig client1-eth0 0')
     switch0.cmd('ifconfig switch0-eth0 0')
     switch0.cmd('ifconfig switch0-eth1 0')
     switch0.cmd('sysctl -w net.ipv4.ip_forward=1')
-    # s1.cmd('ifconfig s1-eth0 0')
-    # s1.cmd('ifconfig s1-eth1 0')
-    # s2.cmd('ifconfig s2-eth0 0')
-    # s2.cmd('ifconfig s2-eth1 0')
-    # s2.cmd('ifconfig s2-eth2 0')
-    # s3.cmd('ifconfig s3-eth0 0')
-    # s3.cmd('ifconfig s3-eth1 0')
-    # s1.cmd('sysctl -w net.ipv4.ip_forward=1')
-    # s2.cmd('sysctl -w net.ipv4.ip_forward=1')
-    # s3.cmd('sysctl -w net.ipv4.ip_forward=1')
+   
     info( '*** Post configure switches and hosts\n')
-    client[0].cmd('ifconfig client0-eth0 10.0.0.2/24')
-    # client[0].cmd('ifconfig client0-eth1 10.0.2.2/24')
-    client[1].cmd('ifconfig client1-eth0 10.0.1.2/24')
+    client[0].cmd('ifconfig client0-eth0 10.0.0.1/24')
+    client[1].cmd('ifconfig client1-eth0 10.0.1.1/24')
     
-    switch0.cmd('ifconfig switch0-eth0 172.16.0.1/24')
-    switch0.cmd('ifconfig switch0-eth1 172.16.1.1/24')
-    # s1.cmd('ifconfig s1-eth1 172.16.2.1/24')
-    # s2.cmd('ifconfig s2-eth0 172.16.2.2/24')
-    # s2.cmd('ifconfig s2-eth1 10.0.1.1/24')
-    # s2.cmd('ifconfig s2-eth2 192.168.2.2/24')
-    # s3.cmd('ifconfig s3-eth0 10.0.2.1/24')
-    # s3.cmd('ifconfig s3-eth1 192.168.2.1/24')
- 
-    # s1.cmd('route add -net 10.0.1.0/24 gw 172.16.2.2')
-    # s2.cmd('route add -net 10.0.0.0/24 gw 172.16.2.1')
-    # s2.cmd('route add -net 10.0.2.0/24 gw 192.168.2.1') 
-    # s3.cmd('route add -net 10.0.1.0/24 gw 192.168.2.2')
-
-    ## 添加到网络的路由，gw表示是哪个网关
-    switch0.cmd('route add -net 10.0.0.0/24 gw 172.16.0.1')
-    switch0.cmd('route add -net 10.0.1.0/24 gw 172.16.1.1')
+    # switch0.cmd('ifconfig switch0-eth0 10.0.0.2/24')
+    # switch0.cmd('ifconfig switch0-eth1 10.0.1.2/24')
 
     ## 添加规则，从哪个ip来的，使用哪个路由表
-    client[0].cmd("ip rule add from 10.0.0.2 table 1")
-    # client[0].cmd("ip rule add from 10.0.2.2 table 2")
-    client[1].cmd("ip rule add from 10.0.1.2 table 1")
+    client[0].cmd("ip rule add from 10.0.0.1 table 1")
+    client[1].cmd("ip rule add from 10.0.1.1 table 2")
+    # switch0.cmd("ip rule add from 10.0.0.2 table 11")
+    # switch0.cmd("ip rule add from 10.0.1.2 table 11")
 
-    ## 添加规则，dev表示用哪个网口，scope表示适用范围，并填入这个路由表的默认路由
+    # client[0].cmd("ip rule add from all table 1")
+    # client[1].cmd("ip rule add from all table 2")
+    # switch0.cmd("ip rule add from all table 11")
+
+    ## 添加规则，目的地址为xxx, dev表示用哪个网口，via表示下一跳的地址，scope表示适用范围
     client[0].cmd("ip route add 10.0.0.0/24 dev client0-eth0 scope link table 1")
-    client[0].cmd("ip route add default via 10.0.0.1 dev client0-eth0 table 1")
+    ## 并填入这个路由表的默认路由（其他情况的发包逻辑）
+    client[0].cmd("ip route add default via 10.0.0.2 dev client0-eth0 table 1") ## 可以去掉via？
+    client[0].cmd("ip route add default scope global nexthop via 10.0.0.2 dev client0-eth0") ## 可以把scope改为link？
 
-    # client[0].cmd("ip route add 10.0.2.0/24 dev client0-eth1 scope link table 2")
-    # client[0].cmd("ip route add default via 10.0.2.1 dev client0-eth1 table 2")
-    
-    client[1].cmd("ip route add 10.0.1.0/24 dev client1-eth0 scope link table 1")
-    client[1].cmd("ip route add default via 10.0.1.1 dev client1-eth0 table 1")
+    client[1].cmd("ip route add 10.0.1.0/24 dev client1-eth0 scope link table 2")
+    client[1].cmd("ip route add default via 10.0.1.2 dev client1-eth0 table 2")
+    client[1].cmd("ip route add default scope global nexthop via 10.0.1.2 dev client1-eth0") 
+
+    # switch0.cmd("ip route add 10.0.1.0/24 dev switch0-eth0 scope link table 11")
+    # switch0.cmd("ip route add 10.0.0.0/24 dev switch0-eth1 scope link table 11")
 
     ## 添加hop的关系
-    client[0].cmd("ip route add default scope global nexthop via 10.0.0.1 dev client0-eth0") 
-    client[1].cmd("ip route add default scope global nexthop via 10.0.1.1 dev client1-eth0")
  
     CLI(net)
     net.stop()
