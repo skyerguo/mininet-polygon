@@ -55,14 +55,14 @@ def myNetwork():
     client[0].cmd('ifconfig client0-eth0 10.0.0.1/24')
     client[1].cmd('ifconfig client1-eth0 10.0.1.1/24')
     
-    # switch0.cmd('ifconfig switch0-eth0 10.0.0.2/24')
-    # switch0.cmd('ifconfig switch0-eth1 10.0.1.2/24')
+    switch0.cmd('ifconfig switch0-eth0 10.0.0.2/24')
+    switch0.cmd('ifconfig switch0-eth1 10.0.1.2/24')
 
     ## 添加规则，从哪个ip来的，使用哪个路由表
     client[0].cmd("ip rule add from 10.0.0.1 table 1")
     client[1].cmd("ip rule add from 10.0.1.1 table 2")
-    # switch0.cmd("ip rule add from 10.0.0.2 table 11")
-    # switch0.cmd("ip rule add from 10.0.1.2 table 11")
+    switch0.cmd("ip rule add from 10.0.0.2 table 11")
+    switch0.cmd("ip rule add from 10.0.1.2 table 11")
 
     # client[0].cmd("ip rule add from all table 1")
     # client[1].cmd("ip rule add from all table 2")
@@ -73,15 +73,18 @@ def myNetwork():
     ## 并填入这个路由表的默认路由（其他情况的发包逻辑）
     client[0].cmd("ip route add default via 10.0.0.2 dev client0-eth0 table 1") ## 可以去掉via？
     client[0].cmd("ip route add default scope global nexthop via 10.0.0.2 dev client0-eth0") ## 可以把scope改为link？
+    ## 可以一个网关连入+连出吗？==> 得换ip网段，学着用
+    # switch0.cmd("ip route add 10.0.1.0/24 dev switch0-eth0 scope link table 11")
+    # switch0.cmd("ip route add default via 10.0.1.1 dev switch-eth0 table 11")
+    # switch0.cmd("ip route add default scope global nexthop via 10.0.1.1 dev switch-eth0")
 
     client[1].cmd("ip route add 10.0.1.0/24 dev client1-eth0 scope link table 2")
     client[1].cmd("ip route add default via 10.0.1.2 dev client1-eth0 table 2")
     client[1].cmd("ip route add default scope global nexthop via 10.0.1.2 dev client1-eth0") 
-
-    # switch0.cmd("ip route add 10.0.1.0/24 dev switch0-eth0 scope link table 11")
     # switch0.cmd("ip route add 10.0.0.0/24 dev switch0-eth1 scope link table 11")
+    # switch0.cmd("ip route add default via 10.0.0.1 dev switch-eth1 table 11")
+    # switch0.cmd("ip route add default scope global nexthop via 10.0.0.1 dev switch-eth1")
 
-    ## 添加hop的关系
  
     CLI(net)
     net.stop()
