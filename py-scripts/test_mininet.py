@@ -12,8 +12,6 @@ def myNetwork():
  
     net = Mininet( topo=None,
                    build=False,
-                   host=CPULimitedHost,
-                   link=TCLink,
                    ipBase='10.0.0.0/8')
     
     ''' 
@@ -45,17 +43,18 @@ def myNetwork():
     info( '*** Add switches\n')
     switch = []
     for switch_id in range(SWITCH_NUMBER):
-        switch.append(net.addHost('switch%s'%str(switch_id), cls=Node, ip='0.0.0.0'))
+        switch.append(net.addSwitch('switch%s'%str(switch_id), cls=OVSKernelSwitch, failMode='standalone'))
 
     info( '*** Add hosts\n')
     client = []
     server = []
     for client_id in range(CLIENT_NUMBER):
-        client.append(net.addHost('client%s'%str(client_id), cls=Host, ip='10.0.%s.1'%str(client_id), defaultRoute=None))
+        client.append(net.addHost('client%s'%str(client_id), cls=CPULimitedHost, ip='10.0.%s.1'%str(client_id), defaultRoute=None))
     for server_id in range(SERVER_NUMBER):
-        server.append(net.addHost('server%s'%str(server_id), cls=Host, ip='10.0.%s.3'%str(client_id), defaultRoute=None))
+        server.append(net.addHost('server%s'%str(server_id), cls=CPULimitedHost, ip='10.0.%s.3'%str(client_id), defaultRoute=None))
     
     info( '*** Add links\n')
+    
     for switch_id in range(SWITCH_NUMBER):
         for client_id in range(CLIENT_NUMBER):
             net.addLink(switch[switch_id], client[client_id])
@@ -63,7 +62,8 @@ def myNetwork():
             net.addLink(switch[switch_id], server[server_id])
 
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
-    net.addLink(switch[0], switch[1], delay='5ms', use_htb=True) 
+    s0s1 = {'bw':100,'delay':'5ms'}
+    net.addLink(switch[0], switch[1], cls=TCLink, **s0s1) 
     
     info( '*** Starting network\n')
     net.build()
@@ -73,6 +73,8 @@ def myNetwork():
         controller.start()
  
     info( '*** Starting switches\n')
+    net.get('switch0').start([])
+    net.get('switch1').start([])
     ## 定义网卡
     
     for switch_id in range(SWITCH_NUMBER):
@@ -130,23 +132,19 @@ def myNetwork():
     #     # server[server_id].cmd("ip rule add from 10.0.%s.4 table %s"%(str(server_id), str(server_id+21)))
 
     
-    client[0].cmd("ip route add 10.0.0.50 dev client0-eth0 proto kernel scope link src 10.0.0.1")
-    client[0].cmd("ip route add 10.0.0.51 dev client0-eth1 proto kernel scope link src 10.0.0.2")
-    client[0].cmd("ip route add default dev client0-eth0 proto kernel scope link src 10.0.0.1")
+    client[0].cmd("ip route add 10.0.0.3 dev client0-eth0 proto kernel scope link")
+    client[0].cmd("ip route add default dev client0-eth0 proto kernel scope link")
 
-    switch[0].cmd("ip route add 10.0.0.1 dev switch0-eth0 proto kernel scope link src 10.0.0.50")
-    switch[0].cmd("ip route add 10.0.0.3 dev switch0-eth1 proto kernel scope link src 10.0.0.52")
-    switch[0].cmd("ip route add default dev switch0-eth2 proto kernel scope link src 10.0.0.100")
-    
-    switch[1].cmd("ip route add 10.0.0.1 dev switch1-eth0 proto kernel scope link src 10.0.0.51")
-    switch[1].cmd("ip route add 10.0.0.2 dev switch1-eth0 proto kernel scope link src 10.0.0.51")
-    switch[1].cmd("ip route add 10.0.0.3 dev switch1-eth1 proto kernel scope link src 10.0.0.53")
-    switch[1].cmd("ip route add 10.0.0.4 dev switch1-eth1 proto kernel scope link src 10.0.0.53")
-    switch[1].cmd("ip route add default dev switch1-eth2 proto kernel scope link src 10.0.0.101")
+    switch[0].cmd("ip rule add from 10.0.0.1 table 1")
+    switch[0].cmd("ip rule add from 10.0.0.3 table 2")
+    switch[0].cmd("ip route add 10.0.0.3 dev switch0-eth2 proto kernel scope link table 1")
+    switch[0].cmd("ip route add 10.0.0.1 dev switch0-eth2 proto kernel scope link table 2")
 
-    server[0].cmd("ip route add 10.0.0.52 dev server0-eth0 proto kernel scope link src 10.0.0.3")
-    server[0].cmd("ip route add 10.0.0.53 dev server0-eth1 proto kernel scope link src 10.0.0.4")
-    server[0].cmd("ip route add default dev server0-eth0 proto kernel scope link src 10.0.0.3")
+    switch[1].cmd("ip route add 10.0.0.1 dev switch1-eth0 proto kernel scope link")
+    switch[1].cmd("ip route add 10.0.0.3 dev switch1-eth1 proto kernel scope link")
+
+    server[0].cmd("ip route add 10.0.0.1 dev server0-eth0 proto kernel scope link")
+    server[0].cmd("ip route add default dev server0-eth0 proto kernel scope link")
 
     ## 添加节点上的路由下一跳规则，以及具体的每个路由表的操作
     # for client_id in range(CLIENT_NUMBER):
@@ -156,20 +154,6 @@ def myNetwork():
     #     client[client_id].cmd("ip route add default via 10.0.%s.%s dev client%s-eth0 table %s"%(str(client_id), str(50+client_id*2), str(client_id), str(client_id+1))) ## 可以去掉via？
     #     client[client_id].cmd("ip route add default scope global nexthop via 10.0.%s.%s dev client%s-eth0"%(str(client_id), str(50+client_id*2), str(client_id))) ## 可以把scope改为link？
 
-    # for server_id in range(SERVER_NUMBER):
-    #     server[server_id].cmd("ip route add 10.0.%s.0/24 dev server%s-eth0 scope link table %s"%(str(server_id), str(server_id), str(server_id+21)))
-    #     server[server_id].cmd("ip route add default via 10.0.%s.%s dev server%s-eth0 table %s"%(str(server_id), str(50+(CLIENT_NUMBER+server_id)*2), str(server_id), str(server_id+21)))
-    #     server[server_id].cmd("ip route add default scope global nexthop via 10.0.%s.%s dev server%s-eth0"%(str(server_id), str(50+(CLIENT_NUMBER+server_id)*2), str(server_id)))
-
-    # ## 添加switch上的路由操作
-    # switch[0].cmd("route add -net 10.0.0.100 gw 10.0.0.50")
-    # switch[0].cmd("ip route add 10.0.0.101 via 10.0.0.100 dev switch0-eth2 table 100")
-
-    # switch[1].cmd("route add -net 10.0.0.101 gw 10.0.0.53")
-    # switch[1].cmd("ip route add 10.0.0.100 via 10.0.0.101 dev switch1-eth2 table 101")
-
-    # switch[1].cmd("ip route add 10.0.0.1 via 10.0.0.51 dev switch1-eth0")
-    # switch[1].cmd("ip route add 10.0.0.3 via 10.0.0.53 dev switch1-eth1")
 
  
     CLI(net)
