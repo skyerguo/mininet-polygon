@@ -55,17 +55,16 @@ def myNetwork():
         server.append(net.addHost('server%s'%str(server_id), ip='10.0.0.2', cls=Host, defaultRoute=None))
     
     info( '*** Add links\n')
-    for switch_id in range(SWITCH_NUMBER):
-        for client_id in range(CLIENT_NUMBER):
-            net.addLink(switch[switch_id], client[client_id])
-        for server_id in range(SERVER_NUMBER):
-            net.addLink(switch[switch_id], server[server_id])
-    # net.addLink(client[0], switch[0])
-    # net.addLink(server[0], switch[1])
+    # for switch_id in range(SWITCH_NUMBER):
+    #     for client_id in range(CLIENT_NUMBER):
+    #         net.addLink(switch[switch_id], client[client_id])
+    #     for server_id in range(SERVER_NUMBER):
+    #         net.addLink(switch[switch_id], server[server_id])
+    net.addLink(client[0], switch[0])
+    net.addLink(server[0], switch[1])
 
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
-    s0s1 = {'bw':100,'delay':'5ms'}
-    net.addLink(switch[0], switch[1], cls=TCLink, **s0s1) 
+    net.addLink(switch[0], switch[1], cls=TCLink, **{'bw':100,'delay':'5ms'}) 
     
     info( '*** Starting network\n')
     net.build()
