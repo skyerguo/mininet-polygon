@@ -1,0 +1,3 @@
+# sudo LD_LIBRARY_PATH=~/data ~/data/server --interface=ens4 --unicast=${unicast} 0.0.0.0 $port ~/data/server.key ~/data/server.crt -q 1>> /home/gtc/server_tmp_${port}.log 2>> /home/gtc/server_${port}.log
+sudo LD_LIBRARY_PATH=~/data ~/data/server --interface=ens4 --unicast=127.0.0.1 0.0.0.0 4433 ~/data/server.key ~/data/server.crt -q 
+LD_LIBRARY_PATH=~/data ~/data/server --interface=server0-eth0 --unicast=10.0.0.3 0.0.0.0 4443 ~/data/server.key ~/data/server.crt -q 
