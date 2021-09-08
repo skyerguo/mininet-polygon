@@ -7,13 +7,43 @@ from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
 from subprocess import call
+
+
+
+CLIENT_NUMBER = 2
+SERVER_NUMBER = 2
+ROUTER_NUMBER = 0
+SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER
+
+switch = []
+client = []
+server = []
+
+def test_run(net):
+
+    import time
+    
+    server[0].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server0-eth0 --unicast=10.0.0.3 0.0.0.0 4443 ~/data/server.key ~/data/server.crt -q 1> temp_server1.txt 2> temp_server2.txt &")
+    time.sleep(30)
+    client[0].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.0.3 4443 -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process 4443 --time_stamp 1234567890 -q 1> temp_client1.txt 2> temp_client2.txt")
+    # cnt_port = 4443
+    # for server_id in range(SERVER_NUMBER):
+    #     server[server_id].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server%s-eth0 --unicast=10.0.%s.3 0.0.0.0 %s ~/data/server.key ~/data/server.crt -q 1> temp_server_%s_1.txt 2> temp_server_%s_2.txt &"%(str(server_id), str(server_id), str(cnt_port), str(server_id), str(server_id)))
+    #     cnt_port += 1
+    
+    # cnt_port = 4443
+    # for client_id in range(CLIENT_NUMBER):
+    #     client[client_id].cmd("sleep 5 && LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 %s -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process %s --time_stamp 1234567890 -q 1> temp_client_%s_1.txt 2> temp_client_%s_2.txt &"%(str(client_id),str(cnt_port),str(cnt_port),str(client_id),str(client_id)))
+    #     cnt_port += 1
+
  
 def myNetwork():
  
     net = Mininet( topo=None,
                    build=False,
                    host=CPULimitedHost,
-                   ipBase='10.0.0.0/8')
+                   ipBase='10.0.0.0/8',
+                   controller=None)
     
     ''' 
         ip地址：
@@ -34,21 +64,13 @@ def myNetwork():
             
     '''
 
-    CLIENT_NUMBER = 2
-    SERVER_NUMBER = 2
-    ROUTER_NUMBER = 0
-    SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER
-
     info( '*** Adding controller\n' )
 
     info( '*** Add switches\n')
-    switch = []
     for switch_id in range(SWITCH_NUMBER):
         switch.append(net.addSwitch('switch%s'%str(switch_id), cls=OVSKernelSwitch, failMode='standalone', stp=True)) ## 防止回路
 
     info( '*** Add hosts\n')
-    client = []
-    server = []
     for client_id in range(CLIENT_NUMBER):
         client.append(net.addHost('client%s'%str(client_id), cpu=0.1/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为系统的10%/所有client数量
     for server_id in range(SERVER_NUMBER):
@@ -73,8 +95,8 @@ def myNetwork():
     net.build()
 
     info( '*** Starting controllers\n')
-    for controller in net.controllers:
-        controller.start()
+    # for controller in net.controllers:
+    #     controller.start()
  
     info( '*** Starting switches\n')
     for switch_id in range(SWITCH_NUMBER):
@@ -105,6 +127,7 @@ def myNetwork():
 
     # for client_id in range(CLIENT_NUMBER):
     #     client[client_id].cmd("sudo LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 4433 -i -p normal_1 -o 1 -w google.com --client_ip 10.0.%s.1 --client_process 4433 --time_stamp 1234567890 -q &"%(str(client_id), str))
+    test_run(net)
     
     CLI(net)
     net.stop()
