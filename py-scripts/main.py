@@ -10,8 +10,8 @@ from subprocess import call
 
 import os
 
-CLIENT_NUMBER = 20
-SERVER_NUMBER = 20
+CLIENT_NUMBER = 5
+SERVER_NUMBER = 5
 ROUTER_NUMBER = 0
 SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER + ROUTER_NUMBER
 
@@ -93,7 +93,7 @@ def myNetwork():
     for client_id in range(CLIENT_NUMBER):
         for server_id in range(SERVER_NUMBER):
             net.addLink(switch[client_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':100,'delay':'%sms'%str(5+temp_cnt),'loss':0}) 
-        temp_cnt += 10
+        temp_cnt += 1
     
     print( '*** Starting network\n')
     net.build()
