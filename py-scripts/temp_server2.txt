@@ -1,9 +1,0 @@
-Using document root /home/mininet/mininet-polygon/py-scripts/
-ifr.ifr_name: lo
-ifr.ifr_name: server0-eth0
-set unicast fd: 6
-connection: 0x55a2fb538960
-SSL_READ_EARLY_DATA_FINISH
-t=31.064749 404
-/websites/normal_1/google.com/www.google.com/index.html
-t=34.103810 Draining period has started

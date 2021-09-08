@@ -8,33 +8,37 @@ from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
 from subprocess import call
 
+import os
 
-
-CLIENT_NUMBER = 2
-SERVER_NUMBER = 2
+CLIENT_NUMBER = 20
+SERVER_NUMBER = 20
 ROUTER_NUMBER = 0
-SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER
+SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER + ROUTER_NUMBER
 
 switch = []
 client = []
 server = []
 
+def clear_output():
+    os.system("rm -f temp_*")
+
+
 def test_run(net):
 
     import time
+    import random
     
-    server[0].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server0-eth0 --unicast=10.0.0.3 0.0.0.0 4443 ~/data/server.key ~/data/server.crt -q 1> temp_server1.txt 2> temp_server2.txt &")
+    # server[0].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server0-eth0 --unicast=10.0.0.3 0.0.0.0 4443 ~/data/server.key ~/data/server.crt -q 1> temp_server1.txt 2> temp_server2.txt &")
+    # time.sleep(30)
+    # client[0].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.0.3 4443 -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process 4443 --time_stamp 1234567890 -q 1> temp_client1.txt 2> temp_client2.txt")
+    for server_id in range(SERVER_NUMBER):
+        server[server_id].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server%s-eth0 --unicast=10.0.%s.3 0.0.0.0 %s ~/data/server.key ~/data/server.crt -q 1> temp_server_%s_1.txt 2> temp_server_%s_2.txt &"%(str(server_id), str(server_id), str(4433+server_id), str(server_id), str(server_id)))
+
     time.sleep(30)
-    client[0].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.0.3 4443 -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process 4443 --time_stamp 1234567890 -q 1> temp_client1.txt 2> temp_client2.txt")
-    # cnt_port = 4443
-    # for server_id in range(SERVER_NUMBER):
-    #     server[server_id].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server%s-eth0 --unicast=10.0.%s.3 0.0.0.0 %s ~/data/server.key ~/data/server.crt -q 1> temp_server_%s_1.txt 2> temp_server_%s_2.txt &"%(str(server_id), str(server_id), str(cnt_port), str(server_id), str(server_id)))
-    #     cnt_port += 1
-    
-    # cnt_port = 4443
-    # for client_id in range(CLIENT_NUMBER):
-    #     client[client_id].cmd("sleep 5 && LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 %s -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process %s --time_stamp 1234567890 -q 1> temp_client_%s_1.txt 2> temp_client_%s_2.txt &"%(str(client_id),str(cnt_port),str(cnt_port),str(client_id),str(client_id)))
-    #     cnt_port += 1
+
+    for client_id in range(CLIENT_NUMBER):
+        server_id = random.randint(0, SERVER_NUMBER - 1)
+        client[client_id].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 %s -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process %s --time_stamp 1234567890 -q 1> temp_client_%s_1.txt 2> temp_client_%s_2.txt &"%(str(server_id),str(4433+server_id),str(4433+server_id),str(client_id),str(client_id)))
 
  
 def myNetwork():
@@ -64,19 +68,19 @@ def myNetwork():
             
     '''
 
-    info( '*** Adding controller\n' )
+    print( '*** Adding controller\n' )
 
-    info( '*** Add switches\n')
+    print( '*** Add switches\n')
     for switch_id in range(SWITCH_NUMBER):
         switch.append(net.addSwitch('switch%s'%str(switch_id), cls=OVSKernelSwitch, failMode='standalone', stp=True)) ## 防止回路
 
-    info( '*** Add hosts\n')
+    print( '*** Add hosts\n')
     for client_id in range(CLIENT_NUMBER):
         client.append(net.addHost('client%s'%str(client_id), cpu=0.1/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为系统的10%/所有client数量
     for server_id in range(SERVER_NUMBER):
         server.append(net.addHost('server%s'%str(server_id), cpu=0.3/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     
-    info( '*** Add links\n')
+    print( '*** Add links\n')
     
     for client_id in range(CLIENT_NUMBER):
         net.addLink(switch[client_id], client[client_id])
@@ -91,14 +95,14 @@ def myNetwork():
             net.addLink(switch[client_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':100,'delay':'%sms'%str(5+temp_cnt),'loss':0}) 
         temp_cnt += 10
     
-    info( '*** Starting network\n')
+    print( '*** Starting network\n')
     net.build()
 
-    info( '*** Starting controllers\n')
+    print( '*** Starting controllers\n')
     # for controller in net.controllers:
     #     controller.start()
  
-    info( '*** Starting switches\n')
+    print( '*** Starting switches\n')
     for switch_id in range(SWITCH_NUMBER):
         net.get('switch%s'%str(switch_id)).start([])
     ## 定义网卡
@@ -106,7 +110,7 @@ def myNetwork():
     for switch_id in range(SWITCH_NUMBER):
         switch[switch_id].cmd('sysctl -w net.ipv4.ip_forward=1')
    
-    info( '*** Post configure switches and hosts\n')
+    print( '*** Post configure switches and hosts\n')
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
         client[client_id].cmd('ifconfig client%s-eth0 10.0.%s.1'%(str(client_id), str(client_id)))
@@ -133,5 +137,6 @@ def myNetwork():
     net.stop()
  
 if __name__ == '__main__':
-    setLogLevel( 'info' )
+    setLogLevel( 'warning' )
+    clear_output()
     myNetwork()

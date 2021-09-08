@@ -1,12 +1,0 @@
-10.0.0.3
-website: google.com
-website_root_path: normal_1
-website_www_opt: 1
-bind fd_ with 10.0.0.3
-migrate server's address to 10.0.0.3
-bind fd2_ with 10.0.0.3
-t=1.035855 QUIC handshake has completed
-handshake time: 1035782
-last_plt_time: 0
-PLT: 1047598 microseconds
-last_plt_cost: 1047598
