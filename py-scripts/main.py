@@ -10,17 +10,24 @@ from subprocess import call
 
 import os
 
-CLIENT_NUMBER = 5
-SERVER_NUMBER = 5
+CLIENT_NUMBER = 2
+SERVER_NUMBER = 2
 ROUTER_NUMBER = 0
 SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER + ROUTER_NUMBER
+
+SERVER_THREAD = 2
+CLIENT_THREAD = 2
+
+START_PORT = 4433
 
 switch = []
 client = []
 server = []
 
-def clear_output():
+def clear_logs():
     os.system("rm -f temp_*")
+    os.system("bash ../bash-scripts/clear_log.sh")
+    os.system("bash ../bash-scripts/kill_running.sh")
 
 
 def test_run(net):
@@ -28,17 +35,23 @@ def test_run(net):
     import time
     import random
     
-    # server[0].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server0-eth0 --unicast=10.0.0.3 0.0.0.0 4443 ~/data/server.key ~/data/server.crt -q 1> temp_server1.txt 2> temp_server2.txt &")
-    # time.sleep(30)
-    # client[0].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.0.3 4443 -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process 4443 --time_stamp 1234567890 -q 1> temp_client1.txt 2> temp_client2.txt")
+    now_port = START_PORT
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server%s-eth0 --unicast=10.0.%s.3 0.0.0.0 %s ~/data/server.key ~/data/server.crt -q 1> temp_server_%s_1.txt 2> temp_server_%s_2.txt &"%(str(server_id), str(server_id), str(4433+server_id), str(server_id), str(server_id)))
-
+        server_ip = "10.0.%s.3" %(str(server_id))
+        print("../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD)))
+        server[server_id].cmd("../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD)))
+        # server[server_id].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server%s-eth0 --unicast=10.0.%s.3 0.0.0.0 %s ~/data/server.key ~/data/server.crt -q 1> temp_server_%s_1.txt 2> temp_server_%s_2.txt &"%(str(server_id), str(server_id), str(4433+server_id), str(server_id), str(server_id)))
+        now_port += SERVER_THREAD
+    
     time.sleep(30)
 
     for client_id in range(CLIENT_NUMBER):
         server_id = random.randint(0, SERVER_NUMBER - 1)
-        client[client_id].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 %s -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process %s --time_stamp 1234567890 -q 1> temp_client_%s_1.txt 2> temp_client_%s_2.txt &"%(str(server_id),str(4433+server_id),str(4433+server_id),str(client_id),str(client_id)))
+        server_ip = "10.0.%s.3" %(str(server_id))
+        now_port = START_PORT + server_id * SERVER_THREAD
+        print("../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD)))
+        client[client_id].cmd("../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD)))
+        # client[client_id].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 %s -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process %s --time_stamp 1234567890 -q 1> temp_client_%s_1.txt 2> temp_client_%s_2.txt &"%(str(server_id),str(4434+server_id*2),str(4434+server_id*2),str(client_id),str(client_id)))
 
  
 def myNetwork():
@@ -126,11 +139,6 @@ def myNetwork():
         server[server_id].cmd("ip route add default dev server%s-eth0 proto kernel scope link"%(str(server_id)))  
 
     ## 设置跑
-    # for server_id in range(SERVER_NUMBER):
-    #     server[server_id].cmd("sudo LD_LIBRARY_PATH=~/data ~/data/server --interface=ens4 --unicast=10.0.%s.3 0.0.0.0 4433 ~/data/server.key ~/data/server.crt -q &"%(str(server_id))) 
-
-    # for client_id in range(CLIENT_NUMBER):
-    #     client[client_id].cmd("sudo LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 4433 -i -p normal_1 -o 1 -w google.com --client_ip 10.0.%s.1 --client_process 4433 --time_stamp 1234567890 -q &"%(str(client_id), str))
     test_run(net)
     
     CLI(net)
@@ -138,5 +146,5 @@ def myNetwork():
  
 if __name__ == '__main__':
     setLogLevel( 'warning' )
-    clear_output()
+    clear_logs()
     myNetwork()

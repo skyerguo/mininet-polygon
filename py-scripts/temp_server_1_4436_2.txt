@@ -1,0 +1,14 @@
+Using document root /home/mininet/mininet-polygon/py-scripts/
+ifr.ifr_name: lo
+ifr.ifr_name: server1-eth0
+set unicast fd: 6
+connection: 0x55d39256e960
+SSL_READ_EARLY_DATA_FINISH
+connection: 0x55d392584bb0
+SSL_READ_EARLY_DATA_FINISH
+ngtcp2_conn_write_pkt: ERR_PKT_TIMEOUT
+t=38.093749 Closing period has started
+ngtcp2_conn_write_connection_close: ERR_INVALID_STATE
+ngtcp2_conn_write_pkt: ERR_PKT_TIMEOUT
+t=38.134638 Closing period has started
+ngtcp2_conn_write_connection_close: ERR_INVALID_STATE

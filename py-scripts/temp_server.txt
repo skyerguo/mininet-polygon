@@ -1,0 +1,10 @@
+4433
+server_4434
+LD_LIBRARY_PATH=/home/mininet/data /home/mininet/data/server --interface=server0-eth0 --unicast=10.0.0.3 0.0.0.0 4434 /home/mininet/data/server.key /home/mininet/data/server.crt -q
+server_4435
+LD_LIBRARY_PATH=/home/mininet/data /home/mininet/data/server --interface=server0-eth0 --unicast=10.0.0.3 0.0.0.0 4435 /home/mininet/data/server.key /home/mininet/data/server.crt -q
+4435
+server_4436
+LD_LIBRARY_PATH=/home/mininet/data /home/mininet/data/server --interface=server1-eth0 --unicast=10.0.1.3 0.0.0.0 4436 /home/mininet/data/server.key /home/mininet/data/server.crt -q
+server_4437
+LD_LIBRARY_PATH=/home/mininet/data /home/mininet/data/server --interface=server1-eth0 --unicast=10.0.1.3 0.0.0.0 4437 /home/mininet/data/server.key /home/mininet/data/server.crt -q
