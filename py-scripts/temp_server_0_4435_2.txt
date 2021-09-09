@@ -1,4 +1,0 @@
-Using document root /home/mininet/mininet-polygon/py-scripts/
-ifr.ifr_name: lo
-ifr.ifr_name: server0-eth0
-set unicast fd: 6

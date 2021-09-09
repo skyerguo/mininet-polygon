@@ -10,13 +10,13 @@ from subprocess import call
 
 import os
 
-CLIENT_NUMBER = 2
-SERVER_NUMBER = 2
+CLIENT_NUMBER = 10
+SERVER_NUMBER = 5
 ROUTER_NUMBER = 0
 SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER + ROUTER_NUMBER
 
-SERVER_THREAD = 2
-CLIENT_THREAD = 2
+SERVER_THREAD = 10
+CLIENT_THREAD = 10
 
 START_PORT = 4433
 
@@ -51,6 +51,7 @@ def test_run(net):
         now_port = START_PORT + server_id * SERVER_THREAD
         print("../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD)))
         client[client_id].cmd("../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD)))
+        time.sleep(0.5)
         # client[client_id].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 %s -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process %s --time_stamp 1234567890 -q 1> temp_client_%s_1.txt 2> temp_client_%s_2.txt &"%(str(server_id),str(4434+server_id*2),str(4434+server_id*2),str(client_id),str(client_id)))
 
  
