@@ -7,11 +7,16 @@ from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
 from subprocess import call
+from topo import *
+import copy
+import json
 
 import os
 
-CLIENT_NUMBER = 10
-SERVER_NUMBER = 5
+SELECT_TOPO = copy.deepcopy(Middleware_client_server)
+
+CLIENT_NUMBER = 0
+SERVER_NUMBER = 0
 ROUTER_NUMBER = 0
 SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER + ROUTER_NUMBER
 
@@ -23,10 +28,39 @@ START_PORT = 4433
 switch = []
 client = []
 server = []
+bw = {}
+delay = {}
+cpu = {}
+
+def sendAndWait(host, line, send=True, debug=False):
+    if not send:
+        return ''
+    # print('*** Executing cmd:', line)
+
+    host.sendCmd(line)
+    ret = host.waitOutput().strip()
+    if ret != '' and debug:
+        print(ret)
+    return ret
+
+def init():
+    global CLIENT_NUMBER, SERVER_NUMBER, ROUTER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD
+    global bw, delay, cpu
+    SERVER_NUMBER = SELECT_TOPO['server_number']
+    CLIENT_NUMBER = SELECT_TOPO['client_number']
+    ROUTER_NUMBER = SELECT_TOPO['router_number']
+    SWITCH_NUMBER = SERVER_NUMBER + CLIENT_NUMBER + ROUTER_NUMBER
+    SERVER_THREAD = SELECT_TOPO['server_thread']
+    CLIENT_THREAD = SELECT_TOPO['client_thread']
+
+    bw = SELECT_TOPO['bw']
+    delay = SELECT_TOPO['delay']
+    cpu = SELECT_TOPO['cpu']
+
 
 def clear_logs():
     os.system("rm -f temp_*")
-    os.system("bash ../bash-scripts/clear_log.sh")
+    os.system("bash ../bash-scripts/clear_logs.sh")
     os.system("bash ../bash-scripts/kill_running.sh")
 
 
@@ -55,44 +89,29 @@ def test_run(net):
         # client[client_id].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 %s -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process %s --time_stamp 1234567890 -q 1> temp_client_%s_1.txt 2> temp_client_%s_2.txt &"%(str(server_id),str(4434+server_id*2),str(4434+server_id*2),str(client_id),str(client_id)))
 
  
-def myNetwork():
- 
-    net = Mininet( topo=None,
-                   build=False,
-                   host=CPULimitedHost,
-                   ipBase='10.0.0.0/8',
-                   controller=None)
-    
+def myNetwork(net):
     ''' 
         ip地址：
             client: 10.0.0.0/16
                     10.0.x.1 clientx ip
-                    10.0.x.2 clientx->switch0 网卡
-            # server: 10.0.0.0/16
-
-            switch0: 0.0.0.0
-            swithc1: 0.0.0.0
-        路由表（table）:
-            一个client/server/router，用一张路由表
-            client: 1-5
-            server: 20-25
-            router: 40-45
-            switch0: 100
-            switch1: 101
+                    10.0.x.1 clientx->switch0 网卡
+            server: 10.0.0.0/16
+                    10.0.x.3 clientx ip
+                    10.0.x.3 clientx->switch0 网卡
             
     '''
 
-    print( '*** Adding controller\n' )
 
     print( '*** Add switches\n')
     for switch_id in range(SWITCH_NUMBER):
         switch.append(net.addSwitch('switch%s'%str(switch_id), cls=OVSKernelSwitch, failMode='standalone', stp=True)) ## 防止回路
 
     print( '*** Add hosts\n')
+    print(cpu)
     for client_id in range(CLIENT_NUMBER):
-        client.append(net.addHost('client%s'%str(client_id), cpu=0.1/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为系统的10%/所有client数量
+        client.append(net.addHost('client%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
     for server_id in range(SERVER_NUMBER):
-        server.append(net.addHost('server%s'%str(server_id), cpu=0.3/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        server.append(net.addHost('server%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     
     print( '*** Add links\n')
     
@@ -103,18 +122,12 @@ def myNetwork():
 
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
 
-    temp_cnt = 0
     for client_id in range(CLIENT_NUMBER):
         for server_id in range(SERVER_NUMBER):
-            net.addLink(switch[client_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':100,'delay':'%sms'%str(5+temp_cnt),'loss':0}) 
-        temp_cnt += 1
+            net.addLink(switch[client_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id],'delay':delay['client_server'][client_id][server_id]}) 
     
     print( '*** Starting network\n')
     net.build()
-
-    print( '*** Starting controllers\n')
-    # for controller in net.controllers:
-    #     controller.start()
  
     print( '*** Starting switches\n')
     for switch_id in range(SWITCH_NUMBER):
@@ -138,14 +151,22 @@ def myNetwork():
     
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmd("ip route add default dev server%s-eth0 proto kernel scope link"%(str(server_id)))  
-
-    ## 设置跑
-    test_run(net)
     
-    CLI(net)
-    net.stop()
  
 if __name__ == '__main__':
-    setLogLevel( 'warning' )
+    setLogLevel( 'info' )
     clear_logs()
-    myNetwork()
+
+    init()
+
+    net = Mininet( topo=None,
+                build=False,
+                host=CPULimitedHost,
+                ipBase='10.0.0.0/8',
+                controller=None)
+
+    myNetwork(net)
+    ## 设置跑
+    # test_run(net)
+    CLI(net)
+    net.stop()
