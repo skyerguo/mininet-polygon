@@ -18,10 +18,10 @@ SELECT_TOPO = copy.deepcopy(Middleware_client_server)
 CLIENT_NUMBER = 0
 SERVER_NUMBER = 0
 ROUTER_NUMBER = 0
-SWITCH_NUMBER = CLIENT_NUMBER + SERVER_NUMBER + ROUTER_NUMBER
+SWITCH_NUMBER = 0
 
-SERVER_THREAD = 10
-CLIENT_THREAD = 10
+SERVER_THREAD = 1
+CLIENT_THREAD = 1
 
 START_PORT = 4433
 
@@ -70,23 +70,22 @@ def test_run(net):
     import random
     
     now_port = START_PORT
+    start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
     for server_id in range(SERVER_NUMBER):
         server_ip = "10.0.%s.3" %(str(server_id))
-        print("../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD)))
-        server[server_id].cmd("../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD)))
-        # server[server_id].cmd("LD_LIBRARY_PATH=~/data ~/data/server --interface=server%s-eth0 --unicast=10.0.%s.3 0.0.0.0 %s ~/data/server.key ~/data/server.crt -q 1> temp_server_%s_1.txt 2> temp_server_%s_2.txt &"%(str(server_id), str(server_id), str(4433+server_id), str(server_id), str(server_id)))
+        print("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
+        server[server_id].cmd("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
         now_port += SERVER_THREAD
     
-    time.sleep(30)
+    time.sleep(30 + 5 * SERVER_NUMBER)
 
     for client_id in range(CLIENT_NUMBER):
         server_id = random.randint(0, SERVER_NUMBER - 1)
         server_ip = "10.0.%s.3" %(str(server_id))
         now_port = START_PORT + server_id * SERVER_THREAD
-        print("../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD)))
-        client[client_id].cmd("../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD)))
-        time.sleep(0.5)
-        # client[client_id].cmd("LD_LIBRARY_PATH=~/data ~/data/client 10.0.%s.3 %s -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process %s --time_stamp 1234567890 -q 1> temp_client_%s_1.txt 2> temp_client_%s_2.txt &"%(str(server_id),str(4434+server_id*2),str(4434+server_id*2),str(client_id),str(client_id)))
+        print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -a %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD), str(start_time)))
+        client[client_id].cmd("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -a %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD), str(start_time)))
+        time.sleep(1.5)
 
  
 def myNetwork(net):
@@ -124,7 +123,7 @@ def myNetwork(net):
 
     for client_id in range(CLIENT_NUMBER):
         for server_id in range(SERVER_NUMBER):
-            net.addLink(switch[client_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id],'delay':delay['client_server'][client_id][server_id]}) 
+            net.addLink(switch[client_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id],'delay':str(delay['client_server'][client_id][server_id])+'ms'}) 
     
     print( '*** Starting network\n')
     net.build()
@@ -167,6 +166,6 @@ if __name__ == '__main__':
 
     myNetwork(net)
     ## 设置跑
-    # test_run(net)
+    test_run(net)
     CLI(net)
     net.stop()

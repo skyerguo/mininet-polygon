@@ -2,3 +2,5 @@
 sudo LD_LIBRARY_PATH=~/data ~/data/client 127.0.0.1 4433 -i -p normal_1 -o 1 -w google.com --client_ip 127.0.0.1 --client_process 4433 --time_stamp 1234567890 -q 
 
 LD_LIBRARY_PATH=~/data ~/data/client 10.0.0.3 4443 -i -p normal_1 -o 1 -w google.com --client_ip 10.0.0.1 --client_process 4443 --time_stamp 1234567890 -q 
+
+sudo LD_LIBRARY_PATH=/data /data/client 127.0.0.1 4443 -i -p normal_1 -o 1 -w google.com --client_ip 127.0.0.1 --client_process 4443 --time_stamp 1234567890 -q 
