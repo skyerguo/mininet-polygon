@@ -59,9 +59,9 @@ def init():
 
 
 def clear_logs():
-    os.system("rm -f temp_*")
-    os.system("bash ../bash-scripts/clear_logs.sh")
-    os.system("bash ../bash-scripts/kill_running.sh")
+    # os.system("rm -f temp_*")
+    # os.system("sudo bash ../bash-scripts/clear_logs.sh")
+    os.system("sudo bash ../bash-scripts/kill_running.sh")
 
 
 def test_run(net):
@@ -80,12 +80,12 @@ def test_run(net):
     time.sleep(30 + 5 * SERVER_NUMBER)
 
     for client_id in range(CLIENT_NUMBER):
-        server_id = random.randint(0, SERVER_NUMBER - 1)
-        server_ip = "10.0.%s.3" %(str(server_id))
-        now_port = START_PORT + server_id * SERVER_THREAD
-        print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -a %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD), str(start_time)))
-        client[client_id].cmd("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -a %s"%(str(client_id), server_ip, str(now_port), str(CLIENT_THREAD), str(start_time)))
-        time.sleep(1.5)
+        # server_id = random.randint(0, SERVER_NUMBER - 1)
+        # server_ip = "10.0.%s.3" %(str(server_id))
+        # now_port = START_PORT + server_id * SERVER_THREAD
+        print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(SERVER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(SERVER_THREAD), str(start_time)))
+        client[client_id].cmd("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(SERVER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(SERVER_THREAD), str(start_time)))
+        time.sleep(3)
 
  
 def myNetwork(net):
@@ -108,9 +108,11 @@ def myNetwork(net):
     print( '*** Add hosts\n')
     print(cpu)
     for client_id in range(CLIENT_NUMBER):
-        client.append(net.addHost('client%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
+        # client.append(net.addHost('client%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
+        client.append(net.addHost('client%s'%str(client_id), ip='10.0.%s.1'%str(client_id), defaultRoute=None))
     for server_id in range(SERVER_NUMBER):
-        server.append(net.addHost('server%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        # server.append(net.addHost('server%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        server.append(net.addHost('server%s'%str(server_id), ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     
     print( '*** Add links\n')
     
@@ -160,9 +162,10 @@ if __name__ == '__main__':
 
     net = Mininet( topo=None,
                 build=False,
-                host=CPULimitedHost,
+                # host=CPULimitedHost,
                 ipBase='10.0.0.0/8',
-                controller=None)
+                controller=None,
+                waitConnected=True)
 
     myNetwork(net)
     ## 设置跑
