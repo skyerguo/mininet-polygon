@@ -71,7 +71,7 @@ Middleware_client_server = {
 }
 
 
-Middleware_client_server_router = {
+Middleware_client_router_server = {
     'client_number': 2,
     'server_number': 2,
     'router_number': 2,

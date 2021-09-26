@@ -39,7 +39,7 @@ type_list_normal=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal
 type_list_video=("video" "video" "video" "video" "video" "video" "video" "video" "video") ## 全是video
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu
 
-type_list=(${type_list_normal[*]})
+type_list=(${type_list_cpu[*]})
 
 for i in `seq $client_thread`
 do 
