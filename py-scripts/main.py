@@ -183,7 +183,33 @@ def myNetwork(net):
     for router_id in range(ROUTER_NUMBER):
         router[router_id].cmd("ip route add default dev router%s-eth0 proto kernel scope link"%(str(router_id)))  
     
- 
+    ## 输出到machine.json
+    machine_json_path = os.path.join(os.environ['HOME'], 'mininet-polygon/json-files')
+    with open('{}/machine.json'.format(machine_json_path), 'w') as f:
+        # servers = {}
+        # routers = {}
+        machines = {}
+        for server_id in range(SERVER_NUMBER):
+            server_name = 'server%s'%str(server_id)
+            temp_host = net.get(server_name)
+            temp_ip = "10.0.%s.3"%(server_id)
+            temp_mac = temp_host.MAC()
+            machines[server_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
+                                     'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
+                                     'mac1': temp_mac, 'mac2': temp_mac,
+                                     'zone': str(server_id)}
+        for router_id in range(ROUTER_NUMBER):
+            router_name = 'router%s'%str(router_id)
+            temp_host = net.get(router_name)
+            temp_ip = "10.0.%s.5"%(router_id)
+            temp_mac = temp_host.MAC()
+            machines[router_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
+                                     'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
+                                     'mac1': temp_mac, 'mac2': temp_mac,
+                                     'zone': str(router_id)}
+        json.dump(machines, f)
+
+
 if __name__ == '__main__':
     setLogLevel( 'info' )
     clear_logs()
