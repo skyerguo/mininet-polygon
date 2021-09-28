@@ -183,11 +183,9 @@ def myNetwork(net):
     for router_id in range(ROUTER_NUMBER):
         router[router_id].cmd("ip route add default dev router%s-eth0 proto kernel scope link"%(str(router_id)))  
     
-    ## 输出到machine.json
+    ## 输出到machine_server.json
     machine_json_path = os.path.join(os.environ['HOME'], 'mininet-polygon/json-files')
-    with open('{}/machine.json'.format(machine_json_path), 'w') as f:
-        # servers = {}
-        # routers = {}
+    with open('{}/machine_server.json'.format(machine_json_path), 'w') as f:
         machines = {}
         for server_id in range(SERVER_NUMBER):
             server_name = 'server%s'%str(server_id)
@@ -198,6 +196,11 @@ def myNetwork(net):
                                      'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
                                      'mac1': temp_mac, 'mac2': temp_mac,
                                      'zone': str(server_id)}
+        json.dump(machines, f)
+    
+    ## 输出到machine_router.json
+    with open('{}/machine_router.json'.format(machine_json_path), 'w') as f:
+        machines = {}
         for router_id in range(ROUTER_NUMBER):
             router_name = 'router%s'%str(router_id)
             temp_host = net.get(router_name)
@@ -207,6 +210,20 @@ def myNetwork(net):
                                      'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
                                      'mac1': temp_mac, 'mac2': temp_mac,
                                      'zone': str(router_id)}
+        json.dump(machines, f)
+    
+    ## 输出到machine_client.json
+    with open('{}/machine_client.json'.format(machine_json_path), 'w') as f:
+        machines = {}
+        for client_id in range(CLIENT_NUMBER):
+            client_name = 'client%s'%str(client_id)
+            temp_host = net.get(client_name)
+            temp_ip = "10.0.%s.1"%(client_id)
+            temp_mac = temp_host.MAC()
+            machines[client_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
+                                     'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
+                                     'mac1': temp_mac, 'mac2': temp_mac,
+                                     'zone': str(client_id)}
         json.dump(machines, f)
 
 
