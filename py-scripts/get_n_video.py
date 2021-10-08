@@ -1,35 +1,50 @@
 import subprocess
 import json
-# import os
+import sys
+import re
+import numpy as np
+import copy
 
-machines=json.load(open("/home/mininet/machine.json"));
-clients=json.load(open("/home/mininet/hosts.json"));
-fh = subprocess.Popen("tail -150 /home/mininet/iftop_log.txt", stdout=subprocess.PIPE, shell=True)
+# print(sys.argv[0])
+
+server_id = int(sys.argv[1])
+router_id = int(sys.argv[2])
+
+
+# machines=json.load(open("/home/mininet/machine.json"))
+# clients=json.load(open("/home/mininet/hosts.json"))
+fh = subprocess.Popen("tail -100 /data/measurement_log/iftop/iftop_log_%s.txt"%(str(server_id)), stdout=subprocess.PIPE, shell=True)
 lines = reversed(fh.stdout.readlines())
-# print(lines)
-cnt=0
-geo_ratio={}
-routers = [x for x in machines if "router" in x]
-
-std_ratio = open("/home/mininet/initial_std.txt").readlines()
-for i in range(len(routers)):
-    geo_ratio[routers[i].split('-')[1]] = float(std_ratio[i])
-# print(geo_ratio)
-# print(routers)
+# lines2 = copy.deepcopy(lines)
+cnt = 0
 
 ips = []
 zones = []
+speeds = {}
 # print(clients)
 
+lines2 = []
 for raw_line in lines:
     line = raw_line.decode('ascii')
     # print(line)
+    lines2.append(line)
     if line.startswith("=="):
         cnt += 1
-    if cnt == 0:
+# fh.kill()
+
+# fh2 = subprocess.Popen("tail -100 /data/measurement_log/iftop/iftop_log_%s.txt"%(str(server_id)), stdout=subprocess.PIPE, shell=True, start_new_session=True)
+# lines2 = reversed(fh2.stdout.readlines())
+for line in lines2:
+    # line = raw_line.decode('ascii')
+    # print(line)
+    if line.startswith("=="):
+        cnt -= 1
+    if cnt > 1:
         continue
-    if cnt == 2:
+    if cnt <= 0:
         break
+    # print(cnt)
+    # print(line)
 
     if "<=" in line:
         last_info = line.split("<=")[0].replace(" ", "")
@@ -37,24 +52,38 @@ for raw_line in lines:
         # print(last_info)
     
     if "=>" in line:
-        speed = line.split("=>")[1].split("b")[2]
         # print(line)
+        speed = line.split("=>")[1].split("b")[2]
         # print(speed)
-        if 'M' in speed or ('K' in speed and float(speed.split('K')[0]) > 200):
-            # print(last_info)
-            ip_add = ''
-            for item in last_info.split('.'):
-                if item.isdigit():
-                    if ip_add:
-                        ip_add = item + '.' + ip_add
-                    else:
-                        ip_add = item
-            if ip_add not in ips:
-                ips.append(ip_add)
-            # print(ip_add)
-            # print(speed)
+        if 'M' in speed:
+            speed = float(speed.split('M')[0]) * 1000
+        elif 'K' in speed:
+            speed = float(speed.split('K')[0]) 
+        else:
+            speed = float(speed) / 1000
+        ip_add = ''
+        for item in last_info.split('.'):
+            if item.isdigit():
+                if ip_add:
+                    ip_add = ip_add + '.' + item
+                else:
+                    ip_add = item
+
+        if not re.search('10.0.*.1', ip_add):
+            continue
+        ip_id = int(ip_add.split('.')[2])
+        if ip_id not in speeds:
+            speeds[ip_id] = [speed]
+        else:
+            speeds[ip_id].append(speed)
+        
+        # if ip_add not in ips:
+        #     ips.append(ip_add)
+        # print(ip_add)
+        # print(speed)
 
 # print(ips)
+# print(speeds)
 
 
 # for client in clients:
@@ -64,16 +93,21 @@ for raw_line in lines:
 #         zone = client['zone'].split('-')[0]
 #     print(client, zone)
 
-ans=0
-for ip in ips:
-    # print(ip)
-    for client in clients:
-        if client['hostname'] == ip:
-            if 'us-' in client['zone']:
-                zone = 'northamerica'
-            else:
-                zone = client['zone'].split('-')[0]
-            ans = ans + float(geo_ratio[zone])
-            # print(client)
-            break
-print(ans)
+# ans=0
+# for ip in ips:
+#     # print(ip)
+#     for client in clients:
+#         if client['hostname'] == ip:
+#             if 'us-' in client['zone']:
+#                 zone = 'northamerica'
+#             else:
+#                 zone = client['zone'].split('-')[0]
+#             ans = ans + float(geo_ratio[zone])
+#             # print(client)
+#             break
+# print(ans)
+
+if router_id in speeds.keys():
+    print(np.mean(speeds[router_id]))
+else:
+    print(0)

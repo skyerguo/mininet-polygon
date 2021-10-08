@@ -10,6 +10,7 @@ from subprocess import call
 from topo import *
 import copy
 import json
+import time
 
 import os
 
@@ -69,9 +70,21 @@ def clear_logs():
     os.system("sudo bash ../bash-scripts/kill_running.sh")
 
 
+def measure_start(net):
+    # print(SELECT_TOPO['bw']['router_server'])
+    # print(SELECT_TOPO['bw']['router_server'][0])
+    for server_id in range(1):
+        print("bash ../bash-scripts/init_measurement_from_server.sh -i %s"%(str(server_id)))
+        server[server_id].cmd("bash ../bash-scripts/init_measurement_from_server.sh -i %s" %(str(server_id)))
+    
+    time.sleep(5)
+    
+    # for server_id in range(1):
+    #     print("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['router_server'][0]).replace(", ","+").replace("[","").replace("]","")))
+    #     server[server_id].cmd("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['router_server'][0]).replace(", ","+").replace("[","").replace("]","")))
+
 def test_run(net):
 
-    import time
     import random
     
     now_port = START_PORT
@@ -242,6 +255,8 @@ if __name__ == '__main__':
 
     myNetwork(net)
     ## 设置跑
+    # time.sleep(30) ## 等待网络构建好
+    measure_start(net)
     # test_run(net)
     CLI(net)
     net.stop()
