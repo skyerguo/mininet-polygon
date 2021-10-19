@@ -1,7 +1,7 @@
 cd ${HOME}
 
 root_path="/home/mininet/mininet-polygon/"
-date > ${root_path}timestamp-records/gre.router.sh.start_ts
+# date > ${root_path}timestamp-records/gre.router.sh.start_ts
 
 ## 删除现有的路由表，server_all已经删了，这里不需要了
 # sudo iptables -I OUTPUT -p icmp --icmp-type destination-unreachable -j DROP
@@ -12,23 +12,30 @@ date > ${root_path}timestamp-records/gre.router.sh.start_ts
 
 ## setup Gre tunnel server -> router
 
-export machine_server_path=$root_path"json-files/machine_server.json"
+# export machine_server_path=$root_path"json-files/machine_server.json"
+# export machine_router_path=$root_path"json-files/machine_router.json"
 # echo "machine_server_path: "$machine_server_path
 
 ## get routers
-routers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item for item in machines.keys() if item.endswith("rt")]))'`)
-servers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item for item in machines.keys() if item.endswith("sv")]))'`)
-pure_routers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item.replace("_","") for item in machines.keys() if item.endswith("rt")]))'`) # 将router的下划线去除
-pure_servers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item.replace("_","") for item in machines.keys() if item.endswith("sv")]))'`) # 将server的下划线去除
+# routers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item for item in machines.keys() if item.endswith("rt")]))'`)
+# servers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item for item in machines.keys() if item.endswith("sv")]))'`)
+# pure_routers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item.replace("_","") for item in machines.keys() if item.endswith("rt")]))'`) # 将router的下划线去除
+# pure_servers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item.replace("_","") for item in machines.keys() if item.endswith("sv")]))'`) # 将server的下划线去除
+servers=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_server.json")); print(" ".join([x for x in machines if "server" in x]));'`)
+routers=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_router.json")); print(" ".join([x for x in machines if "router" in x]));'`)
 
 for i in `seq 0 $((${#routers[*]} - 1))`
 do
     # export hostname=$(ifconfig | head -1 | cut -d'-' -f1)
-    export hostname=${routers[$i]}
-    # iface_secondary=${hostname}'-eth0'
-    iface_secondary='s1-eth'$(($i*2+1))
+    echo "server $i:  " ${servers[i]}
+    echo "router $i:  " ${routers[i]}
+    export hostname=${routers[i]}
+    iface_secondary=${hostname}'-eth0'
+    echo "iface_secondary: "$iface_secondary
+    # iface_secondary='s1-eth'$(($i*2+1))
     var=$(ifconfig ${iface_secondary}|grep ether); vars=( $var ); mac_secondary=${vars[1]}
-    # echo "mac_secondary: "$mac_secondary
+    echo "mac_secondary: "$mac_secondary
+    continue
 
     ip_primary=`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(machines[os.environ["hostname"]]["internal_ip1"])'`
     ip_secondary=`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(machines[os.environ["hostname"]]["internal_ip2"])'`
@@ -126,4 +133,4 @@ do
     break
 done
 
-date > ${root_path}timestamp-records/gre.router.sh.end_ts
+# date > ${root_path}timestamp-records/gre.router.sh.end_ts

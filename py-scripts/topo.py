@@ -2,8 +2,8 @@ test_1_1 = {
     'client_number': 1,
     'server_number': 1,
     'router_number': 0,
-    'server_thread': 10,
-    'client_thread': 10,
+    'server_thread': 1,
+    'client_thread': 1,
     'bw': {
         'client_server': [
             [50,50,50,50,50],
@@ -26,6 +26,61 @@ test_1_1 = {
         'client': 0.2,
         'server': 0.5,
         'router': 0.0,
+    }
+}
+
+test_1_1_1 = {
+    'client_number': 1,
+    'server_number': 1,
+    'router_number': 1,
+    'server_thread': 1,
+    'client_thread': 1,
+    'router_thread': 1,
+    'bw': {
+        'client_server': [
+            [50,50],
+            [50,50]
+        ],
+        'client_router': [
+            [50,50],
+            [50,50]
+        ],
+        'router_server': [
+            [1000,50],
+            [50,1000]
+        ],
+        'router_router': [
+            [50,50],
+            [50,50]
+        ]
+    },
+    'delay': {
+        'client_server': [
+            [10,30],
+            [15,20]
+        ],
+        'client_router': [
+            [10,30],
+            [15,20]
+        ],
+        'router_server': [
+            [1,30],
+            [15,1]
+        ],
+        'router_router': [
+            [0,30],
+            [15,0]
+        ],
+    },
+    'cpu': {
+        'client': .2,
+        'server': .3,
+        'router': .2,
+    },
+    'zone': {
+        'as',
+        'na',
+        'eu',
     }
 }
 

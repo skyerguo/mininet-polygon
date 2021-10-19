@@ -11,10 +11,9 @@ from topo import *
 import copy
 import json
 import time
-
 import os
 
-SELECT_TOPO = copy.deepcopy(Middleware_client_router_server)
+SELECT_TOPO = copy.deepcopy(test_1_1_1)
 
 CLIENT_NUMBER = 0
 ROUTER_NUMBER = 0
@@ -47,13 +46,14 @@ def sendAndWait(host, line, send=True, debug=False):
         print(ret)
     return ret
 
+
 def init():
     global CLIENT_NUMBER, SERVER_NUMBER, ROUTER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD
     global bw, delay, cpu
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     ROUTER_NUMBER = SELECT_TOPO['router_number']
-    SWITCH_NUMBER = SERVER_NUMBER + CLIENT_NUMBER + ROUTER_NUMBER
+    SWITCH_NUMBER = SERVER_NUMBER + CLIENT_NUMBER + ROUTER_NUMBER * 2 
     SERVER_THREAD = SELECT_TOPO['server_thread']
     ROUTER_THREAD = SELECT_TOPO['router_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
@@ -70,39 +70,6 @@ def clear_logs():
     os.system("sudo bash ../bash-scripts/kill_running.sh")
 
 
-def measure_start(net):
-    # print(SELECT_TOPO['bw']['router_server'])
-    # print(SELECT_TOPO['bw']['router_server'][0])
-    for server_id in range(1):
-        print("bash ../bash-scripts/init_measurement_from_server.sh -i %s"%(str(server_id)))
-        server[server_id].cmd("bash ../bash-scripts/init_measurement_from_server.sh -i %s" %(str(server_id)))
-    
-    time.sleep(5)
-    
-    # for server_id in range(1):
-    #     print("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['router_server'][0]).replace(", ","+").replace("[","").replace("]","")))
-    #     server[server_id].cmd("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['router_server'][0]).replace(", ","+").replace("[","").replace("]","")))
-
-def test_run(net):
-
-    import random
-    
-    now_port = START_PORT
-    start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
-    for server_id in range(SERVER_NUMBER):
-        server_ip = "10.0.%s.3" %(str(server_id))
-        print("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
-        server[server_id].cmd("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
-        now_port += SERVER_THREAD
-    
-    time.sleep(30 + 5 * SERVER_NUMBER)
-
-    for client_id in range(CLIENT_NUMBER):
-        print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(SERVER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(SERVER_THREAD), str(start_time)))
-        client[client_id].cmd("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(SERVER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(SERVER_THREAD), str(start_time)))
-        time.sleep(3)
-
- 
 def myNetwork(net):
     ''' 
         ip地址：
@@ -114,7 +81,8 @@ def myNetwork(net):
                     10.0.x.3 clientx->switch0 网卡
             router: 10.0.0.0/16
                     10.0.x.5 routerx ip
-                    10.0.x.5 routex->switch0 网卡
+                    10.0.x.5 routerx->switch0 网卡
+                    10.0.x.7 routerx->switch1 网卡
             
     '''
 
@@ -141,6 +109,8 @@ def myNetwork(net):
         net.addLink(switch[CLIENT_NUMBER+server_id], server[server_id])
     for router_id in range(ROUTER_NUMBER):
         net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+router_id], router[router_id])
+    for router_id in range(ROUTER_NUMBER):
+        net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+ROUTER_NUMBER+router_id], router[router_id])
 
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
 
@@ -157,12 +127,12 @@ def myNetwork(net):
     ## router_server
     for router_id in range(ROUTER_NUMBER):
         for server_id in range(SERVER_NUMBER):
-            net.addLink(switch[router_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':bw['router_server'][router_id][server_id],'delay':str(delay['router_server'][router_id][server_id])+'ms'})
+            net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+router_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':bw['router_server'][router_id][server_id],'delay':str(delay['router_server'][router_id][server_id])+'ms'})
     
     ## router_router
     for router_id_0 in range(ROUTER_NUMBER):
         for router_id_1 in range(router_id_0 + 1, ROUTER_NUMBER):
-            net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+router_id_0], switch[CLIENT_NUMBER+SERVER_NUMBER+router_id_1], cls=TCLink, **{'bw':bw['router_router'][router_id_0][router_id_1],'delay':str(delay['router_router'][router_id_0][router_id_1])+'ms'}) 
+            net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+ROUTER_NUMBER+router_id_0], switch[CLIENT_NUMBER+SERVER_NUMBER+ROUTER_NUMBER+router_id_1], cls=TCLink, **{'bw':bw['router_router'][router_id_0][router_id_1],'delay':str(delay['router_router'][router_id_0][router_id_1])+'ms'}) 
     
     print( '*** Starting network\n')
     net.build()
@@ -240,6 +210,44 @@ def myNetwork(net):
         json.dump(machines, f)
 
 
+def gre_setup(net):
+    for router_id in range(ROUTER_NUMBER):
+        print("bash ../bash-scripts/gre_setup_router_single.sh -i %s"%(str(router_id)))
+        router[router_id].cmd("bash ../bash-scripts/gre_setup_router_single.sh -i %s"%(str(router_id)))
+
+def measure_start(net):
+    for server_id in range(1):
+        print("bash ../bash-scripts/init_measurement_from_server.sh -i %s"%(str(server_id)))
+        server[server_id].cmd("bash ../bash-scripts/init_measurement_from_server.sh -i %s" %(str(server_id)))
+    
+    time.sleep(5)
+    
+    for server_id in range(1):
+        print("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['router_server'][0]).replace(", ","+").replace("[","").replace("]","")))
+        server[server_id].cmd("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['router_server'][0]).replace(", ","+").replace("[","").replace("]","")))
+
+
+def test_run(net):
+
+    import random
+    
+    now_port = START_PORT
+    start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
+    for server_id in range(SERVER_NUMBER):
+        server_ip = "10.0.%s.3" %(str(server_id))
+        print("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
+        server[server_id].cmd("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
+        now_port += SERVER_THREAD
+    
+    time.sleep(30 + 5 * SERVER_NUMBER)
+
+    for client_id in range(CLIENT_NUMBER):
+        print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(SERVER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(SERVER_THREAD), str(start_time)))
+        client[client_id].cmd("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(SERVER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(SERVER_THREAD), str(start_time)))
+        time.sleep(3)
+
+
+
 if __name__ == '__main__':
     setLogLevel( 'info' )
     clear_logs()
@@ -255,8 +263,9 @@ if __name__ == '__main__':
 
     myNetwork(net)
     ## 设置跑
-    # time.sleep(30) ## 等待网络构建好
+    time.sleep(20) ## 等待网络构建好
+    # gre_setup(net)
     measure_start(net)
-    # test_run(net)
+    test_run(net)
     CLI(net)
     net.stop()
