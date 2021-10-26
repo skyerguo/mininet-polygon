@@ -83,7 +83,7 @@ def myNetwork(net):
                     10.0.x.5 dispatcherx ip
                     10.0.x.5 dispatcherx->switch0 网卡
                     10.0.x.7 dispatcherx->switch1 网卡
-            
+        ## 由于mininet对于interface名字不能太长，因此使用cx,sx,dx来表示client，server，dispatcher
     '''
 
 
@@ -93,14 +93,14 @@ def myNetwork(net):
 
     print( '*** Add hosts\n')
     for client_id in range(CLIENT_NUMBER):
-        client.append(net.addHost('client%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
+        client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
         # client.append(net.addHost('client%s'%str(client_id), ip='10.0.%s.1'%str(client_id), defaultRoute=None))
     for server_id in range(SERVER_NUMBER):
-        server.append(net.addHost('server%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
         # server.append(net.addHost('server%s'%str(server_id), ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher.append(net.addHost('dispatcher%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
-    
+        dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
+      
     print( '*** Add links\n')
     
     for client_id in range(CLIENT_NUMBER):
@@ -148,30 +148,30 @@ def myNetwork(net):
     print( '*** Post configure switches and hosts\n')
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmd('ifconfig client%s-eth0 10.0.%s.1'%(str(client_id), str(client_id)))
+        client[client_id].cmd('ifconfig c%s-eth0 10.0.%s.1'%(str(client_id), str(client_id)))
     
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmd('ifconfig server%s-eth0 10.0.%s.3'%(str(server_id), str(server_id)))
+        server[server_id].cmd('ifconfig s%s-eth0 10.0.%s.3'%(str(server_id), str(server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher[dispatcher_id].cmd('ifconfig dispatcher%s-eth0 10.0.%s.5'%(str(dispatcher_id), str(dispatcher_id)))
+        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth0 10.0.%s.5'%(str(dispatcher_id), str(dispatcher_id)))
 
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmd("ip route add default dev client%s-eth0 proto kernel scope link"%(str(client_id)))  
+        client[client_id].cmd("ip route add default dev c%s-eth0 proto kernel scope link"%(str(client_id)))  
     
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmd("ip route add default dev server%s-eth0 proto kernel scope link"%(str(server_id))) 
+        server[server_id].cmd("ip route add default dev s%s-eth0 proto kernel scope link"%(str(server_id))) 
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher[dispatcher_id].cmd("ip route add default dev dispatcher%s-eth0 proto kernel scope link"%(str(dispatcher_id)))  
+        dispatcher[dispatcher_id].cmd("ip route add default dev d%s-eth0 proto kernel scope link"%(str(dispatcher_id)))  
     
     ## 输出到machine_server.json
     machine_json_path = os.path.join(os.environ['HOME'], 'mininet-polygon/json-files')
     with open('{}/machine_server.json'.format(machine_json_path), 'w') as f:
         machines = {}
         for server_id in range(SERVER_NUMBER):
-            server_name = 'server%s'%str(server_id)
+            server_name = 's%s'%str(server_id)
             temp_host = net.get(server_name)
             temp_ip = "10.0.%s.3"%(server_id)
             temp_mac = temp_host.MAC()
@@ -185,7 +185,7 @@ def myNetwork(net):
     with open('{}/machine_dispatcher.json'.format(machine_json_path), 'w') as f:
         machines = {}
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            dispatcher_name = 'dispatcher%s'%str(dispatcher_id)
+            dispatcher_name = 'd%s'%str(dispatcher_id)
             temp_host = net.get(dispatcher_name)
             temp_ip = "10.0.%s.5"%(dispatcher_id)
             temp_mac = temp_host.MAC()
@@ -199,7 +199,7 @@ def myNetwork(net):
     with open('{}/machine_client.json'.format(machine_json_path), 'w') as f:
         machines = {}
         for client_id in range(CLIENT_NUMBER):
-            client_name = 'client%s'%str(client_id)
+            client_name = 'c%s'%str(client_id)
             temp_host = net.get(client_name)
             temp_ip = "10.0.%s.1"%(client_id)
             temp_mac = temp_host.MAC()
@@ -263,9 +263,9 @@ if __name__ == '__main__':
 
     myNetwork(net)
     ## 设置跑
-    time.sleep(20) ## 等待网络构建好
-    # gre_setup(net)
-    measure_start(net)
+    # time.sleep(20) ## 等待网络构建好
+    # # gre_setup(net)
+    # measure_start(net)
     test_run(net)
     CLI(net)
     net.stop()
