@@ -239,6 +239,13 @@ def test_run(net):
         server[server_id].cmd("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
         now_port += SERVER_THREAD
     
+    now_port = START_PORT
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
+        print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
+        dispatcher[dispatcher_id].cmd("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
+        now_port += SERVER_THREAD
+
     time.sleep(30 + 5 * SERVER_NUMBER)
 
     for client_id in range(CLIENT_NUMBER):
@@ -263,7 +270,7 @@ if __name__ == '__main__':
 
     myNetwork(net)
     ## 设置跑
-    # time.sleep(20) ## 等待网络构建好
+    time.sleep(20) ## 等待网络构建好
     # # gre_setup(net)
     # measure_start(net)
     test_run(net)
