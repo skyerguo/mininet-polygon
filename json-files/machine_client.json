@@ -1,1 +1,1 @@
-{"client0": {"external_ip1": "10.0.0.1", "external_ip2": "10.0.0.1", "internal_ip1": "10.0.0.1", "internal_ip2": "10.0.0.1", "mac1": "c2:07:03:95:ac:2e", "mac2": "c2:07:03:95:ac:2e", "zone": "0"}}
+{"c0": {"external_ip1": "10.0.0.1", "external_ip2": "10.0.0.1", "internal_ip1": "10.0.0.1", "internal_ip2": "10.0.0.1", "mac1": "d6:f8:4b:f2:b8:99", "mac2": "d6:f8:4b:f2:b8:99", "zone": "0"}}
