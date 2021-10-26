@@ -1,7 +1,7 @@
 test_1_1 = {
     'client_number': 1,
     'server_number': 1,
-    'router_number': 0,
+    'dispatcher_number': 0,
     'server_thread': 1,
     'client_thread': 1,
     'bw': {
@@ -25,31 +25,31 @@ test_1_1 = {
     'cpu': {
         'client': 0.2,
         'server': 0.5,
-        'router': 0.0,
+        'dispatcher': 0.0,
     }
 }
 
 test_1_1_1 = {
     'client_number': 1,
     'server_number': 1,
-    'router_number': 1,
+    'dispatcher_number': 1,
     'server_thread': 1,
     'client_thread': 1,
-    'router_thread': 1,
+    'dispatcher_thread': 1,
     'bw': {
         'client_server': [
             [50,50],
             [50,50]
         ],
-        'client_router': [
+        'client_dispatcher': [
             [50,50],
             [50,50]
         ],
-        'router_server': [
+        'dispatcher_server': [
             [1000,50],
             [50,1000]
         ],
-        'router_router': [
+        'dispatcher_dispatcher': [
             [50,50],
             [50,50]
         ]
@@ -59,15 +59,15 @@ test_1_1_1 = {
             [10,30],
             [15,20]
         ],
-        'client_router': [
+        'client_dispatcher': [
             [10,30],
             [15,20]
         ],
-        'router_server': [
+        'dispatcher_server': [
             [1,30],
             [15,1]
         ],
-        'router_router': [
+        'dispatcher_dispatcher': [
             [0,30],
             [15,0]
         ],
@@ -75,7 +75,7 @@ test_1_1_1 = {
     'cpu': {
         'client': .2,
         'server': .3,
-        'router': .2,
+        'dispatcher': .2,
     },
     'zone': {
         'as',
@@ -87,7 +87,7 @@ test_1_1_1 = {
 Middleware_client_server = {
     'client_number': 10,
     'server_number': 10,
-    'router_number': 0,
+    'dispatcher_number': 0,
     'server_thread': 3,
     'client_thread': 3,
     'bw': {
@@ -121,32 +121,32 @@ Middleware_client_server = {
     'cpu': {
         'client': .2,
         'server': .5,
-        'router': 0,
+        'dispatcher': 0,
     }
 }
 
 
-Middleware_client_router_server = {
+Middleware_client_dispatcher_server = {
     'client_number': 2,
     'server_number': 2,
-    'router_number': 2,
+    'dispatcher_number': 2,
     'server_thread': 1,
     'client_thread': 1,
-    'router_thread': 1,
+    'dispatcher_thread': 1,
     'bw': {
         'client_server': [
             [50,50],
             [50,50]
         ],
-        'client_router': [
+        'client_dispatcher': [
             [50,50],
             [50,50]
         ],
-        'router_server': [
+        'dispatcher_server': [
             [1000,50],
             [50,1000]
         ],
-        'router_router': [
+        'dispatcher_dispatcher': [
             [50,50],
             [50,50]
         ]
@@ -156,15 +156,15 @@ Middleware_client_router_server = {
             [10,30],
             [15,20]
         ],
-        'client_router': [
+        'client_dispatcher': [
             [10,30],
             [15,20]
         ],
-        'router_server': [
+        'dispatcher_server': [
             [1,30],
             [15,1]
         ],
-        'router_router': [
+        'dispatcher_dispatcher': [
             [0,30],
             [15,0]
         ],
@@ -172,7 +172,7 @@ Middleware_client_router_server = {
     'cpu': {
         'client': .2,
         'server': .3,
-        'router': .2,
+        'dispatcher': .2,
     },
     'zone': {
         'as',
