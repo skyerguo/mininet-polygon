@@ -272,6 +272,7 @@ if __name__ == '__main__':
     ## 设置跑
     time.sleep(20) ## 等待网络构建好
     # gre_setup(net)
+    ## 用socket，直接从dispatcher发送给server，不走gre了
     # measure_start(net)
     # test_run(net)
     CLI(net)
