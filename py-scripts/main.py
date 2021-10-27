@@ -271,8 +271,8 @@ if __name__ == '__main__':
     myNetwork(net)
     ## 设置跑
     time.sleep(20) ## 等待网络构建好
-    # # gre_setup(net)
+    # gre_setup(net)
     # measure_start(net)
-    test_run(net)
+    # test_run(net)
     CLI(net)
     net.stop()
