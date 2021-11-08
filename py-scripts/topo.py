@@ -135,38 +135,38 @@ Middleware_client_dispatcher_server = {
     'dispatcher_thread': 1,
     'bw': {
         'client_server': [
-            [50,50],
-            [50,50]
+            [5,1],
+            [1,5]
         ],
         'client_dispatcher': [
-            [50,50],
-            [50,50]
+            [5,1],
+            [1,5]
         ],
         'dispatcher_server': [
-            [1000,50],
-            [50,1000]
+            [10,3],
+            [3,10]
         ],
         'dispatcher_dispatcher': [
-            [50,50],
-            [50,50]
+            [10,10],
+            [10,10]
         ]
     },
     'delay': {
         'client_server': [
-            [10,30],
-            [15,20]
+            [20,200],
+            [200,20]
         ],
         'client_dispatcher': [
-            [10,30],
-            [15,20]
+            [20,200],
+            [200,20]
         ],
         'dispatcher_server': [
-            [1,30],
-            [15,1]
+            [1,100],
+            [100,1]
         ],
         'dispatcher_dispatcher': [
-            [0,30],
-            [15,0]
+            [0,1],
+            [1,0]
         ],
     },
     'cpu': {
@@ -177,6 +177,7 @@ Middleware_client_dispatcher_server = {
     'zone': {
         'as',
         'na',
-        'eu',
+        # 'eu',
     }
 }
+

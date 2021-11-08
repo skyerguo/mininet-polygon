@@ -53,7 +53,7 @@ def init():
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
-    SWITCH_NUMBER = SERVER_NUMBER + CLIENT_NUMBER + DISPATCHER_NUMBER * 2 
+    SWITCH_NUMBER = SERVER_NUMBER + CLIENT_NUMBER + DISPATCHER_NUMBER
     SERVER_THREAD = SELECT_TOPO['server_thread']
     DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
@@ -100,6 +100,9 @@ def myNetwork(net):
         # server.append(net.addHost('server%s'%str(server_id), ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
+
+    print( '*** Add remote controller\n')
+    con = net.addController(name='con', controller=RemoteController, ip='10.177.53.102', port=6379)
       
     print( '*** Add links\n')
     
@@ -109,8 +112,8 @@ def myNetwork(net):
         net.addLink(switch[CLIENT_NUMBER+server_id], server[server_id])
     for dispatcher_id in range(DISPATCHER_NUMBER):
         net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+dispatcher_id], dispatcher[dispatcher_id])
-    for dispatcher_id in range(DISPATCHER_NUMBER):
-        net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id], dispatcher[dispatcher_id])
+    # for dispatcher_id in range(DISPATCHER_NUMBER):
+    #     net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id], dispatcher[dispatcher_id])
 
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
 
@@ -129,17 +132,24 @@ def myNetwork(net):
         for server_id in range(SERVER_NUMBER):
             net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+dispatcher_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id],'delay':str(delay['dispatcher_server'][dispatcher_id][server_id])+'ms'})
     
-    ## dispatcher_dispatcher
-    for dispatcher_id_0 in range(DISPATCHER_NUMBER):
-        for dispatcher_id_1 in range(dispatcher_id_0 + 1, DISPATCHER_NUMBER):
-            net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id_0], switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id_1], cls=TCLink, **{'bw':bw['dispatcher_dispatcher'][dispatcher_id_0][dispatcher_id_1],'delay':str(delay['dispatcher_dispatcher'][dispatcher_id_0][dispatcher_id_1])+'ms'}) 
+    # ## dispatcher_dispatcher
+    # for dispatcher_id_0 in range(DISPATCHER_NUMBER):
+    #     for dispatcher_id_1 in range(dispatcher_id_0 + 1, DISPATCHER_NUMBER):
+    #         net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id_0], switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id_1], cls=TCLink, **{'bw':bw['dispatcher_dispatcher'][dispatcher_id_0][dispatcher_id_1],'delay':str(delay['dispatcher_dispatcher'][dispatcher_id_0][dispatcher_id_1])+'ms'}) 
     
     print( '*** Starting network\n')
     net.build()
+    # net.start()
+
+    print( '*** Starting controllers\n')
+    for controller in net.controllers:
+        print("controller: ", controller)
+        controller.start()
  
     print( '*** Starting switches\n')
     for switch_id in range(SWITCH_NUMBER):
-        net.get('switch%s'%str(switch_id)).start([])
+        net.get('switch%s'%str(switch_id)).start([con])
+    
     ## 定义网卡
     
     for switch_id in range(SWITCH_NUMBER):
@@ -246,7 +256,7 @@ def test_run(net):
         dispatcher[dispatcher_id].cmd("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
         now_port += SERVER_THREAD
 
-    time.sleep(30 + 5 * SERVER_NUMBER)
+    time.sleep(20 + 5 * SERVER_NUMBER)
 
     for client_id in range(CLIENT_NUMBER):
         print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(start_time)))
@@ -269,11 +279,17 @@ if __name__ == '__main__':
                 waitConnected=True)
 
     myNetwork(net)
+    
     ## 设置跑
     time.sleep(20) ## 等待网络构建好
     # gre_setup(net)
     ## 用socket，直接从dispatcher发送给server，不走gre了
     # measure_start(net)
+    # print("../test/test_socket/recvfrom > /home/mininet/tmp1.txt &")
+    # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
+    # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /home/mininet/test_server_sendquic_newipudp.cap &")
+    # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /home/mininet/test_dispatcher_sendquic_d0all.cap &")
+    # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
     # test_run(net)
     CLI(net)
     net.stop()

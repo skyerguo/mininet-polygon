@@ -37,7 +37,8 @@ type_list_normal=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal
 type_list_video=("video" "video" "video" "video" "video" "video" "video" "video" "video") ## 全是video
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu
 
-type_list=(${type_list_cpu[*]})
+type_list=(${type_list_normal[*]})
+
 
 for i in `seq $client_thread`
 do 
@@ -68,13 +69,13 @@ do
         echo "data_type: " $data_type >> ${output_file}_tmp.txt
         echo "website: " $website >> ${output_file}_tmp.txt
 
-        echo "sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q" >> ${output_file}_tmp.txt
+        echo "sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
 
         temp_time=$((${RANDOM=$port} % 1000))
         temp_time=`awk 'BEGIN{print "'$temp_time'" / "1000"}'`
         echo "sleep_time: " $temp_time >> ${output_file}_tmp.txt
         sleep $temp_time
 
-        sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+        sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
     } &
 done
