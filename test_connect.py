@@ -12,13 +12,14 @@ def myNetwork():
                    build=False)
 
     info( '*** Adding controller\n' )
-    net.addController(name='c0')
+    # net.addController(name='c0')
 
     info( '*** Add switches\n')
     s1 = net.addSwitch('s1')
     Intf( 'eth1', node=s1 )
 
     info( '*** Add hosts\n')
+    # h1 = net.addHost('h1', ip='10.177.53.22/24', defaultRoute="via 10.177.53.1")
     h1 = net.addHost('h1', ip='0.0.0.0')
 
     info( '*** Add links\n')
@@ -26,7 +27,7 @@ def myNetwork():
 
     info( '*** Starting network\n')
     net.start()
-    h1.cmdPrint('dhclient '+h1.defaultIntf().name)
+    # h1.cmdPrint('dhclient -v '+h1.defaultIntf().name)
     CLI(net)
     net.stop()
 
