@@ -1,3 +1,0 @@
-Using document root /home/mininet/mininet-polygon/py-scripts/
-listening on d0-eth1
-fd: 5
