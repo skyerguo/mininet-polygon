@@ -14,7 +14,7 @@ import time
 import os
 import subprocess
 
-SELECT_TOPO = copy.deepcopy(test_1_1_1)
+SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server)
 
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0

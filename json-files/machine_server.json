@@ -1,1 +1,1 @@
-{"s0": {"external_ip1": "10.0.0.3", "external_ip2": "10.0.0.3", "internal_ip1": "10.0.0.3", "internal_ip2": "10.0.0.3", "mac1": "b2:5f:75:e5:c9:59", "mac2": "b2:5f:75:e5:c9:59", "zone": "0"}}
+{"s0": {"external_ip1": "10.0.0.3", "external_ip2": "10.0.0.3", "internal_ip1": "10.0.0.3", "internal_ip2": "10.0.0.3", "mac1": "1a:98:75:a1:20:0f", "mac2": "1a:98:75:a1:20:0f", "zone": "0"}, "s1": {"external_ip1": "10.0.1.3", "external_ip2": "10.0.1.3", "internal_ip1": "10.0.1.3", "internal_ip2": "10.0.1.3", "mac1": "3a:36:71:ec:9f:e1", "mac2": "3a:36:71:ec:9f:e1", "zone": "1"}}

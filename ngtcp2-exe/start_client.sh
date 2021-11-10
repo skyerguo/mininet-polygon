@@ -45,6 +45,7 @@ do
     {
         time_stamp=$(($(date +%s%N)/1000000))
         dispatcher_id=$((${RANDOM=$time_stamp} % $dispatcher_number))
+        dispatcher_id=$client_id
         dispatcher_ip="10.0."$dispatcher_id".5"
         start_port=$(($init_port + $dispatcher_id * $dispatcher_thread))
 
