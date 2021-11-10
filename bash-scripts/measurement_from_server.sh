@@ -155,7 +155,11 @@ do
 
         avg_throughput=`awk 'BEGIN{print ("'${dispatcher_bw[i]}'" - "'$exist_throughput'") / "'${dispatcher_bw[i]}'" }'`
         echo "avg_throughput: "$avg_throughput >> $output_file
-        redis-cli -h $redis_ip -a 'Hestia123456' set throughput_server${server_id}_dispatcher$i ${dispatcher_bw[i]} ${avg_throughput} # > /dev/null
+        redis-cli -h $redis_ip -a 'Hestia123456' set throughput_server${server_id}_dispatcher$i ${avg_throughput} # > /dev/null
+
+        latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
+        echo "latency: "$latency >> $output_file
+        redis-cli -h $redis_ip -a 'Hestia123456' set latency_server${server_id}_dispatcher$i ${latency}
         
         # redis-cli -h ${dispatcher_ip[$i]} -a 'Hestia123456' set cpu_idle_$hostname $cpu_idle > /dev/null
     done
