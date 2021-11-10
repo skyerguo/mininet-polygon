@@ -1,0 +1,24 @@
+0dfd08c8332c774323d16d64774437a116119873 5517067826d07fa3a0061294cd8294ad2cc29a47 None <None> 1628756932 +0800	commit: 更新TODO，并跑通一个hostip网段的版本
+5517067826d07fa3a0061294cd8294ad2cc29a47 b6c8ca4d31eb73e9cceab8c6c2602b4165b0945c None <None> 1628835653 +0800	commit: change switch name
+b6c8ca4d31eb73e9cceab8c6c2602b4165b0945c b0ca1e28419dd5ebfac814539e3c579b83d62f68 None <None> 1628836890 +0800	commit: change hostname
+b0ca1e28419dd5ebfac814539e3c579b83d62f68 b9223ad5d6aa8f1916cd7a4342a6bca81af79092 None <None> 1628837261 +0800	commit: 数组使用存储host
+b9223ad5d6aa8f1916cd7a4342a6bca81af79092 07d04327b48b2a040d5187317d408ced205b5569 skyerguo97@gmail.com <skyerguo97@gmail.com> 1628955184 +0800	commit: test version
+07d04327b48b2a040d5187317d408ced205b5569 27b91609c24ad2258fa72de06a300ae8932e3252 skyerguo97@gmail.com <skyerguo97@gmail.com> 1628964201 +0800	commit: 路由表配置成功
+27b91609c24ad2258fa72de06a300ae8932e3252 bbf7471e7d05c8fae785c236c8a8e55a5cd52aab skyerguo97@gmail.com <skyerguo97@gmail.com> 1628965959 +0800	commit: 测试网关是否需要换网段，答案为是的
+bbf7471e7d05c8fae785c236c8a8e55a5cd52aab 234a9cdf732540551febc9c490d216f8e4e0eb47 skyerguo97 <skyerguo97@gmail.com> 1629279397 +0800	commit: 通过route add -net，使得节点间能通过switch 互相ping通
+234a9cdf732540551febc9c490d216f8e4e0eb47 57f825ac7378c2e4eed4ff7af912698efb311b38 skyerguo97 <skyerguo97@gmail.com> 1629292533 +0800	commit: 将代码改为循环
+57f825ac7378c2e4eed4ff7af912698efb311b38 6baf6e95c61b667c91d6b573b8f02b2c2d921704 skyerguo97 <skyerguo97@gmail.com> 1629650033 +0800	commit: 修改client+server，router内仍有问题
+6baf6e95c61b667c91d6b573b8f02b2c2d921704 0381ec998a37a0f598eb892c663891a4264f1f68 skyerguo97 <skyerguo97@gmail.com> 1630120681 +0800	commit: 手动路由half done
+0381ec998a37a0f598eb892c663891a4264f1f68 c405b1836b048df97966ee141ace7e4a2c944392 skyerguo97 <skyerguo97@gmail.com> 1630591424 +0800	commit: temp.py能保证在两个switch的情况下互通
+c405b1836b048df97966ee141ace7e4a2c944392 d45146f330ce10b4e6b79f53c9644c26e8c798ac skyerguo97 <skyerguo97@gmail.com> 1630662249 +0800	commit: 使用test_allswitch成功配置路由
+d45146f330ce10b4e6b79f53c9644c26e8c798ac 75673c5561f009c811e4f37842d55793f10d1a8f skyerguo97 <skyerguo97@gmail.com> 1630768791 +0800	commit: ngtcp2-exe 在系统级别成功运行，在mininet内不行，server0里监听不到server0-eth0的端口
+75673c5561f009c811e4f37842d55793f10d1a8f 9e50e46d7e067a9c94f64638f176e9c8ac967f74 skyerguo97 <skyerguo97@gmail.com> 1630833469 +0800	commit: update test_socket
+9e50e46d7e067a9c94f64638f176e9c8ac967f74 25662df3c0b7f54f4b34cd4e48488714572e02f6 skyerguo97 <skyerguo97@gmail.com> 1631103304 +0800	commit: mininet-polygon server对client传ngtcp2，一对一成功
+25662df3c0b7f54f4b34cd4e48488714572e02f6 ca92ed25204efb72232cce91d76701b5e11f7c78 skyerguo97 <skyerguo97@gmail.com> 1631104862 +0800	commit: mininet client和server对ngtcp2多对多成功
+ca92ed25204efb72232cce91d76701b5e11f7c78 c8df47c61eec4b98a6406f7d4678db1cf9bfc973 skyerguo97 <skyerguo97@gmail.com> 1631106879 +0800	commit: update
+c8df47c61eec4b98a6406f7d4678db1cf9bfc973 40a6c02076bcffc99659b098da541e051bfad400 skyerguo97 <skyerguo97@gmail.com> 1631170182 +0800	commit: server-client多线程互通成功
+40a6c02076bcffc99659b098da541e051bfad400 c4f08b7b1b0d51b47745a0079e3e3e2fda9f9ad5 skyerguo97 <skyerguo97@gmail.com> 1631170733 +0800	commit: update
+c4f08b7b1b0d51b47745a0079e3e3e2fda9f9ad5 9866d8da8ffea7d232380f2d4e9d0effc22a5cd1 skyerguo97 <skyerguo97@gmail.com> 1631694243 +0800	commit: 更新使用topo文件，实现多种网络拓扑灵活配置
+9866d8da8ffea7d232380f2d4e9d0effc22a5cd1 c70824d8ec57ffc88be3ddf18c5c39de3542938a skyerguo97 <skyerguo97@gmail.com> 1631872086 +0800	commit: 多类型资源，client-server done
+c70824d8ec57ffc88be3ddf18c5c39de3542938a 536dd93704c5f6cdd0f6ab2a796e4b8cfb6a020a skyerguo97 <skyerguo97@gmail.com> 1632292626 +0800	commit: client-server 三种文件类型，数据存储正确
+536dd93704c5f6cdd0f6ab2a796e4b8cfb6a020a db7d8a49764ec92efb8a0485a551f2a6e27f312d skyerguo97 <skyerguo97@gmail.com> 1632451873 +0800	commit: client-server成功互通版本，大体不动

@@ -1,0 +1,18 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[branch "master"]
+[remote "origin"]
+	url = git@github.com:skyerguo/mininet-polygon.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "cs-version"]
+	remote = origin
+	merge = refs/heads/cs-version
+[branch "crs-version"]
+	remote = origin
+	merge = refs/heads/crs-version
+[branch "csd-version"]
+	remote = origin
+	merge = refs/heads/csd-version
