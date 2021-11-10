@@ -9,11 +9,14 @@ import copy
 
 server_id = int(sys.argv[1])
 router_id = int(sys.argv[2])
+measurement_result_path = str(sys.argv[3])
 
 
 # machines=json.load(open("/home/mininet/machine.json"))
 # clients=json.load(open("/home/mininet/hosts.json"))
-fh = subprocess.Popen("tail -100 /data/measurement_log/iftop/iftop_log_%s.txt"%(str(server_id)), stdout=subprocess.PIPE, shell=True)
+# print("get_n_video")
+# print("%siftop/iftop_log_%s.txt"%(str(measurement_result_path), str(server_id)))
+fh = subprocess.Popen("tail -100 %siftop/iftop_log_%s.txt"%(str(measurement_result_path), str(server_id)), stdout=subprocess.PIPE, shell=True)
 lines = reversed(fh.stdout.readlines())
 # lines2 = copy.deepcopy(lines)
 cnt = 0

@@ -37,6 +37,9 @@ cpu = {}
 zone = {}
 start_time = 0
 
+virtual_machine_id = "127.0.0.1"
+virtual_machine_subnet = "127.0.0.1"
+
 def sendAndWait(host, line, send=True, debug=False):
     if not send:
         return ''
@@ -68,6 +71,16 @@ def init():
     global start_time
     start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
 
+    global virtual_machine_id, virtual_machine_subnet
+    ret = subprocess.Popen("ifconfig eth0 | grep inet | awk '{print $2}' | cut -f 2 -d ':'",shell=True,stdout=subprocess.PIPE)
+    virtual_machine_id = ret.stdout.read().decode("utf-8").strip('\n')
+    ret.stdout.close()
+    print("virtual_machine_id: ", virtual_machine_id)
+    virtual_machine_subnet = str(virtual_machine_id.split('.')[0]) + '.' + \
+                            str(virtual_machine_id.split('.')[1]) + '.' + \
+                            str(virtual_machine_id.split('.')[2]) + '.0' + '/24'
+
+    print("virtual_machine_subnet: ", virtual_machine_subnet)
 
 def clear_logs():
     # os.system("rm -f temp_*")
@@ -189,15 +202,7 @@ def myNetwork(net):
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth1 10.0.2.%s/24'%(str(dispatcher_id), str(150+dispatcher_id)))
     
     # (status, output) = commands.getstatusoutput('sh hello.sh')
-    ret = subprocess.Popen("ifconfig eth0 | grep inet | awk '{print $2}' | cut -f 2 -d ':'",shell=True,stdout=subprocess.PIPE)
-    virtual_machine_id = ret.stdout.read().decode("utf-8").strip('\n')
-    ret.stdout.close()
-    print("virtual_machine_id: ", virtual_machine_id)
-    virtual_machine_subnet = str(virtual_machine_id.split('.')[0]) + '.' + \
-                            str(virtual_machine_id.split('.')[1]) + '.' + \
-                            str(virtual_machine_id.split('.')[2]) + '.0' + '/24'
 
-    print("virtual_machine_subnet: ", virtual_machine_subnet)
 
     ret = subprocess.Popen("ifconfig switch%s | grep inet | awk '{print $2}' | cut -f 2 -d ':'"%(str(SWITCH_NUMBER - 1)),shell=True,stdout=subprocess.PIPE)
     switch_gw = ret.stdout.read().decode("utf-8").strip('\n')
@@ -275,13 +280,13 @@ def measure_start(net):
 
     for server_id in range(1):
         # print("bash ../bash-scripts/init_measurement_from_server.sh -i %s"%(str(server_id)))
-        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -a" %(str(server_id), str(start_time)))
+        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -a %s" %(str(server_id), str(start_time)))
     
     time.sleep(5)
     
     for server_id in range(1):
         # print("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['dispatcher_server'][0]).replace(", ","+").replace("[","").replace("]","")))
-        server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -a"%(str(server_id), str(SELECT_TOPO['bw']['dispatcher_server'][0]).replace(", ","+").replace("[","").replace("]",""), str(start_time)))
+        server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(SELECT_TOPO['bw']['dispatcher_server'][0]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_id), str(start_time)))
 
 
 def test_run(net):
@@ -299,10 +304,12 @@ def test_run(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
         # print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
-        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
+        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
         now_port += SERVER_THREAD
 
+    print("sleep " + str(20 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(20 + 5 * SERVER_NUMBER)
+    print("start_clients!")
 
     for client_id in range(CLIENT_NUMBER):
         # print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(start_time)))
@@ -337,6 +344,6 @@ if __name__ == '__main__':
     # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /home/mininet/test_server_sendquic_newipudp.cap &")
     # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /home/mininet/test_dispatcher_sendquic_d0all.cap &")
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
-    # test_run(net)
+    test_run(net)
     CLI(net)
     net.stop()

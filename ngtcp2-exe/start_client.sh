@@ -64,7 +64,8 @@ do
             website="cpu"
         fi
 
-        output_file=${client_result_path}${unique_identifier}
+        # output_file=${client_result_path}${unique_identifier}
+        output_file=${client_result_path}${client_id}'_'$port
         echo "output_file: " $output_file >> ${output_file}_tmp.txt
         echo "data_type: " $data_type >> ${output_file}_tmp.txt
         echo "website: " $website >> ${output_file}_tmp.txt
@@ -76,6 +77,6 @@ do
         echo "sleep_time: " $temp_time >> ${output_file}_tmp.txt
         sleep $temp_time
 
-        sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+        sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
     } &
 done

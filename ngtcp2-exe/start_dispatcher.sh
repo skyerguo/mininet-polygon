@@ -40,7 +40,7 @@ do
 
         echo "sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson 'd'${dispatcher_id}'-eth0' 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name 'd'$dispatcher_id" >> ${output_file}_tmp.txt
 
-        sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson "d"${dispatcher_id}"-eth0" 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name "d"$dispatcher_id 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+        sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson "d"${dispatcher_id}"-eth0" 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name "d"$dispatcher_id -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
         # sudo LD_LIBRARY_PATH=/data /data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port /data/server.key /data/server.crt -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
     } &
 done

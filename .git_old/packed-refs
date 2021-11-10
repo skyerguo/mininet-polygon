@@ -1,9 +1,0 @@
-# pack-refs with: peeled fully-peeled sorted 
-2a2e1d6d57c46e3252ac1189b91607a6ea202352 refs/heads/crs-version
-db7d8a49764ec92efb8a0485a551f2a6e27f312d refs/heads/cs-version
-2e325e100e8d604dad201a65529f40a8211368ab refs/heads/csd-version
-db7d8a49764ec92efb8a0485a551f2a6e27f312d refs/heads/master
-2a2e1d6d57c46e3252ac1189b91607a6ea202352 refs/remotes/origin/crs-version
-db7d8a49764ec92efb8a0485a551f2a6e27f312d refs/remotes/origin/cs-version
-29c3aa3851cbe1e115fd3e78bb0563598efa837b refs/remotes/origin/csd-version
-db7d8a49764ec92efb8a0485a551f2a6e27f312d refs/remotes/origin/master
