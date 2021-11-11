@@ -109,6 +109,7 @@ echo "second_max: " $second_max
 server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | awk '{print $2}'`
 echo "server_pid: " $server_pid
 
+echo "start_time: " $(date "+%Y-%m-%d-%H-%M-%S") "${measurement_result_path}server/cpu_$server_id.log"
 top -p $server_pid -b -d 0.1 | grep -a '%Cpu' >> "${measurement_result_path}server/cpu_$server_id.log" & 
 
 while true
@@ -118,11 +119,12 @@ do
     temp_now_used=`tac ${measurement_result_path}iftop/iftop_log_$server_id.txt | grep -a "Total send rate" |head -n 1| awk '{print $4}'`
     
     if [ ! -n "$temp_now_used" ]; then
-        sleep 1.5
-        continue
+        # sleep 1.5
+        # continue
+        temp_now_used=0
     fi
 
-    echo "time: " $(date "+%Y%m%d%H%M%S") >> $output_file
+    echo "time: " $(date "+%Y-%m-%d-%H-%M-%S") >> $output_file
     echo "temp_now_used: " $temp_now_used >> $output_file
     now_used=`echo $temp_now_used | tr -cd "[0-9][.]"`
 
