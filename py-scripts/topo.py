@@ -165,19 +165,18 @@ Middleware_client_dispatcher_server = {
             [100,1]
         ],
         'dispatcher_dispatcher': [
-            [0,1],
-            [1,0]
+            [0.1,1],
+            [1,0.1]
         ],
     },
     'cpu': {
         'client': .2,
-        'server': .3,
-        'dispatcher': .2,
+        'server': .4,
+        'dispatcher': .3,
     },
-    'zone': {
-        'as',
-        'na',
-        # 'eu',
-    }
+    # 'zone': {
+    #     'as',
+    #     'na',
+    # }
 }
 

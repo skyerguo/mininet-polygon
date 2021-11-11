@@ -34,7 +34,7 @@ server = []
 bw = {}
 delay = {}
 cpu = {}
-zone = {}
+# zone = {}
 start_time = 0
 
 virtual_machine_id = "127.0.0.1"
@@ -66,7 +66,7 @@ def init():
     bw = SELECT_TOPO['bw']
     delay = SELECT_TOPO['delay']
     cpu = SELECT_TOPO['cpu']
-    zone = SELECT_TOPO['zone']
+    # zone = SELECT_TOPO['zone']
 
     global start_time
     start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
@@ -269,7 +269,7 @@ def myNetwork(net):
                                      'zone': str(client_id)}
         json.dump(machines, f)
 
-def measure_start():
+def measure_start(net):
     os.system("redis-cli -a Hestia123456 flushdb") # 清空redis的数据库
 
     for server_id in range(SERVER_NUMBER):
@@ -283,7 +283,7 @@ def measure_start():
         server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(SELECT_TOPO['bw']['dispatcher_server'][0]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_id), str(start_time)))
 
 
-def test_run():
+def test_run(net):
 
     import random
     
@@ -292,17 +292,17 @@ def test_run():
         server_ip = "10.0.%s.3" %(str(server_id))
         # print("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
         server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
-        now_port += SERVER_THREAD
+        # now_port += SERVER_THREAD
     
     now_port = START_PORT
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
         # print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
         dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time)))
-        now_port += SERVER_THREAD
+        # now_port += SERVER_THREAD
 
-    print("sleep " + str(20 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
-    time.sleep(20 + 5 * SERVER_NUMBER)
+    print("sleep " + str(30 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
+    time.sleep(30 + 5 * SERVER_NUMBER)
     print("start_clients!")
 
     for client_id in range(CLIENT_NUMBER):
@@ -327,16 +327,23 @@ if __name__ == '__main__':
 
     myNetwork(net)
     
-    ## 设置跑
+    ## 等待网络构建好
     print("sleep 20 seconds to wait mininet construction! ")
-    time.sleep(20) ## 等待网络构建好
+    time.sleep(20)
+
     ## 用socket，直接从dispatcher发送给server，不走gre了
+    ## 测量
     print("measure_start! ")
-    measure_start()
+    measure_start(net)
+
+    ## tcpdump
     # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
     # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /home/mininet/test_server_sendquic_newipudp.cap &")
     # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /home/mininet/test_dispatcher_sendquic_d0all.cap &")
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
+
+    ## 跑实验
     test_run(net)
-    CLI()
+
+    CLI(net)
     net.stop()
