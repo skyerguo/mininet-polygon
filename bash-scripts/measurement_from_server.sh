@@ -101,18 +101,19 @@ echo ${dispatcher_port[*]}
 
 ## 以下所有流量相关的变量，单位均为Kb/sec
 output_file="${measurement_result_path}server/server_$server_id.log"
+echo "output_file: " $output_file
 
 second_max=$((100*1024)) # 假设每个节点最多100MB流量
 echo "second_max: " $second_max
 
-server_pid = `ps aux | grep mininet:s${server_id} | grep -v grep | awk '{print $2}'`
+server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | awk '{print $2}'`
 echo "server_pid: " $server_pid
 
 top -p $server_pid -b -d 0.1 | grep -a '%Cpu' >> "${measurement_result_path}server/cpu_$server_id.log" & 
 
 while true
 do
-    cpu_idle_temp=`tail -2 '${measurement_result_path}server/cpu_$server_id.log' | head -n 1 |awk -F',' '{print $4}'`
+    cpu_idle_temp=`tail -2 ${measurement_result_path}server/cpu_$server_id.log | head -n 1 |awk -F',' '{print $4}'`
     cpu_idle=`echo $cpu_idle_temp | tr -cd "[0-9][.]"`
     temp_now_used=`tac ${measurement_result_path}iftop/iftop_log_$server_id.txt | grep -a "Total send rate" |head -n 1| awk '{print $4}'`
     

@@ -269,27 +269,21 @@ def myNetwork(net):
                                      'zone': str(client_id)}
         json.dump(machines, f)
 
-
-def gre_setup(net):
-    for dispatcher_id in range(DISPATCHER_NUMBER):
-        # print("bash ../bash-scripts/gre_setup_dispatcher_single.sh -i %s"%(str(dispatcher_id)))
-        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/gre_setup_dispatcher_single.sh -i %s"%(str(dispatcher_id)))
-
-def measure_start(net):
+def measure_start():
     os.system("redis-cli -a Hestia123456 flushdb") # 清空redis的数据库
 
-    for server_id in range(1):
+    for server_id in range(SERVER_NUMBER):
         # print("bash ../bash-scripts/init_measurement_from_server.sh -i %s"%(str(server_id)))
         server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -a %s" %(str(server_id), str(start_time)))
     
     time.sleep(5)
     
-    for server_id in range(1):
+    for server_id in range(SERVER_NUMBER):
         # print("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['dispatcher_server'][0]).replace(", ","+").replace("[","").replace("]","")))
         server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(SELECT_TOPO['bw']['dispatcher_server'][0]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_id), str(start_time)))
 
 
-def test_run(net):
+def test_run():
 
     import random
     
@@ -336,14 +330,13 @@ if __name__ == '__main__':
     ## 设置跑
     print("sleep 20 seconds to wait mininet construction! ")
     time.sleep(20) ## 等待网络构建好
-    # gre_setup(net)
     ## 用socket，直接从dispatcher发送给server，不走gre了
     print("measure_start! ")
-    measure_start(net)
+    measure_start()
     # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
     # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /home/mininet/test_server_sendquic_newipudp.cap &")
     # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /home/mininet/test_dispatcher_sendquic_d0all.cap &")
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
-    # test_run(net)
-    CLI(net)
+    test_run(net)
+    CLI()
     net.stop()
