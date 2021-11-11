@@ -304,7 +304,7 @@ def test_run(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
         # print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
-        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
+        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time)))
         now_port += SERVER_THREAD
 
     print("sleep " + str(20 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
@@ -344,6 +344,6 @@ if __name__ == '__main__':
     # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /home/mininet/test_server_sendquic_newipudp.cap &")
     # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /home/mininet/test_dispatcher_sendquic_d0all.cap &")
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
-    test_run(net)
+    # test_run(net)
     CLI(net)
     net.stop()
