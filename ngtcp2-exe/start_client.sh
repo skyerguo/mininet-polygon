@@ -1,7 +1,7 @@
 root_path=/data
 client_result_path=$root_path/result-logs/client/
 
-while getopts ":i:s:p:t:y:a:" opt
+while getopts ":i:s:p:t:y:r:a:" opt
 do
     case $opt in
         i)
@@ -18,6 +18,9 @@ do
         ;;
         y)
             dispatcher_thread=$OPTARG
+        ;;
+        r)
+            redis_ip=$OPTARG
         ;;
         a)
             client_result_path=${client_result_path}$OPTARG'/'
@@ -80,5 +83,11 @@ do
         sleep $temp_time
 
         sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+
+        sleep 100
+
+        current_jct=`tac ${output_file}_2.txt | grep -a "PLT" |head -n 1| awk '{print $2}'`
+
+        redis-cli -h ${redis_ip} -a 'Hestia123456' set 'jct_'${client_id}'_'$port $current_jct
     } &
 done
