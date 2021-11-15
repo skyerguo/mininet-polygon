@@ -1,7 +1,7 @@
 root_path=/data
 dispatcher_result_path=$root_path/result-logs/dispatcher/
 
-while getopts ":i:s:p:t:r:a:" opt
+while getopts ":i:s:p:t:r:a:m:" opt
 do
     case $opt in
         i)
@@ -22,6 +22,9 @@ do
         ;;
         r)
             redis_ip=$OPTARG
+        ;;
+        m)
+            mode=$OPTARG
         ;;
         ?)
             echo "未知参数"

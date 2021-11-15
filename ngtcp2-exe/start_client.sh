@@ -1,7 +1,7 @@
 root_path=/data
 client_result_path=$root_path/result-logs/client/
 
-while getopts ":i:s:p:t:y:r:a:" opt
+while getopts ":i:s:p:t:y:r:a:m:" opt
 do
     case $opt in
         i)
@@ -26,6 +26,9 @@ do
             client_result_path=${client_result_path}$OPTARG'/'
             mkdir -p $client_result_path
         ;;
+        m)
+            mode=$OPTARG
+        ;;
         ?)
             echo "未知参数"
             exit 1
@@ -47,13 +50,32 @@ for i in `seq $client_thread`
 do 
     {
         time_stamp=$(($(date +%s%N)/1000000))
-        dispatcher_id=$((${RANDOM=$time_stamp} % $dispatcher_number))
         dispatcher_id=$client_id ## 定死
         dispatcher_ip="10.0."$dispatcher_id".5"
-        start_port=$(($init_port + $dispatcher_id * $dispatcher_thread))
-        start_port=$init_port ##定死
-
+        start_port=$init_port ## 定死
+        
         port=$(($start_port+$i))
+        output_file=${client_result_path}${client_id}'_'$port
+
+        echo "output_file: " $output_file >> ${output_file}_tmp.txt
+
+        if [[ $mode == "Polygon" ]]; then
+            destination_ip="10.0."$client_id".5"
+        elif [[ $mode == "DNS" ]]; then
+            destination_ip="10.0."$client_id".3"
+        elif [[ $mode == "Anycast" ]]; then
+            destination_ip="10.0."$client_id".3"
+        elif [[ $mode == "FastRoute" ]]; then
+            destination_ip="10.0."$client_id".3"
+        else
+            echo "undefined mode!" >> ${output_file}_tmp.txt
+            continue
+        fi
+
+        echo "mode: " $mode >> ${output_file}_tmp.txt
+        echo "destination_ip: " $destination_ip >> ${output_file}_tmp.txt
+        echo "destination_port: " $port >> ${output_file}_tmp.txt
+
         unique_identifier=${client_ip}'_'${port}'_'${time_stamp}
         rand_seed=$((${RANDOM=$port} % 9))
         data_type=${type_list[$rand_seed]}
@@ -68,21 +90,19 @@ do
         elif [[ $data_type == "cpu" ]]; then 
             website="cpu"
         fi
-
-        # output_file=${client_result_path}${unique_identifier}
-        output_file=${client_result_path}${client_id}'_'$port
-        echo "output_file: " $output_file >> ${output_file}_tmp.txt
+        
         echo "data_type: " $data_type >> ${output_file}_tmp.txt
         echo "website: " $website >> ${output_file}_tmp.txt
 
-        echo "sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
+        # echo "sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
 
         temp_time=$((${RANDOM=$port} % 1000))
         temp_time=`awk 'BEGIN{print "'$temp_time'" / "1000"}'`
         echo "sleep_time: " $temp_time >> ${output_file}_tmp.txt
         sleep $temp_time
 
-        sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+        # sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+        sudo LD_LIBRARY_PATH=/data /data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
 
         sleep 100
 

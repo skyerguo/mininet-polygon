@@ -40,6 +40,9 @@ start_time = 0
 virtual_machine_id = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
 
+modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
+mode = modes[0]
+
 def sendAndWait(host, line, send=True, debug=False):
     if not send:
         return ''
@@ -292,14 +295,14 @@ def test_run(net):
     for server_id in range(SERVER_NUMBER):
         server_ip = "10.0.%s.3" %(str(server_id))
         # print("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
-        server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
+        server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time), mode))
         # now_port += SERVER_THREAD
     
     now_port = START_PORT
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
         # print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
-        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time)))
+        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time), mode))
         # now_port += SERVER_THREAD
 
     print("sleep " + str(30 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
@@ -308,7 +311,7 @@ def test_run(net):
 
     for client_id in range(CLIENT_NUMBER):
         # print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(start_time)))
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time)))
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time), mode))
         time.sleep(3)
 
 

@@ -1,7 +1,7 @@
 root_path=/data
 server_result_path=$root_path/result-logs/server/
 
-while getopts ":i:s:p:t:a:" opt
+while getopts ":i:s:p:t:a:m:" opt
 do
     case $opt in
         i)
@@ -19,6 +19,9 @@ do
         a)
             server_result_path=${server_result_path}$OPTARG'/'
             mkdir -p $server_result_path
+        ;;
+        m)
+            mode=$OPTARG
         ;;
         ?)
             echo "未知参数"
