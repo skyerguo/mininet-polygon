@@ -88,6 +88,6 @@ do
 
         current_jct=`tac ${output_file}_2.txt | grep -a "PLT" |head -n 1| awk '{print $2}'`
 
-        redis-cli -h ${redis_ip} -a 'Hestia123456' set 'jct_'${client_id}'_'$port $current_jct
+        redis-cli -h ${redis_ip} -a 'Hestia123456' -n 1 set 'jct_'${client_id}'_'$port $current_jct
     } &
 done

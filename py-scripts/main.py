@@ -270,7 +270,8 @@ def myNetwork(net):
         json.dump(machines, f)
 
 def measure_start(net):
-    os.system("redis-cli -a Hestia123456 flushdb") # 清空redis的数据库
+    os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
+    os.system("redis-cli -a Hestia123456 -n 1 flushdb") # 清空redis的数据库，1号数据库存储Polygon的PLT结果
 
     for server_id in range(SERVER_NUMBER):
         # print("bash ../bash-scripts/init_measurement_from_server.sh -i %s"%(str(server_id)))
