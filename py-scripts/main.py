@@ -85,6 +85,10 @@ def init():
 
     print("virtual_machine_subnet: ", virtual_machine_subnet)
 
+    os.system("mkdir -p /data/saved_results/%s/DNS" % str(start_time))
+    os.system("mkdir -p /data/saved_results/%s/Polygon" % str(start_time))
+    
+
 def clear_logs():
     # os.system("rm -f temp_*")
     # os.system("sudo bash ../bash-scripts/clear_logs.sh")
@@ -126,7 +130,6 @@ def myNetwork(net):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
 
     print( '*** Add remote controller\n')
-    # con = net.addController(name='con', controller=RemoteController, ip='10.177.53.102', port=6379)
       
     print( '*** Add links\n')
     
@@ -348,6 +351,8 @@ if __name__ == '__main__':
 
     ## 跑实验
     test_run(net)
+
+    print("start_time: ", start_time)
 
     CLI(net)
     net.stop()

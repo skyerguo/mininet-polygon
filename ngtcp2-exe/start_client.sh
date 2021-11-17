@@ -1,5 +1,6 @@
 root_path=/data
 client_result_path=$root_path/result-logs/client/
+# saved_result_path=$root_path/saved_results/
 
 while getopts ":i:s:p:t:y:r:a:m:" opt
 do
@@ -24,10 +25,12 @@ do
         ;;
         a)
             client_result_path=${client_result_path}$OPTARG'/'
+            # saved_result_path=${saved_result_path}$OPTARG'/'
             mkdir -p $client_result_path
         ;;
         m)
             mode=$OPTARG
+            # saved_result_path=${saved_result_path}$mode'/'
         ;;
         ?)
             echo "未知参数"
@@ -79,16 +82,18 @@ do
         unique_identifier=${client_ip}'_'${port}'_'${time_stamp}
         rand_seed=$((${RANDOM=$port} % 9))
         data_type=${type_list[$rand_seed]}
-        opt=1
 
         if [[ $data_type == "normal_1" ]]; then
             website="google.com"
+            # sensitive_type="delay"
 
         elif [[ $data_type == "video" ]]; then
             website="downloading"
+            # sensitive_type="bw"
 
         elif [[ $data_type == "cpu" ]]; then 
             website="cpu"
+            # sensitive_type="cpu"
         fi
         
         echo "data_type: " $data_type >> ${output_file}_tmp.txt
@@ -104,10 +109,13 @@ do
         # sudo LD_LIBRARY_PATH=/data /data/client $dispatcher_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
         sudo LD_LIBRARY_PATH=/data /data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
 
-        sleep 100
+        # sleep 100
 
-        current_jct=`tac ${output_file}_2.txt | grep -a "PLT" |head -n 1| awk '{print $2}'`
+        # specific_path=${saved_result_path}${client_ip}'_jct/'${client_ip}'_'$port'.txt'
+        # current_jct=`tac ${output_file}_2.txt | grep -a "PLT" |head -n 1| awk '{print $2}'`
 
-        redis-cli -h ${redis_ip} -a 'Hestia123456' -n 1 set 'jct_'${client_id}'_'$port $current_jct
+        # echo "$time_stamp $sensitive_type $current_jct" >> $specific_path
+
+        # redis-cli -h ${redis_ip} -a 'Hestia123456' -n 1 set 'jct_'${client_id}'_'$port $current_jct
     } &
 done
