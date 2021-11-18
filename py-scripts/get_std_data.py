@@ -48,9 +48,9 @@ for client_file in client_files:
                 if ("mode") in line:
                     mode = line.split(" ")[-1].strip()
 
-        os.system("mkdir -p %s" %(saved_results_root_path + mode))
+        os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/"))
         
-        print(current_time + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + client_ip + "_jct/" + client_ip + "_" + client_port + ".txt", "a"))
+        print(str(current_time) + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))
 
 dispatcher_result_path = result_root_path + "dispatcher/" + str(start_time) + "/"
 dispatcher_files = os.listdir(dispatcher_result_path)
@@ -68,30 +68,35 @@ for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个�
 
     if ("_2") in dispatcher_file:
         dispatcher_ip = "10.0.%s.3" % (dispatcher_file.split("_")[0])
-
         with open(dispatcher_result_path + dispatcher_file, "r") as f:
-            if ("client_ip") in line:
-                client_ip = line.split(" ")[-1].strip()
-            if ("current_time") in line:
-                current_time = line.split(" ")[-1].strip()
-            if ("sensitive_type") in line:
-                sensitive_type = line.split(" ")[-1].strip()
-            if ("!Forwarded") in line:
-                forward_dc = line.split(" ")[5].strip()
-                server_ip = "10.0.%s.5" % (str(forward_dc))
-                if ("server") in line:
-                    forward_to = "local"
-                elif ("dispatcher") in line:
-                    forward_to = "forward"
-                
-                print(current_time + " " + client_ip + " " + sensitive_type + " " + forward_to + " " + server_ip, file=open(saved_results_root_path + mode + "/" + dispatcher_ip + "_routing/" + "routing.txt", "a"))
+            for line in f:
+                # print(line)
+                if ("client_ip") in line:
+                    client_ip = line.split(" ")[-1].strip()
+                if ("current_time") in line:
+                    current_time = line.split(" ")[-1].strip()
+                if ("sensitive_type") in line:
+                    sensitive_type = line.split(" ")[-1].strip()
+                if ("!Forwarded") in line:
+                    forward_dc = line.split(" ")[5].strip()
+                    server_ip = "10.0.%s.5" % (str(forward_dc))
+                    if ("server") in line:
+                        forward_to = "local"
+                    elif ("dispatcher") in line:
+                        forward_to = "forward"
 
-                current_time = 0
-                client_ip = ""
-                sensitive_type = ""
-                foward_to = ""
-                forward_dc = ""
-                server_ip = ""
+                    # print(3333)
+
+                    os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + dispatcher_ip + "_routing/"))
+                    
+                    print(str(current_time) + " " + client_ip + " " + sensitive_type + " " + forward_to + " " + server_ip, file=open(saved_results_root_path + mode + "/" + dispatcher_ip + "_routing/" + "routing.txt", "a"))
+
+                    current_time = 0
+                    client_ip = ""
+                    sensitive_type = ""
+                    foward_to = ""
+                    forward_dc = ""
+                    server_ip = ""
 
     if ("_tmp") in dispatcher_file:
         continue
