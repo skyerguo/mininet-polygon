@@ -282,6 +282,11 @@ def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
     # os.system("redis-cli -a Hestia123456 -n 1 flushdb") # 清空redis的数据库，1号数据库存储Polygon的PLT结果
 
+    # 设置latency的表格
+    for server_id in range(SERVER_NUMBER):
+        for dispatcher_id in range(DISPATCHER_NUMBER):
+            os.system("redis-cli -h %s -a 'Hestia123456' set latency_server%s_dispatcher%s %s"%(str(virtual_machine_id), str(server_id), str(dispatcher_id), str(delay['dispatcher_server'][dispatcher_id][server_id])))
+
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -a %s" %(str(server_id), str(start_time)))
     
@@ -289,7 +294,7 @@ def measure_start(net):
     
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(bw['dispatcher_server'][server_id]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_id), str(start_time)))
-        # server[server_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(server_id), str(virtual_machine_id), str(start_time)))
+        server[server_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(server_id), str(virtual_machine_id), str(start_time)))
 
 
 def test_run(net):
@@ -352,7 +357,7 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
 
     ## 跑实验
-    test_run(net)
+    # test_run(net)
 
     print("start_time: ", start_time)
 

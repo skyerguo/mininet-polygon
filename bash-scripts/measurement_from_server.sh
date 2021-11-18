@@ -57,48 +57,6 @@ done
 echo ${dispatcher_ip[*]}
 echo ${dispatcher_port[*]}
 
-# throughput=()
-# max_throughput=0
-# second_max=0
-# sudo wondershaper clear ens4
-
-# rm -f /home/mininet/initial_*
-# tmux send-key -t main:2 "sudo LD_LIBRARY_PATH=/home/mininet/data /home/mininet/data/server --interface=ens4 --unicast=${server_ips[$server_id]} 0.0.0.0 4433 /home/mininet/data/server.key /home/mininet/data/server.crt -q" Enter
-
-# while [[ `ls -l /home/mininet/initial_* | wc -l` -lt 5 ]]
-# do
-#     sleep 10
-# done
-# echo "get all initial data!"
-
-# capable_ratio=()
-# std_ratio=()
-# max_capable_ratio=0
-# for i in `seq 0 $((${#dispatcher_ip[*]} - 1))`
-# do
-#     capable_ratio[i]=`cat /home/mininet/initial_${i}.txt`
-#     if [[ `echo "${capable_ratio[i]} > $max_capable_ratio" | bc` -eq 1  ]]
-#     then
-#         max_capable_ratio=${capable_ratio[i]}
-#     fi
-# done
-
-# rm -f /home/mininet/initial_std.txt
-# for i in `seq 0 $((${#dispatcher_ip[*]} - 1))`
-# do
-#     std_ratio[i]=`awk 'BEGIN{print "'${capable_ratio[i]}'" / "'$max_capable_ratio'"}'`
-#     echo "dispatcher_hostname: " ${dispatcher_hostnames[$i]} >> server.log
-#     echo "dispatcher std_ratio: " ${std_ratio[i]} >> server.log
-#     echo ${std_ratio[i]} >> /home/mininet/initial_std.txt
-# done
-
-# sudo wondershaper clear ens4
-# second_max=$((5*1024))
-
-# echo max_throughput: $max_throughput >> ~/server.log
-# echo "second_max: " $second_max 
-# sudo wondershaper ens4 $second_max $second_max
-
 ## 以下所有流量相关的变量，单位均为Kb/sec
 output_file="${measurement_result_path}server/server_$server_id.log"
 echo "output_file: " $output_file
@@ -149,29 +107,20 @@ do
         echo "dispatcher_log: dispatcher"$i >> $output_file
         echo "{dispatcher_bw[i]}: "${dispatcher_bw[i]} >> $output_file
         echo "res_throughput: "$res_throughput >> $output_file
-        # if  [[ `echo "${dispatcher_bw[i]} < $res_throughput" | bc` -eq 1  ]]
-        # then
-        #     redis-cli -h "127.0.0.1" -a 'Hestia123456' set throughput_server${server_id}_dispatcher$i ${dispatcher_bw[i]} # > /dev/null
-        # else
-        #     exist_throughput=`python3 /home/mininet/mininet-polygon/py-scripts/get_n_video.py $server_id $i`
-        #     echo "exist_throughput: "$exist_throughput
 
-        #     avg_throughput=`awk 'BEGIN{print ("'${dispatcher_bw[i]}'" - "'$exist_throughput'") / "'${dispatcher_bw[i]}'" }'`
-        #     echo "avg_throughput: "$avg_throughput 
-        #     redis-cli -h "127.0.0.1" -a 'Hestia123456' set throughput_server${server_id}_dispatcher$i ${dispatcher_bw[i]} ${avg_throughput} # > /dev/null
-        # fi
         exist_throughput=`python3 /home/mininet/mininet-polygon/py-scripts/get_n_video.py $server_id $i ${measurement_result_path}`
         echo "exist_throughput: "$exist_throughput >> $output_file
 
         avg_throughput=`awk 'BEGIN{print ("'${dispatcher_bw[i]}'" - "'$exist_throughput'") / "'${dispatcher_bw[i]}'" }'`
 
-        latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
+        
+        # latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
 
         echo "avg_throughput: "$avg_throughput >> $output_file
         redis-cli -h $redis_ip -a 'Hestia123456' set throughput_server${server_id}_dispatcher$i ${avg_throughput} > /dev/null
 
-        echo "latency: "$latency >> $output_file
-        redis-cli -h $redis_ip -a 'Hestia123456' set latency_server${server_id}_dispatcher$i ${latency} > /dev/null
+        # echo "latency: "$latency >> $output_file
+        # redis-cli -h $redis_ip -a 'Hestia123456' set latency_server${server_id}_dispatcher$i ${latency} > /dev/null
 
         echo "cpu_idle: "$cpu_idle >> $output_file
         redis-cli -h $redis_ip -a 'Hestia123456' set cpu_server${server_id}_dispatcher$i ${cpu_idle} > /dev/null
