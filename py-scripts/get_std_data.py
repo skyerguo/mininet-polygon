@@ -11,6 +11,7 @@ server_files.sort(reverse=True)
 start_time = server_files[0]
 
 saved_results_root_path = data_root_path + "saved_results/" + str(start_time) + "/"
+os.system("sudo rm -rf %s" %(saved_results_root_path))
 # print(os.listdir(saved_logs))
 
 client_result_path = result_root_path + "client/" + str(start_time) + "/"
@@ -43,7 +44,7 @@ for client_file in client_files:
                         sensitive_type = "cpu"
                     if "video" in line:
                         sensitive_type = "bw"
-                if ("--time_stamp") in line:
+                if ("current_time") in line:
                     current_time = line.split(" ")[-1].strip()
                 if ("mode") in line:
                     mode = line.split(" ")[-1].strip()
@@ -70,7 +71,6 @@ for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个�
         dispatcher_ip = "10.0.%s.3" % (dispatcher_file.split("_")[0])
         with open(dispatcher_result_path + dispatcher_file, "r") as f:
             for line in f:
-                # print(line)
                 if ("client_ip") in line:
                     client_ip = line.split(" ")[-1].strip()
                 if ("current_time") in line:

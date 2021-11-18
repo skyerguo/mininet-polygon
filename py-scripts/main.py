@@ -85,8 +85,8 @@ def init():
 
     print("virtual_machine_subnet: ", virtual_machine_subnet)
 
-    os.system("mkdir -p /data/saved_results/%s/DNS" % str(start_time))
-    os.system("mkdir -p /data/saved_results/%s/Polygon" % str(start_time))
+    # os.system("mkdir -p /data/saved_results/%s/DNS" % str(start_time))
+    # os.system("mkdir -p /data/saved_results/%s/Polygon" % str(start_time))
     
 
 def clear_logs():
@@ -121,13 +121,14 @@ def myNetwork(net):
 
     print( '*** Add hosts\n')
     for client_id in range(CLIENT_NUMBER):
-        client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
-        # client.append(net.addHost('client%s'%str(client_id), ip='10.0.%s.1'%str(client_id), defaultRoute=None))
+        # client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
+        client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client'], ip='10.0.%s.1'%str(client_id), defaultRoute=None)) 
     for server_id in range(SERVER_NUMBER):
-        server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
-        # server.append(net.addHost('server%s'%str(server_id), ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        # server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server'], ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
+        # dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
+        dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher'], ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
 
     print( '*** Add remote controller\n')
       
@@ -224,7 +225,7 @@ def myNetwork(net):
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
         client[client_id].cmdPrint("ip route add default dev c%s-eth0 proto kernel scope link"%(str(client_id)))  
-        client[client_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
+        # client[client_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
     
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint("ip route add default dev s%s-eth0 proto kernel scope link"%(str(server_id))) 
@@ -282,14 +283,13 @@ def measure_start(net):
     # os.system("redis-cli -a Hestia123456 -n 1 flushdb") # 清空redis的数据库，1号数据库存储Polygon的PLT结果
 
     for server_id in range(SERVER_NUMBER):
-        # print("bash ../bash-scripts/init_measurement_from_server.sh -i %s"%(str(server_id)))
         server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -a %s" %(str(server_id), str(start_time)))
     
     time.sleep(5)
     
     for server_id in range(SERVER_NUMBER):
-        # print("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s"%(str(server_id), str(SELECT_TOPO['bw']['dispatcher_server'][0]).replace(", ","+").replace("[","").replace("]","")))
-        server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(SELECT_TOPO['bw']['dispatcher_server'][0]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_id), str(start_time)))
+        server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(bw['dispatcher_server'][server_id]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_id), str(start_time)))
+        # server[server_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(server_id), str(virtual_machine_id), str(start_time)))
 
 
 def test_run(net):
