@@ -187,15 +187,20 @@ def myNetwork(net):
     
     ## 将最后一个switch和网卡eth1相连，并获取网关地址
     os.system("sudo ovs-vsctl add-port switch%s eth1"%str(SWITCH_NUMBER - 1))
-    os.system("dhclient switch%s" %str(SWITCH_NUMBER - 1))
+    
+    ## 别用了，傻逼dhclient
+    # os.system("sudo dhclient -r switch%s" %str(SWITCH_NUMBER - 1))
+    # os.system("sudo dhclient switch%s" %str(SWITCH_NUMBER - 1))
 
-   
+    os.system("sudo ifconfig switch%s 10.0.2.15/24" %str(SWITCH_NUMBER - 1))
+
+
     print( '*** Post configure switches and hosts\n')
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint('ifconfig c%s-eth0 10.0.%s.1'%(str(client_id), str(client_id)))
+        client[client_id].cmdPrint('ifconfig c%s-eth0 10.0.%s.1'%(str(client_id),  str(client_id)))
         client[client_id].cmdPrint('ifconfig c%s-eth1 0'%(str(client_id)))
-        client[client_id].cmdPrint('ifconfig c%s-eth1 10.0.2.%s/24'%(str(client_id), str(50+client_id)))
+        # client[client_id].cmdPrint('ifconfig c%s-eth1 10.0.2.%s/24'%(str(client_id), str(50+client_id))) # client不用连redis
     
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint('ifconfig s%s-eth0 10.0.%s.3'%(str(server_id), str(server_id)))
@@ -207,9 +212,6 @@ def myNetwork(net):
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth1 0'%(str(dispatcher_id)))
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth1 10.0.2.%s/24'%(str(dispatcher_id), str(150+dispatcher_id)))
     
-    # (status, output) = commands.getstatusoutput('sh hello.sh')
-
-
     ret = subprocess.Popen("ifconfig switch%s | grep inet | awk '{print $2}' | cut -f 2 -d ':'"%(str(SWITCH_NUMBER - 1)),shell=True,stdout=subprocess.PIPE)
     switch_gw = ret.stdout.read().decode("utf-8").strip('\n')
     ret.stdout.close()
