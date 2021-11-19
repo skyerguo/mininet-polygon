@@ -130,7 +130,7 @@ for measurement_file in measurement_files:
             else:
                 os.system("mkdir -p " + saved_results_root_path + mode + "/" + server_ip + "_bw/")
                 with open(saved_results_root_path + mode + "/" + server_ip + "_bw/bw.txt", "a") as f_out:
-                    print(current_time,end=" ", file=f_out)bw
+                    print(current_time,end=" ", file=f_out)
                     for i in range(dispatcher_number):
                         print(bw[i], end=" ", file=f_out)
                     print(" ", file=f_out)
