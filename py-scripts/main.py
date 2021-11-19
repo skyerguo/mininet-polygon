@@ -41,7 +41,7 @@ virtual_machine_id = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
-mode = modes[0]
+mode = modes[1]
 
 def sendAndWait(host, line, send=True, debug=False):
     if not send:
@@ -294,7 +294,10 @@ def measure_start(net):
     
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(bw['dispatcher_server'][server_id]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_id), str(start_time)))
-        server[server_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(server_id), str(virtual_machine_id), str(start_time)))
+    
+    time.sleep(5)
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_id), str(start_time)))
 
 
 def test_run(net):
@@ -357,7 +360,7 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
 
     ## 跑实验
-    # test_run(net)
+    test_run(net)
 
     print("start_time: ", start_time)
 
