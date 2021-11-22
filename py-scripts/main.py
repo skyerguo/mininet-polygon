@@ -14,7 +14,7 @@ import time
 import os
 import subprocess
 
-SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server)
+SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_test)
 
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0
@@ -121,14 +121,14 @@ def myNetwork(net):
 
     print( '*** Add hosts\n')
     for client_id in range(CLIENT_NUMBER):
-        # client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
-        client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client'], ip='10.0.%s.1'%str(client_id), defaultRoute=None)) 
+        client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
+        # client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client'], ip='10.0.%s.1'%str(client_id), defaultRoute=None)) 
     for server_id in range(SERVER_NUMBER):
-        # server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
-        server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server'], ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        # server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server'], ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        # dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
-        dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher'], ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
+        dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
+        # dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher'], ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
 
     print( '*** Add remote controller\n')
       
@@ -326,7 +326,6 @@ def test_run(net):
         # print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(start_time)))
         client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time), mode))
         time.sleep(3)
-
 
 
 if __name__ == '__main__':
