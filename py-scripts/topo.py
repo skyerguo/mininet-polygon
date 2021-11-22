@@ -184,9 +184,9 @@ Middleware_client_dispatcher_server_main = {
     'client_number': 5,
     'server_number': 5,
     'dispatcher_number': 5,
-    'server_thread': 3,
-    'client_thread': 3,
-    'dispatcher_thread': 3,
+    'server_thread': 5,
+    'client_thread': 5,
+    'dispatcher_thread': 5,
     'bw': {
         'client_server': [
             [5.00,2.07,1.98,1.89,3.15],

@@ -117,7 +117,6 @@ def myNetwork(net):
     print( '*** Add switches\n')
     for switch_id in range(SWITCH_NUMBER):
         switch.append(net.addSwitch('switch%s'%str(switch_id), cls=OVSKernelSwitch, failMode='standalone', stp=True)) ## 防止回路
-    # Intf( 'eth1', node=switch[SWITCH_NUMBER - 1])
 
     print( '*** Add hosts\n')
     for client_id in range(CLIENT_NUMBER):
@@ -311,15 +310,16 @@ def test_run(net):
         server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time), mode))
         # now_port += SERVER_THREAD
     
-    now_port = START_PORT
-    for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-        # print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
-        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time), mode))
+    if mode == "Polygon":
+        now_port = START_PORT
+        for dispatcher_id in range(DISPATCHER_NUMBER):
+            dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
+            # print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
+            dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time), mode))
         # now_port += SERVER_THREAD
 
-    print("sleep " + str(30 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
-    time.sleep(30 + 5 * SERVER_NUMBER)
+    print("sleep " + str(60 + 20 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
+    time.sleep(60 + 20 * SERVER_NUMBER)
     print("start_clients!")
 
     for client_id in range(CLIENT_NUMBER):
@@ -349,19 +349,17 @@ if __name__ == '__main__':
 
     ## 用socket，直接从dispatcher发送给server，不走gre了
     ## 测量
-    print("measure_start! ")
-    measure_start(net)
+    # print("measure_start! ")
+    # measure_start(net)
 
     ## tcpdump
     # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
     # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /home/mininet/test_server_sendquic_newipudp.cap &")
     # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /home/mininet/test_dispatcher_sendquic_d0all.cap &")
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
-
+    
     ## 跑实验
-    test_run(net)
-
-    print("start_time: ", start_time)
+    # test_run(net)
 
     CLI(net)
     net.stop()
