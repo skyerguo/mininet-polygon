@@ -37,23 +37,11 @@ cpu = {}
 # zone = {}
 start_time = 0
 
-virtual_machine_id = "127.0.0.1"
+virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
 mode = modes[1]
-
-def sendAndWait(host, line, send=True, debug=False):
-    if not send:
-        return ''
-    # print('*** Executing cmd:', line)
-
-    host.sendCmd(line)
-    ret = host.waitOutput().strip()
-    if ret != '' and debug:
-        print(ret)
-    return ret
-
 
 def init():
     global CLIENT_NUMBER, SERVER_NUMBER, DISPATCHER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD
@@ -74,20 +62,21 @@ def init():
     global start_time
     start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
 
-    global virtual_machine_id, virtual_machine_subnet
+    global virtual_machine_ip, virtual_machine_subnet
     ret = subprocess.Popen("ifconfig eth0 | grep inet | awk '{print $2}' | cut -f 2 -d ':'",shell=True,stdout=subprocess.PIPE)
-    virtual_machine_id = ret.stdout.read().decode("utf-8").strip('\n')
+    virtual_machine_ip = ret.stdout.read().decode("utf-8").strip('\n')
     ret.stdout.close()
-    print("virtual_machine_id: ", virtual_machine_id)
-    virtual_machine_subnet = str(virtual_machine_id.split('.')[0]) + '.' + \
-                            str(virtual_machine_id.split('.')[1]) + '.' + \
-                            str(virtual_machine_id.split('.')[2]) + '.0' + '/24'
+    print("virtual_machine_ip: ", virtual_machine_ip)
+    virtual_machine_subnet = str(virtual_machine_ip.split('.')[0]) + '.' + \
+                            str(virtual_machine_ip.split('.')[1]) + '.' + \
+                            str(virtual_machine_ip.split('.')[2]) + '.0' + '/24'
 
     print("virtual_machine_subnet: ", virtual_machine_subnet)
 
-    # os.system("mkdir -p /data/saved_results/%s/DNS" % str(start_time))
-    # os.system("mkdir -p /data/saved_results/%s/Polygon" % str(start_time))
-    
+    # 每次重新启动mongodb，以防mininet网络变化
+    os.system("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9")
+    os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/data/mongo.log --logappend"%(virtual_machine_ip))
+
 
 def clear_logs():
     # os.system("rm -f temp_*")
@@ -284,7 +273,7 @@ def measure_start(net):
     # 设置latency的表格
     for server_id in range(SERVER_NUMBER):
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            os.system("redis-cli -h %s -a 'Hestia123456' set latency_server%s_dispatcher%s %s"%(str(virtual_machine_id), str(server_id), str(dispatcher_id), str(delay['dispatcher_server'][dispatcher_id][server_id])))
+            os.system("redis-cli -h %s -a 'Hestia123456' set latency_server%s_dispatcher%s %s"%(str(virtual_machine_ip), str(server_id), str(dispatcher_id), str(delay['dispatcher_server'][dispatcher_id][server_id])))
 
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -a %s" %(str(server_id), str(start_time)))
@@ -292,11 +281,11 @@ def measure_start(net):
     time.sleep(5)
     
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(bw['dispatcher_server'][server_id]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_id), str(start_time)))
+        server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(bw['dispatcher_server'][server_id]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time)))
     
     time.sleep(5)
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_id), str(start_time)))
+        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
 
 
 def test_run(net):
@@ -315,7 +304,7 @@ def test_run(net):
         for dispatcher_id in range(DISPATCHER_NUMBER):
             dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
             # print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
-            dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time), mode))
+            dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode))
         # now_port += SERVER_THREAD
 
     print("sleep " + str(60 + 20 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
@@ -324,7 +313,7 @@ def test_run(net):
 
     for client_id in range(CLIENT_NUMBER):
         # print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(start_time)))
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_id), str(start_time), mode))
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode))
         time.sleep(3)
 
 
@@ -349,8 +338,8 @@ if __name__ == '__main__':
 
     ## 用socket，直接从dispatcher发送给server，不走gre了
     ## 测量
-    # print("measure_start! ")
-    # measure_start(net)
+    print("measure_start! ")
+    measure_start(net)
 
     ## tcpdump
     # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
@@ -359,7 +348,7 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
     
     ## 跑实验
-    # test_run(net)
+    test_run(net)
 
     CLI(net)
     net.stop()
