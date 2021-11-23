@@ -47,12 +47,12 @@ type_list_video=("video" "video" "video" "video" "video" "video" "video" "video"
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu
 
 type_list=(${type_list_all[*]})
-type_list=(${type_list_cpu[*]})
+# type_list=(${type_list_cpu[*]})
 
 for i in `seq $client_thread`
 do
     {
-        for round in `seq 1`
+        for round in `seq 200`
         do
             time_stamp=$(($(date +%s%N)/1000000))
             dispatcher_id=$client_id ## 定死

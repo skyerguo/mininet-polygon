@@ -8,7 +8,8 @@ result_root_path = data_root_path + "result-logs/"
 server_files = os.listdir(result_root_path + "server")
 server_files.sort(reverse=True)
 
-start_time = "2021-11-23_13:28:49"
+start_time = server_files[0]
+print("start_time: ", start_time)
 
 saved_results_root_path = data_root_path + "saved_results/" + str(start_time) + "/"
 os.system("sudo rm -rf %s" %(saved_results_root_path))
@@ -41,7 +42,6 @@ for client_file in client_files:
                 if "end_time:" in line:
                     cpu_end_time = float(line.split(" ")[-1].strip())
                     cpu_duration = int((cpu_end_time - cpu_start_time) * 1000000)
-                    print("cpu_duration: ", cpu_duration)
     
     if "_tmp.txt" in client_file:
         client_ip = "10.0.%s.1" % (client_file.split("_")[0])
