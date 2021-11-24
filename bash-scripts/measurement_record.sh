@@ -37,8 +37,8 @@ do
     echo "current_time: " $current_time >> $output_file
     for i in `seq 0 $((${#server_ips[*]} - 1))`
     do
-        throughput_record=`redis-cli -h $redis_ip -a 'Hestia123456' get throughput_server${i}_dispatcher${dispatcher_id}`
-        cpu_record=`redis-cli -h $redis_ip -a 'Hestia123456' get cpu_server${i}_dispatcher${dispatcher_id}`        
+        throughput_record=`redis-cli -h $redis_ip -a 'Hestia123456' get throughput_s${i}_d${dispatcher_id}`
+        cpu_record=`redis-cli -h $redis_ip -a 'Hestia123456' get cpu_s${i}_d${dispatcher_id}`        
         echo $i'+'$throughput_record'+'$cpu_record >> $output_file
     done
     sleep 1

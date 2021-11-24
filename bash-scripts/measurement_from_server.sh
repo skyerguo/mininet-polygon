@@ -46,26 +46,26 @@ start_time=$(date "+%Y%m%d%H%M%S")
 
 
 dispatcher_ip=()
-dispatcher_port=()
 default_max=100
 for i in `seq 0 $((${#dispatcher_ips[*]} - 1))`
 do
     dispatcher_ip[$i]=${dispatcher_ips[$i]}
-    dispatcher_port[$i]=$((5200 + $i + $server_id))
-    dispatcher_bw[$i]=$((${dispatcher_bw[i]} * 1000))
+    dispatcher_bw[$i]=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" * "1000"}'`
 done
-echo ${dispatcher_ip[*]}
-echo ${dispatcher_port[*]}
+
+output_file="${measurement_result_path}server/server_$server_id.log"
+
+echo "dispatcher_ip: "${dispatcher_ip[*]} >> $output_file
+echo "dispatcher_bw: "${dispatcher_bw[*]} >> $output_file
 
 ## 以下所有流量相关的变量，单位均为Kb/sec
-output_file="${measurement_result_path}server/server_$server_id.log"
-echo "output_file: " $output_file
+echo "output_file: " $output_file >> $output_file
 
 second_max=$((100*1024)) # 假设每个节点最多100MB流量
-echo "second_max: " $second_max
+echo "second_max: " $second_max >> $output_file
 
 server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | awk '{print $2}'`
-echo "server_pid: " $server_pid
+echo "server_pid: " $server_pid >> $output_file
 
 echo "start_time: " $(date "+%Y-%m-%d-%H-%M-%S") "${measurement_result_path}server/cpu_$server_id.log"
 top -p $server_pid -b -d 0.1 | grep -a '%Cpu' >> "${measurement_result_path}server/cpu_$server_id.log" & 
@@ -117,13 +117,13 @@ do
         # latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
 
         echo "avg_throughput: "$avg_throughput >> $output_file
-        redis-cli -h $redis_ip -a 'Hestia123456' set throughput_server${server_id}_dispatcher$i ${avg_throughput} > /dev/null
+        redis-cli -h $redis_ip -a 'Hestia123456' set throughput_s${server_id}_d$i ${avg_throughput} > /dev/null
 
         # echo "latency: "$latency >> $output_file
         # redis-cli -h $redis_ip -a 'Hestia123456' set latency_server${server_id}_dispatcher$i ${latency} > /dev/null
 
         echo "cpu_idle: "$cpu_idle >> $output_file
-        redis-cli -h $redis_ip -a 'Hestia123456' set cpu_server${server_id}_dispatcher$i ${cpu_idle} > /dev/null
+        redis-cli -h $redis_ip -a 'Hestia123456' set cpu_s${server_id}_d$i ${cpu_idle} > /dev/null
         
         # redis-cli -h ${dispatcher_ip[$i]} -a 'Hestia123456' set cpu_idle_$hostname $cpu_idle > /dev/null
     done

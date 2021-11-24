@@ -135,38 +135,30 @@ Middleware_client_dispatcher_server_test = {
     'dispatcher_thread': 3,
     'bw': {
         'client_server': [
-            [5,1],
-            [1,5]
+            [5,2],
+            [2,5]
         ],
         'client_dispatcher': [
-            [5,1],
-            [1,5]
+            [5,2],
+            [2,5]
         ],
         'dispatcher_server': [
             [10,3],
             [3,10]
         ],
-        'dispatcher_dispatcher': [
-            [10,10],
-            [10,10]
-        ]
     },
     'delay': {
         'client_server': [
-            [20,200],
-            [200,20]
+            [30,300],
+            [300,30]
         ],
         'client_dispatcher': [
-            [20,200],
-            [200,20]
+            [20,100],
+            [100,20]
         ],
         'dispatcher_server': [
-            [1,100],
-            [100,1]
-        ],
-        'dispatcher_dispatcher': [
-            [0.1,1],
-            [1,0.1]
+            [3,100],
+            [100,3]
         ],
     },
     'cpu': {
@@ -210,7 +202,7 @@ Middleware_client_dispatcher_server_main = {
             [3.15,0.26,1.14,5.00,5.00],
         ],
     },
-    'delay': {
+    'delay': { # 这里的delay，实际上记录的是rtt的值
         'client_server': [
             [100,157,162,170,105],
             [157,150,224,317,240], 
@@ -234,9 +226,9 @@ Middleware_client_dispatcher_server_main = {
         ],
     },
     'cpu': {
-        'client': .2,
-        'server': .4,
-        'dispatcher': .3,
+        'client': .1,
+        'server': .3,
+        'dispatcher': .5,
     },
     # 'zone': {
     #     'as',

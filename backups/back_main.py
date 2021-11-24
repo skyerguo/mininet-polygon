@@ -14,7 +14,7 @@ import time
 import os
 import subprocess
 
-SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_test)
+SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_main)
 
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0
@@ -49,7 +49,7 @@ def init():
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
-    SWITCH_NUMBER = SERVER_NUMBER * CLIENT_NUMBER + CLIENT_NUMBER * DISPATCHER_NUMBER + SERVER_NUMBER * DISPATCHER_NUMBER+ 1 # 最后一位用来连外网
+    SWITCH_NUMBER = SERVER_NUMBER + CLIENT_NUMBER + DISPATCHER_NUMBER + 1 # 最后一位用来连外网
     SERVER_THREAD = SELECT_TOPO['server_thread']
     DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
@@ -110,42 +110,59 @@ def myNetwork(net):
     print( '*** Add hosts\n')
     for client_id in range(CLIENT_NUMBER):
         client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
+        # client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client'], ip='10.0.%s.1'%str(client_id), defaultRoute=None)) 
     for server_id in range(SERVER_NUMBER):
         server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        # server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server'], ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
+        # dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher'], ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
 
     print( '*** Add remote controller\n')
       
     print( '*** Add links\n')
     
-    ## add links among clients, servers and dispatchers
     for client_id in range(CLIENT_NUMBER):
-        for server_id in range(SERVER_NUMBER):
-            net.addLink(switch[client_id * CLIENT_NUMBER + server_id], client[client_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id],'delay':str(int(delay['client_server'][client_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-            net.addLink(switch[client_id * CLIENT_NUMBER + server_id], server[server_id])
-
-        for dispatcher_id in range(DISPATCHER_NUMBER):
-            net.addLink(switch[CLIENT_NUMBER * SERVER_NUMBER + client_id * CLIENT_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id],'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-            net.addLink(switch[CLIENT_NUMBER * SERVER_NUMBER + client_id * CLIENT_NUMBER + dispatcher_id], dispatcher[dispatcher_id])
-
-    for dispatcher_id in range(DISPATCHER_NUMBER):
-        for server_id in range(SERVER_NUMBER):
-            net.addLink(switch[CLIENT_NUMBER * SERVER_NUMBER + CLIENT_NUMBER * DISPATCHER_NUMBER + dispatcher_id * DISPATCHER_NUMBER + server_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id],'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-            net.addLink(switch[CLIENT_NUMBER * SERVER_NUMBER + CLIENT_NUMBER * DISPATCHER_NUMBER + dispatcher_id * DISPATCHER_NUMBER + server_id], server[server_id])
-        # net.addLink(switch[SWITCH_NUMBER - 1], server[server_id])
-    
-    ## add links from dispatchers and servers to virtual machine ip.
-    for dispatcher_id in range(DISPATCHER_NUMBER):
-        net.addLink(switch[SWITCH_NUMBER - 1], dispatcher[dispatcher_id])
-
+        net.addLink(switch[client_id], client[client_id])
+        # net.addLink(switch[SWITCH_NUMBER - 1], client[client_id])
     for server_id in range(SERVER_NUMBER):
-        net.addLink(switch[SWITCH_NUMBER - 1], server[server_id])
+        net.addLink(switch[CLIENT_NUMBER+server_id], server[server_id])
+        # net.addLink(switch[SWITCH_NUMBER - 1], server[server_id])
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+dispatcher_id], dispatcher[dispatcher_id])
+        # net.addLink(switch[SWITCH_NUMBER - 1], dispatcher[dispatcher_id])
+    # for dispatcher_id in range(DISPATCHER_NUMBER):
+    #     net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id], dispatcher[dispatcher_id])
 
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
+
+    # client_server
+    for client_id in range(CLIENT_NUMBER):
+        for server_id in range(SERVER_NUMBER):
+            net.addLink(switch[client_id], server[server_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id],'delay':str(int(delay['client_server'][client_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})  #设置的delay只有rtt的一半
+    
+            # net.addLink(switch[client_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id],'delay':str(int(delay['client_server'][client_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})  #设置的delay只有rtt的一半
+    
+    ## client_dispatcher
+    for client_id in range(CLIENT_NUMBER):
+        for dispatcher_id in range(DISPATCHER_NUMBER):
+            net.addLink(switch[client_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id],'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True}) 
+            # net.addLink(switch[client_id], switch[CLIENT_NUMBER+SERVER_NUMBER+dispatcher_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id],'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True}) 
+    
+    ## dispatcher_server
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        for server_id in range(SERVER_NUMBER):
+            net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+dispatcher_id], server[server_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id],'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+            # net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+dispatcher_id], switch[CLIENT_NUMBER+server_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id],'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+    
+    # ## dispatcher_dispatcher
+    # for dispatcher_id_0 in range(DISPATCHER_NUMBER):
+    #     for dispatcher_id_1 in range(dispatcher_id_0 + 1, DISPATCHER_NUMBER):
+    #         net.addLink(switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id_0], switch[CLIENT_NUMBER+SERVER_NUMBER+DISPATCHER_NUMBER+dispatcher_id_1], cls=TCLink, **{'bw':bw['dispatcher_dispatcher'][dispatcher_id_0][dispatcher_id_1],'delay':str(delay['dispatcher_dispatcher'][dispatcher_id_0][dispatcher_id_1])+'ms'}) 
     
     print( '*** Starting network\n')
     net.build()
+    # net.start()
 
     # print( '*** Starting controllers\n')
     # for controller in net.controllers:
@@ -168,7 +185,8 @@ def myNetwork(net):
     # os.system("sudo dhclient -r switch%s" %str(SWITCH_NUMBER - 1))
     # os.system("sudo dhclient switch%s" %str(SWITCH_NUMBER - 1))
 
-    os.system("sudo ifconfig switch%s 10.0.100.15/24" %str(SWITCH_NUMBER - 1))
+    os.system("sudo ifconfig switch%s 10.0.10.15/24" %str(SWITCH_NUMBER - 1))
+
 
     print( '*** Post configure switches and hosts\n')
         
@@ -184,36 +202,30 @@ def myNetwork(net):
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
         client[client_id].cmdPrint('ifconfig c%s-eth0 10.0.%s.1'%(str(client_id),  str(client_id)))
+        # client[client_id].cmdPrint('ifconfig c%s-eth1 0'%(str(client_id)))
+        # client[client_id].cmdPrint('ifconfig c%s-eth1 10.0.10.%s/24'%(str(client_id), str(50+client_id))) # client不用连redis
     
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint('ifconfig s%s-eth0 10.0.%s.3'%(str(server_id), str(server_id)))
-        server[server_id].cmdPrint('ifconfig s%s-eth%s 0'%(str(server_id), str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
-        server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(CLIENT_NUMBER + DISPATCHER_NUMBER), str(switch_gw_pre3), str(50+server_id)))
+        server[server_id].cmdPrint('ifconfig s%s-eth1 0'%(str(server_id)))
+        server[server_id].cmdPrint('ifconfig s%s-eth1 %s.%s/24'%(str(server_id), str(switch_gw_pre3), str(50+server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth0 10.0.%s.5'%(str(dispatcher_id), str(dispatcher_id)))
-        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
-        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(CLIENT_NUMBER + DISPATCHER_NUMBER),  str(switch_gw_pre3), str(100+dispatcher_id)))
+        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth1 0'%(str(dispatcher_id)))
+        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth1 %s.%s/24'%(str(dispatcher_id), str(switch_gw_pre3), str(100+dispatcher_id)))
 
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
-        for server_id in range(SERVER_NUMBER):
-            client[client_id].cmdPrint("route add -host 10.0.%s.3 dev c%s-eth%s" % (str(server_id), str(client_id), str(server_id)))
-        for dispatcher_id in range(DISPATCHER_NUMBER):
-            client[client_id].cmdPrint("route add -host 10.0.%s.5 dev c%s-eth%s" % (str(dispatcher_id), str(client_id), str(SERVER_NUMBER + dispatcher_id)))
+        client[client_id].cmdPrint("ip route add default dev c%s-eth0 proto kernel scope link"%(str(client_id)))  
+        # client[client_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
     
     for server_id in range(SERVER_NUMBER):
-        for client_id in range(CLIENT_NUMBER):
-            server[server_id].cmdPrint("route add -host 10.0.%s.1 dev s%s-eth%s" % (str(client_id), str(server_id), str(client_id)))
-        for dispatcher_id in range(DISPATCHER_NUMBER):
-            server[server_id].cmdPrint("route add -host 10.0.%s.5 dev s%s-eth%s" % (str(dispatcher_id), str(server_id), str(CLIENT_NUMBER + dispatcher_id)))
+        server[server_id].cmdPrint("ip route add default dev s%s-eth0 proto kernel scope link"%(str(server_id))) 
         server[server_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        for client_id in range(CLIENT_NUMBER):
-            dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.1 dev d%s-eth%s" % (str(client_id), str(dispatcher_id), str(client_id)))
-        for server_id in range(SERVER_NUMBER):
-            dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.3 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(CLIENT_NUMBER + server_id)))
+        dispatcher[dispatcher_id].cmdPrint("ip route add default dev d%s-eth0 proto kernel scope link"%(str(dispatcher_id)))  
         dispatcher[dispatcher_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
     
     ## 输出到machine_server.json
@@ -329,15 +341,15 @@ if __name__ == '__main__':
     print("sleep 30 seconds to wait mininet construction! ")
     time.sleep(30)
 
-    # 测试网络连接
-    # for client_id in range(CLIENT_NUMBER):
-        # for dispatcher_id in range(DISPATCHER_NUMBER):
-            # client[client_id].cmdPrint("ping -i.2 -c5 d%s"%(dispatcher_id))
+    ## 测试网络连接
+    for client_id in range(CLIENT_NUMBER):
+        for dispatcher_id in range(DISPATCHER_NUMBER):
+            client[client_id].cmdPrint("ping -i.2 -c5 d%s"%(dispatcher_id))
 
     ## 用socket，直接从dispatcher发送给server，不走gre了
     ## 测量
-    print("measure_start! ")
-    measure_start(net)
+    # print("measure_start! ")
+    # measure_start(net)
 
     ## tcpdump
     # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
@@ -346,7 +358,7 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
     
     ## 跑实验
-    test_run(net)
+    # test_run(net)
 
     CLI(net)
     net.stop()
