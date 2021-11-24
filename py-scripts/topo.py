@@ -130,9 +130,9 @@ Middleware_client_dispatcher_server_test = {
     'client_number': 2,
     'server_number': 2,
     'dispatcher_number': 2,
-    'server_thread': 3,
-    'client_thread': 3,
-    'dispatcher_thread': 3,
+    'server_thread': 1,
+    'client_thread': 1,
+    'dispatcher_thread': 1,
     'bw': {
         'client_server': [
             [5,2],

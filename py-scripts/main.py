@@ -41,7 +41,7 @@ virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
-mode = modes[0]
+mode = modes[1]
 
 def init():
     global CLIENT_NUMBER, SERVER_NUMBER, DISPATCHER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD, DISPATCHER_THREAD
@@ -183,15 +183,18 @@ def myNetwork(net):
 
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint('ifconfig c%s-eth0 10.0.%s.1'%(str(client_id),  str(client_id)))
+        for interface_id in range(DISPATCHER_NUMBER + SERVER_NUMBER):
+            client[client_id].cmdPrint('ifconfig c%s-eth%s 10.0.%s.1'%(str(client_id), str(interface_id), str(client_id)))
     
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmdPrint('ifconfig s%s-eth0 10.0.%s.3'%(str(server_id), str(server_id)))
+        for interface_id in range(DISPATCHER_NUMBER + CLIENT_NUMBER):
+            server[server_id].cmdPrint('ifconfig s%s-eth%s 10.0.%s.3'%(str(server_id), str(interface_id), str(server_id)))
         server[server_id].cmdPrint('ifconfig s%s-eth%s 0'%(str(server_id), str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
         server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(CLIENT_NUMBER + DISPATCHER_NUMBER), str(switch_gw_pre3), str(50+server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth0 10.0.%s.5'%(str(dispatcher_id), str(dispatcher_id)))
+        for interface_id in range(SERVER_NUMBER + CLIENT_NUMBER):
+            dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(CLIENT_NUMBER + DISPATCHER_NUMBER),  str(switch_gw_pre3), str(100+dispatcher_id)))
 
@@ -288,24 +291,19 @@ def test_run(net):
     now_port = START_PORT
     for server_id in range(SERVER_NUMBER):
         server_ip = "10.0.%s.3" %(str(server_id))
-        # print("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time)))
-        server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time), mode))
-        # now_port += SERVER_THREAD
+        server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s -n %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time), mode, str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
     
     if mode == "Polygon":
         now_port = START_PORT
         for dispatcher_id in range(DISPATCHER_NUMBER):
             dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-            # print("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -a %s"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(start_time)))
             dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode))
-        # now_port += SERVER_THREAD
 
     print("sleep " + str(60 + 20 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 20 * SERVER_NUMBER)
     print("start_clients!")
 
     for client_id in range(CLIENT_NUMBER):
-        # print("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -a %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(start_time)))
         client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode))
         time.sleep(3)
 
