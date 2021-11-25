@@ -41,7 +41,7 @@ virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
-mode = modes[1]
+mode = modes[0]
 
 def init():
     global CLIENT_NUMBER, SERVER_NUMBER, DISPATCHER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD, DISPATCHER_THREAD
@@ -197,10 +197,10 @@ def myNetwork(net):
         server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(2), str(switch_gw_pre3), str(50+server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        # for interface_id in range(SERVER_NUMBER1):
+        # for interface_id in range(SERVER_NUMBER):
             # dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
-        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER)))
-        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER),  str(switch_gw_pre3), str(100+dispatcher_id)))
+        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER + 1)))
+        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3), str(100+dispatcher_id)))
 
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
@@ -301,7 +301,7 @@ def test_run(net):
         now_port = START_PORT
         for dispatcher_id in range(DISPATCHER_NUMBER):
             dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-            dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode))
+            dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -p %s -t %s -r %s -a %s -m %s -s %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER)))
 
     print("sleep " + str(60 + 20 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 20 * SERVER_NUMBER)
@@ -338,8 +338,8 @@ if __name__ == '__main__':
 
     ## 用socket，直接从dispatcher发送给server，不走gre了
     ## 测量
-    # print("measure_start! ")
-    # measure_start(net)
+    print("measure_start! ")
+    measure_start(net)
 
     ## tcpdump
     # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
@@ -348,7 +348,7 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
     
     ## 跑实验
-    # test_run(net)
+    test_run(net)
 
     CLI(net)
     net.stop()
