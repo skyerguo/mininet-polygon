@@ -1,7 +1,7 @@
 root_path=/data
 dispatcher_result_path=$root_path/result-logs/dispatcher/
 
-while getopts ":i:s:d:p:t:r:a:m:" opt
+while getopts ":i:d:s:p:t:r:a:m:n:" opt
 do
     case $opt in
         i)
@@ -29,6 +29,9 @@ do
         m)
             mode=$OPTARG
         ;;
+        n)
+            redis_interface=$OPTARG
+        ;;
         ?)
             echo "未知参数"
             exit 1
@@ -47,9 +50,8 @@ do
         output_file=${dispatcher_result_path}${dispatcher_id}'_'$port
         echo "output_file: " $output_file >> ${output_file}_tmp.txt
 
-        echo "sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson 'd'${dispatcher_id}'-eth0' 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name 'd'$dispatcher_id -q --redis_ip $redis_ip" >> ${output_file}_tmp.txt
+        echo "sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson d${dispatcher_id}-eth$server_number 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name=d$dispatcher_id -q --redis_ip=$redis_ip --redis_interface=d$dispatcher_id-eth$redis_interface" >> ${output_file}_tmp.txt
 
-        sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson 'd'${dispatcher_id}'-eth'$server_number 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name 'd'$dispatcher_id -q --redis_ip $redis_ip 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
-        # sudo LD_LIBRARY_PATH=/data /data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port /data/server.key /data/server.crt -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+        sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson d${dispatcher_id}-eth$server_number 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name=d$dispatcher_id --redis_ip=$redis_ip --redis_interface=d$dispatcher_id-eth$redis_interface -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
     } &
 done

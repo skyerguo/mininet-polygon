@@ -52,7 +52,7 @@ type_list=(${type_list_all[*]})
 for i in `seq $client_thread`
 do
     {
-        for round in `seq 1`
+        for round in `seq 2000`
         do
             time_stamp=$(($(date +%s%N)/1000000))
             dispatcher_id=$client_id ## 定死

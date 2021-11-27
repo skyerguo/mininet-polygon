@@ -14,7 +14,7 @@ import time
 import os
 import subprocess
 
-SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_test)
+SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_main)
 
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0
@@ -49,7 +49,7 @@ def init():
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
-    SWITCH_NUMBER = SERVER_NUMBER * 2 + DISPATCHER_NUMBER + 1 # 前SN个，对应C-S，中间SN个，对应D-S，后DN个，对应C-D。最后一个用来连外网。
+    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 1 # 前SN个，对应C-S，中间SN个，对应D-S，后DN个，对应C-D。最后一个用来连外网。
     SERVER_THREAD = SELECT_TOPO['server_thread']
     DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
@@ -129,14 +129,14 @@ def myNetwork(net):
     ## D-S
     for server_id in range(SERVER_NUMBER):
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            net.addLink(switch[SERVER_NUMBER + server_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id],'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-        net.addLink(switch[SERVER_NUMBER + server_id], server[server_id])
+            net.addLink(switch[server_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id],'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+        # net.addLink(switch[server_id], server[server_id]) # 都连第一个interface
 
     ## C-D
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
-            net.addLink(switch[SERVER_NUMBER * 2 + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id],'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-        net.addLink(switch[SERVER_NUMBER * 2 + dispatcher_id], dispatcher[dispatcher_id])
+            net.addLink(switch[SERVER_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id],'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+        net.addLink(switch[SERVER_NUMBER + dispatcher_id], dispatcher[dispatcher_id])
     
     ## add links from dispatchers and servers to virtual machine ip.
     for dispatcher_id in range(DISPATCHER_NUMBER):
@@ -186,15 +186,15 @@ def myNetwork(net):
 
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
-        # for interface_id in range(DISPATCHER_NUMBER + SERVER_NUMBER):
+        # for interface_id in range(1, DISPATCHER_NUMBER + SERVER_NUMBER):
             # client[client_id].cmdPrint('ifconfig c%s-eth%s 10.0.%s.1'%(str(client_id), str(interface_id), str(client_id)))
         pass
     
     for server_id in range(SERVER_NUMBER):
-        # for interface_id in range(2):
-            # server[server_id].cmdPrint('ifconfig s%s-eth%s 10.0.%s.3'%(str(server_id), str(interface_id), str(server_id)))
-        server[server_id].cmdPrint('ifconfig s%s-eth%s 0'%(str(server_id), str(2)))
-        server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(2), str(switch_gw_pre3), str(50+server_id)))
+        # for interface_id in range(1, 2):
+            # server[server_id].cmdPrint('ifconfig s%s-eth%s 10.0.%s.4'%(str(server_id), str(interface_id), str(server_id)))
+        server[server_id].cmdPrint('ifconfig s%s-eth%s 0'%(str(server_id), str(1)))
+        server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3), str(50+server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
         # for interface_id in range(SERVER_NUMBER):
@@ -206,6 +206,7 @@ def myNetwork(net):
     for client_id in range(CLIENT_NUMBER):
         for server_id in range(SERVER_NUMBER):
             client[client_id].cmdPrint("route add -host 10.0.%s.3 dev c%s-eth%s" % (str(server_id), str(client_id), str(server_id)))
+            # client[client_id].cmdPrint("route add -host 10.0.%s.4 dev c%s-eth%s" % (str(server_id), str(client_id), str(server_id)))
         for dispatcher_id in range(DISPATCHER_NUMBER):
             client[client_id].cmdPrint("route add -host 10.0.%s.5 dev c%s-eth%s" % (str(dispatcher_id), str(client_id), str(SERVER_NUMBER + dispatcher_id)))
     
@@ -213,7 +214,9 @@ def myNetwork(net):
         for client_id in range(CLIENT_NUMBER):
             server[server_id].cmdPrint("route add -host 10.0.%s.1 dev s%s-eth%s" % (str(client_id), str(server_id), str(0)))
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            server[server_id].cmdPrint("route add -host 10.0.%s.5 dev s%s-eth%s" % (str(dispatcher_id), str(server_id), str(1)))
+            server[server_id].cmdPrint("route add -host 10.0.%s.5 dev s%s-eth%s" % (str(dispatcher_id), str(server_id), str(0)))
+            # for interface_id in range(SERVER_NUMBER):
+                # server[server_id].cmdPrint("route add -host 10.0.%s.%s dev s%s-eth%s" % (str(dispatcher_id), str(5+interface_id), str(server_id), str(0)))
         server[server_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
@@ -221,6 +224,7 @@ def myNetwork(net):
             dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.1 dev d%s-eth%s" % (str(client_id), str(dispatcher_id), str(SERVER_NUMBER)))
         for server_id in range(SERVER_NUMBER):
             dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.3 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(server_id)))
+            # dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.4 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(server_id)))
         dispatcher[dispatcher_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
     
     ## 输出到machine_server.json
@@ -231,9 +235,10 @@ def myNetwork(net):
             server_name = 's%s'%str(server_id)
             temp_host = net.get(server_name)
             temp_ip = "10.0.%s.3"%(server_id)
+            temp_ip2 = "10.0.%s.4"%(server_id)
             temp_mac = temp_host.MAC()
-            machines[server_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
-                                     'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
+            machines[server_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip2,
+                                     'internal_ip1': temp_ip, 'internal_ip2': temp_ip2,
                                      'mac1': temp_mac, 'mac2': temp_mac,
                                      'zone': str(server_id)}
         json.dump(machines, f)
@@ -301,8 +306,8 @@ def test_run(net):
         now_port = START_PORT
         for dispatcher_id in range(DISPATCHER_NUMBER):
             dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-            dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -p %s -t %s -r %s -a %s -m %s -s %s &"%(str(dispatcher_id), dispatcher_ip, str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER)))
-
+            dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER + 1)))
+    
     print("sleep " + str(60 + 20 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 20 * SERVER_NUMBER)
     print("start_clients!")
@@ -342,10 +347,13 @@ if __name__ == '__main__':
     measure_start(net)
 
     ## tcpdump
-    # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
-    # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /home/mininet/test_server_sendquic_newipudp.cap &")
-    # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /home/mininet/test_dispatcher_sendquic_d0all.cap &")
-    # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
+    client[0].cmd("sudo tcpdump -nn -i c0-eth0 udp -w /home/mininet/test_client_sendquic_1127_c0eth0.cap &")
+    client[0].cmd("sudo tcpdump -nn -i c0-eth2 udp -w /home/mininet/test_client_sendquic_1127_c0eth2.cap &")
+    server[0].cmd("sudo tcpdump -nn -i s0-eth0 udp -w /home/mininet/test_server_sendquic_1127_s0eth0..cap &")
+    # server[0].cmd("sudo tcpdump -nn -i s0-eth1 udp -w /home/mininet/test_server_sendquic_1126_s0eth1..cap &")
+    dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth0 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth0.cap &")
+    dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth2 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth2.cap &")
+    # dispatcher[0].cmd("sudo x -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_1125.cap &")
     
     ## 跑实验
     test_run(net)

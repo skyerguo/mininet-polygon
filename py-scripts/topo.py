@@ -38,50 +38,37 @@ test_1_1_1 = {
     'dispatcher_thread': 1,
     'bw': {
         'client_server': [
-            [50,50],
-            [50,50]
+            [5,2],
+            [2,5]
         ],
         'client_dispatcher': [
-            [50,50],
-            [50,50]
+            [5,2],
+            [2,5]
         ],
         'dispatcher_server': [
-            [1000,50],
-            [50,1000]
+            [10,3],
+            [3,10]
         ],
-        'dispatcher_dispatcher': [
-            [50,50],
-            [50,50]
-        ]
     },
     'delay': {
         'client_server': [
-            [10,30],
-            [15,20]
+            [30,300],
+            [300,30]
         ],
         'client_dispatcher': [
-            [10,30],
-            [15,20]
+            [20,100],
+            [100,20]
         ],
         'dispatcher_server': [
-            [1,30],
-            [15,1]
-        ],
-        'dispatcher_dispatcher': [
-            [0,30],
-            [15,0]
+            [3,100],
+            [100,3]
         ],
     },
     'cpu': {
         'client': .2,
-        'server': .3,
-        'dispatcher': .2,
+        'server': .4,
+        'dispatcher': .3,
     },
-    'zone': {
-        'as',
-        'na',
-        'eu',
-    }
 }
 
 Middleware_client_server = {
