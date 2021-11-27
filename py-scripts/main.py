@@ -302,11 +302,11 @@ def test_run(net):
         server_ip = "10.0.%s.3" %(str(server_id))
         server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s -n %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time), mode, str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
     
-    if mode == "Polygon":
-        now_port = START_PORT
-        for dispatcher_id in range(DISPATCHER_NUMBER):
-            dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-            dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER + 1)))
+    # if mode == "Polygon":
+    now_port = START_PORT
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
+        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER + 1)))
     
     print("sleep " + str(60 + 20 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 20 * SERVER_NUMBER)
@@ -347,13 +347,11 @@ if __name__ == '__main__':
     measure_start(net)
 
     ## tcpdump
-    client[0].cmd("sudo tcpdump -nn -i c0-eth0 udp -w /home/mininet/test_client_sendquic_1127_c0eth0.cap &")
-    client[0].cmd("sudo tcpdump -nn -i c0-eth2 udp -w /home/mininet/test_client_sendquic_1127_c0eth2.cap &")
-    server[0].cmd("sudo tcpdump -nn -i s0-eth0 udp -w /home/mininet/test_server_sendquic_1127_s0eth0..cap &")
-    # server[0].cmd("sudo tcpdump -nn -i s0-eth1 udp -w /home/mininet/test_server_sendquic_1126_s0eth1..cap &")
-    dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth0 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth0.cap &")
-    dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth2 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth2.cap &")
-    # dispatcher[0].cmd("sudo x -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_1125.cap &")
+    # client[0].cmd("sudo tcpdump -nn -i c0-eth0 udp -w /home/mininet/test_client_sendquic_1127_c0eth0.cap &")
+    # client[0].cmd("sudo tcpdump -nn -i c0-eth2 udp -w /home/mininet/test_client_sendquic_1127_c0eth2.cap &")
+    # server[0].cmd("sudo tcpdump -nn -i s0-eth0 udp -w /home/mininet/test_server_sendquic_1127_s0eth0..cap &")
+    # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth0 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth0.cap &")
+    # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth2 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth2.cap &")
     
     ## 跑实验
     test_run(net)
