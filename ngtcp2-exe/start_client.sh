@@ -47,7 +47,7 @@ type_list_video=("video" "video" "video" "video" "video" "video" "video" "video"
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu
 
 type_list=(${type_list_all[*]})
-# type_list=(${type_list_cpu[*]})
+# type_list=(${type_list_video[*]})
 
 for i in `seq $client_thread`
 do

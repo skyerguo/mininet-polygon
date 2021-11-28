@@ -8,7 +8,7 @@ import copy
 # print(sys.argv[0])
 
 server_id = int(sys.argv[1])
-router_id = int(sys.argv[2])
+dispatcher_id = int(sys.argv[2])
 measurement_result_path = str(sys.argv[3])
 
 
@@ -110,7 +110,7 @@ for line in lines2:
 #             break
 # print(ans)
 
-if router_id in speeds.keys():
-    print(np.mean(speeds[router_id]))
+if dispatcher_id in speeds.keys():
+    print(np.mean(speeds[dispatcher_id]))
 else:
     print(0)

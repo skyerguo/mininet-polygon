@@ -9,6 +9,7 @@ server_files = os.listdir(result_root_path + "server")
 server_files.sort(reverse=True)
 
 start_time = server_files[0]
+# start_time = "2021-11-28_00:52:53"
 
 saved_results_root_path = data_root_path + "saved_results/" + str(start_time) + "/"
 os.system("sudo rm -rf %s" %(saved_results_root_path))
@@ -48,10 +49,12 @@ for client_file in client_files:
                 if "data_type" in line:
                     if "normal_1" in line:
                         sensitive_type = "delay"
-                    if "cpu" in line:
+                    elif "cpu" in line:
                         sensitive_type = "cpu"
-                    if "video" in line:
+                    elif "video" in line:
                         sensitive_type = "bw"
+                    else:
+                        sensitive_type = "error"
                 if ("current_time") in line:
                     current_time = line.split(" ")[-1].strip()
                 if ("mode") in line:
@@ -82,7 +85,7 @@ for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个�
         continue
 
     if ("_2.txt") in dispatcher_file:
-        dispatcher_ip = "10.0.%s.3" % (dispatcher_file.split("_")[0])
+        dispatcher_ip = "10.0.%s.5" % (dispatcher_file.split("_")[0])
         with open(dispatcher_result_path + dispatcher_file, "r") as f:
             for line in f:
                 if ("client_ip") in line:
@@ -90,10 +93,18 @@ for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个�
                 if ("current_time") in line:
                     current_time = line.split(" ")[-1].strip()
                 if ("sensitive_type") in line:
-                    sensitive_type = line.split(" ")[-1].strip()
+                    if "latency" in line:
+                        sensitive_type = "delay"
+                    elif "cpu" in line:
+                        sensitive_type = "cpu"
+                    elif "throughput" in line:
+                        sensitive_type = "bw"
+                    else:
+                        sensitive_type = "error"
+                    # sensitive_type = line.split(" ")[-1].strip()
                 if ("!Forwarded") in line:
                     forward_dc = line.split(" ")[5].strip()
-                    server_ip = "10.0.%s.5" % (str(forward_dc))
+                    server_ip = "10.0.%s.3" % (str(forward_dc))
                     if ("server") in line:
                         forward_to = "local"
                     elif ("dispatcher") in line:
@@ -129,31 +140,31 @@ for server_file in os.listdir(result_root_path + "server/" + start_time):
 print("server_number: ", server_number)
 
 for measurement_file in measurement_files:
-    server_ip = "10.0.%s.3"%(measurement_file.split('.')[0])
+    dispatcher_ip = "10.0.%s.5"%(measurement_file.split('.')[0])
     bw = [-1 for _ in range(server_number)]
     cpu = [-1 for _ in range(server_number)]
     with open(measurement_result_path + measurement_file, "r") as f:
         for line in f:
             if not "current_time" in line:
                 # dispatcher_ip = "10.0.%s.5"%(line.split("+")[0].strip())
-                dispatcher_id = int(line.split("+")[0].strip())
+                server_id = int(line.split("+")[0].strip())
                 temp_bw = line.split('+')[1].strip()
                 temp_cpu = line.split('+')[2].strip()
                 if not temp_bw:
                     temp_bw = -1
                 if not temp_cpu:
                     temp_cpu = -1
-                bw[dispatcher_id] = temp_bw
-                cpu[dispatcher_id] = temp_cpu
+                bw[server_id] = temp_bw
+                cpu[server_id] = temp_cpu
             else:
-                os.system("mkdir -p " + saved_results_root_path + mode + "/" + server_ip + "_bw/")
-                with open(saved_results_root_path + mode + "/" + server_ip + "_bw/bw.txt", "a") as f_out:
+                os.system("mkdir -p " + saved_results_root_path + mode + "/" + dispatcher_ip + "_bw/")
+                with open(saved_results_root_path + mode + "/" + dispatcher_ip + "_bw/bw.txt", "a") as f_out:
                     print(current_time,end=" ", file=f_out)
                     for i in range(server_number):
                         print(bw[i], end=" ", file=f_out)
                     print(" ", file=f_out)
-                os.system("mkdir -p " + saved_results_root_path + mode + "/" + server_ip + "_cpu/")
-                with open(saved_results_root_path + mode + "/" + server_ip + "_cpu/cpu.txt", "a") as f_out:
+                os.system("mkdir -p " + saved_results_root_path + mode + "/" + dispatcher_ip + "_cpu/")
+                with open(saved_results_root_path + mode + "/" + dispatcher_ip + "_cpu/cpu.txt", "a") as f_out:
                     print(current_time,end=" ", file=f_out)
                     for i in range(server_number):
                         print(cpu[i], end=" ", file=f_out)

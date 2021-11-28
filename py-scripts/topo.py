@@ -172,7 +172,7 @@ Middleware_client_dispatcher_server_main = {
             [2.07,4.00,1.36,0.91,1.26],
             [1.98,1.36,4.00,0.83,1.14],
             [1.89,0.91,0.83,5.00,5.00],
-            [3.15,0.26,1.14,5.00,5.00],
+            [3.15,1.26,1.14,5.00,5.00],
         ],
         'client_dispatcher': [
             [5,5,5,5,5],
@@ -213,9 +213,9 @@ Middleware_client_dispatcher_server_main = {
         ],
     },
     'cpu': {
-        'client': .1,
-        'server': .3,
-        'dispatcher': .5,
+        'client': .2,
+        'server': .4,
+        'dispatcher': .4,
     },
     # 'zone': {
     #     'as',

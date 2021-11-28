@@ -54,6 +54,8 @@ def init():
     DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
 
+    print("SWITCH_NUMBER: ", SWITCH_NUMBER)
+
     bw = SELECT_TOPO['bw']
     delay = SELECT_TOPO['delay']
     cpu = SELECT_TOPO['cpu']
@@ -163,6 +165,7 @@ def myNetwork(net):
     
     for switch_id in range(SWITCH_NUMBER):
         switch[switch_id].cmd('sysctl -w net.ipv4.ip_forward=1')
+
     
     ## 将最后一个switch和网卡eth1相连，并获取网关地址
     os.system("sudo ovs-vsctl add-port switch%s eth1"%str(SWITCH_NUMBER - 1))
@@ -197,8 +200,8 @@ def myNetwork(net):
         server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3), str(50+server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        # for interface_id in range(SERVER_NUMBER):
-            # dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
+        for interface_id in range(SERVER_NUMBER): # 给dispatcher所有端口都绑定，保证每个端口都能转发，否则只能转发给server0
+            dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER + 1)))
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3), str(100+dispatcher_id)))
 

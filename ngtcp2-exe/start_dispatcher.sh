@@ -52,6 +52,6 @@ do
 
         echo "sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson d${dispatcher_id}-eth$server_number 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name=d$dispatcher_id -q --redis_ip=$redis_ip --redis_interface=d$dispatcher_id-eth$redis_interface" >> ${output_file}_tmp.txt
 
-        sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson d${dispatcher_id}-eth$server_number 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name=d$dispatcher_id --redis_ip=$redis_ip --redis_interface=d$dispatcher_id-eth$redis_interface -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+        sudo LD_LIBRARY_PATH=/data /data/dispatcher --datacenter $dispatcher_id --user johnson --password johnson d${dispatcher_id}-eth$server_number 0.0.0.0 $port /data/server.key /data/server.crt --current_dispatcher_name=d$dispatcher_id --redis_ip=$redis_ip --redis_interface=d$dispatcher_id-eth$redis_interface 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
     } &
 done

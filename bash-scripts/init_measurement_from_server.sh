@@ -28,4 +28,4 @@ done
 
 # tmux send-key -t $server_id:0 "iftop -t > ${measurement_result_path}iftop/iftop_log_$server_id.txt" Enter 
 # nohup sudo iftop -t > ${measurement_result_path}iftop/iftop_log_$server_id.txt >${measurement_result_path}iftop/iftop_error_$server_id.txt 2>&1 &
-sudo iftop -t > ${measurement_result_path}iftop/iftop_log_$server_id.txt &
+sudo iftop -t -F 10.0.$server_id.3 > ${measurement_result_path}iftop/iftop_log_$server_id.txt &

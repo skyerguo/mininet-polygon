@@ -93,7 +93,7 @@ do
     then
         now_used=`awk 'BEGIN{print "'$now_used'" * "1000000"}'`
     fi
-    if [[ `echo "$now_used > $second_max" | bc` -eq 1 ]]
+    if [[ `echo "$now_umeasurement_result_pathsed > $second_max" | bc` -eq 1 ]]
     then
         now_used=$second_max
     fi
