@@ -46,11 +46,12 @@ start_time=$(date "+%Y%m%d%H%M%S")
 
 
 dispatcher_ip=()
-default_max=100
+total_bw_capability=0
 for i in `seq 0 $((${#dispatcher_ips[*]} - 1))`
 do
     dispatcher_ip[$i]=${dispatcher_ips[$i]}
     dispatcher_bw[$i]=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" * "1000"}'`
+    total_bw_capability=`awk 'BEGIN{print "'${total_bw_capability}'" + "'${dispatcher_bw[i]}'"}'`
 done
 
 output_file="${measurement_result_path}server/server_$server_id.log"
@@ -61,8 +62,7 @@ echo "dispatcher_bw: "${dispatcher_bw[*]} >> $output_file
 ## 以下所有流量相关的变量，单位均为Kb/sec
 echo "output_file: " $output_file >> $output_file
 
-second_max=$((100*1024)) # 假设每个节点最多100MB流量
-echo "second_max: " $second_max >> $output_file
+echo "total_bw_capability: " $total_bw_capability >> $output_file
 
 server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | awk '{print $2}'`
 echo "server_pid: " $server_pid >> $output_file
@@ -93,29 +93,36 @@ do
     then
         now_used=`awk 'BEGIN{print "'$now_used'" * "1000000"}'`
     fi
-    if [[ `echo "$now_umeasurement_result_pathsed > $second_max" | bc` -eq 1 ]]
+    if [[ `echo "$temp_now_used > $total_bw_capability" | bc` -eq 1 ]]
     then
-        now_used=$second_max
+        now_used=$total_bw_capability
     fi
 
     echo "now_used: " $now_used >> $output_file
-    res_throughput=`awk 'BEGIN{print "'$second_max'" - "'$now_used'"}'`
-    echo "res_throughput:" $res_throughput >> $output_file
+    total_res_bw=`awk 'BEGIN{print "'$now_used'" / "'$total_bw_capability'"}'`
+    echo "total_res_bw:" $total_res_bw >> $output_file
+    total_res_rate=`awk 'BEGIN{print "1" - "'$total_res_bw'"}'`
+    echo "total_res_rate:" $total_res_rate >> $output_file
 
     for i in `seq 0 $((${#dispatcher_ip[*]} - 1))`
     do
         echo "dispatcher_log: dispatcher"$i >> $output_file
         echo "{dispatcher_bw[i]}: "${dispatcher_bw[i]} >> $output_file
-        echo "res_throughput: "$res_throughput >> $output_file
 
+        # latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
+        
+        ## exist_throughput 测量当前server到当前dispathcer的流量
         exist_throughput=`python3 /home/mininet/mininet-polygon/py-scripts/get_n_video.py $server_id $i ${measurement_result_path}`
         echo "exist_throughput: "$exist_throughput >> $output_file
+        if [[ `echo "$exist_throughput > ${dispatcher_bw[i]}" | bc` -eq 1 ]]
+        then
+            exist_throughput=${dispatcher_bw[i]}
+        fi
 
-        avg_throughput=`awk 'BEGIN{print ("'${dispatcher_bw[i]}'" - "'$exist_throughput'") / "'${dispatcher_bw[i]}'" }'`
+        # current_res_throughput=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" - "'$exist_throughput'"}'`
+        ## 总体逻辑：当前剩余 * (1-used/总)
 
-        
-        # latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
-
+        avg_throughput=`awk 'BEGIN{print ("'${dispatcher_bw[i]}'" - "'$exist_throughput'") * "'${total_res_rate}'"}'`
         echo "avg_throughput: "$avg_throughput >> $output_file
         redis-cli -h $redis_ip -a 'Hestia123456' set throughput_s${server_id}_d$i ${avg_throughput} > /dev/null
 
