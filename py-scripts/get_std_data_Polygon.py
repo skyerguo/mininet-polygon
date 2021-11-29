@@ -27,6 +27,7 @@ for client_file in client_files:
         current_time = 0
         mode = "Polygon"
         cpu_duration = 0
+        plt_times = 0
         continue
     
     if "_2.txt" in client_file:
@@ -34,6 +35,7 @@ for client_file in client_files:
             for line in f:
                 if "PLT:" in line:
                     plt = int(line.split(" ")[1].strip())
+                    plt_times += 1
                 if "start_time:" in line:
                     cpu_start_time = float(line.split(" ")[-1].strip())
                 if "end_time:" in line:
@@ -62,9 +64,11 @@ for client_file in client_files:
 
         os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/"))
 
+        if plt == 0: # 应该有plt，但是没有查到
+            continue
         if sensitive_type == "cpu" and cpu_duration == 0: # 应该是cpu，但是没查到cpu
             continue
-        if plt == 0: # 应该有plt，但是没有查到
+        if sensitive_type == "bw" and plt_times != 2: # 应该是bw，但是没有收到实际的文件
             continue
         
         print(str(current_time) + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))
@@ -113,6 +117,9 @@ for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个�
                     # print(3333)
 
                     os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + dispatcher_ip + "_routing/"))
+
+                    if (client_ip == ""):
+                        continue
                     
                     print(str(current_time) + " " + client_ip + " " + sensitive_type + " " + forward_to + " " + server_ip, file=open(saved_results_root_path + mode + "/" + dispatcher_ip + "_routing/" + "routing.txt", "a"))
 
@@ -125,6 +132,7 @@ for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个�
 
     if ("_tmp.txt") in dispatcher_file:
         continue
+
                     
 ## measurement data
 measurement_result_path = data_root_path + "measurement_log/" + str(start_time) + "/record/"

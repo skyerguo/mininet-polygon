@@ -27,6 +27,7 @@ for client_file in client_files:
         current_time = 0
         mode = "DNS"
         cpu_duration = 0
+        plt_times = 0
         continue
     
     if "_2.txt" in client_file:
@@ -37,6 +38,7 @@ for client_file in client_files:
             for line in f:
                 if "PLT:" in line:
                     plt = int(line.split(" ")[1].strip())
+                    plt_times += 1
                 if "start_time:" in line:
                     cpu_start_time = float(line.split(" ")[-1].strip())
                 if "end_time:" in line:
@@ -65,9 +67,11 @@ for client_file in client_files:
 
         os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/"))
 
+        if plt == 0: # 应该有plt，但是没有查到
+            continue
         if sensitive_type == "cpu" and cpu_duration == 0: # 应该是cpu，但是没查到cpu
             continue
-        if plt == 0: # 应该有plt，但是没有查到
+        if sensitive_type == "bw" and plt_times != 2: # 应该是bw，但是没有收到实际的文件
             continue
         
         print(str(current_time) + " " + sensitive_type + " " + str(plt + cpu_duration), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))

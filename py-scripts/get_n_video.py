@@ -56,8 +56,7 @@ for line in lines2:
     
     if "=>" in line:
         # print(line)
-        speed = line.split("=>")[1].split("b")[2]
-        # print(speed)
+        speed = line.split("=>")[1].split("b")[0] ## 最近两秒的平均速率
         if 'M' in speed:
             speed = float(speed.split('M')[0]) * 1000
         elif 'K' in speed:
