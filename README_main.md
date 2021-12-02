@@ -94,9 +94,11 @@ $ sudo apt-get -y install git
 $ git clone git@github.com:skyerguo/Hestia.git
 $ cd ~/ngtcp2
 $ git checkout -b resource-demand
+$ git branch --set-upstream-to=origin/resource-demand resource-demand
 $ git clone git@github.com:skyerguo/mininet-polygon.git
 $ cd ~/mininet-polygon
 $ git checkout -b csd_version
+$ git branch --set-upstream-to=origin/csd-version csd-version
 ```
 
 
@@ -106,6 +108,14 @@ $ git checkout -b csd_version
 #### 初始化mongodb
 
 #### 初始化redis
+
+#### 清空mininet旧有的数据
+
+```
+$ sudo mn -cgit pu
+```
+
+
 
 
 
