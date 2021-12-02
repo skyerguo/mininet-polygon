@@ -200,12 +200,18 @@ $ sudo mn -c
 
 在/data/websites下，分别存放cpu, normal_1和video三个文件夹，请求的文件都将从这里获取
 
+``` 
+$ cp -r ~/mininet-polygon/data_prepare /data/websites
+```
+
+
+
 #### 添加mongodb数据
 
 首先执行
 
 ```
-python3 /data/polygon/experiment/motivation/machine_preparation/insert_shuffle.py
+$ python3 ~/mininet-polygon/data_prepare/insert_shuffle.py
 ```
 
 数据添加到mongo的shuffle_index数据库里，shuffle_100w的表格。
