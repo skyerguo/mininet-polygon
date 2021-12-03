@@ -13,6 +13,7 @@ import json
 import time
 import os
 import subprocess
+import sys
 
 SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_main)
 
@@ -41,7 +42,10 @@ virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
-mode = modes[0]
+mode = sys.argv[1]
+# mode = modes[0]
+
+print("mode: ", mode)
 
 def init():
     global CLIENT_NUMBER, SERVER_NUMBER, DISPATCHER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD, DISPATCHER_THREAD
