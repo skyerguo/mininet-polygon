@@ -90,7 +90,7 @@ $ sudo sed -i 's/# requirepass foobared/requirepass Hestia123456/g' /etc/redis/r
 $ sudo service redis-server restart
 ```
 
-#### #### 配置语言环境
+#### 配置语言环境
 
 ```
 echo "export LC_ALL=C" >> ~/.zshrc 
@@ -200,12 +200,18 @@ $ sudo mn -c
 
 在/data/websites下，分别存放cpu, normal_1和video三个文件夹，请求的文件都将从这里获取
 
+``` 
+$ cp -r ~/mininet-polygon/data_prepare /data/websites
+```
+
+
+
 #### 添加mongodb数据
 
 首先执行
 
 ```
-python3 /data/polygon/experiment/motivation/machine_preparation/insert_shuffle.py
+$ python3 ~/mininet-polygon/data_prepare/insert_shuffle.py
 ```
 
 数据添加到mongo的shuffle_index数据库里，shuffle_100w的表格。
@@ -232,7 +238,27 @@ python3 /data/polygon/experiment/motivation/machine_preparation/insert_shuffle.p
 
 ## 运行说明
 
+### 运行主文件
 
+最后一位为方法，目前只提供["DNS", "Polygon"]两种
+
+```
+$ cd ~/mininet-polygon/py-scripts
+$ sudo timeout 2000 python3 main.py DNS 
+$ sudo timeout 2000 python3 main.py Polygon
+```
+
+### 数据处理获取标准数据
+
+最后一维的方法，和上面运行的主文件方法一致
+
+```
+$ cd ~/mininet-polygon/py-scripts
+$ sudo python3 get_std_data_DNS.py
+$ sudo python3 get_std_data_Polygon.py
+```
+
+每次数据处理的是，最后一次运行的主文件方法的时间戳。如果需要处理之前运行的数据，需要在代码中修改"start_time"字段，改为定死的时间戳
 
 
 
@@ -298,4 +324,37 @@ python3 /data/polygon/experiment/motivation/machine_preparation/insert_shuffle.p
 
 ## CPU测量
 
+### 目前CPU的测量脚本
+
+位于~/mininet-polygon/bash-scripts/measurement_from_server.sh
+
+```
+server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | awk '{print $2}'`
+top -p $server_pid -b -d 0.1 | grep -a '%Cpu' >> "${measurement_result_path}server/cpu_$server_id.log" & 
+```
+
+### 可能存在的问题
+
+测量的cpu idle，不一定是Mininet的host对应的server实际可用的cpu。比如调用redis的cpu，就没有被统计到。
+
+需要进一步理解，Mininet中CPULimitedHost的限制CPU逻辑，该如何更精确地测量一个host所剩余的CPU资源。
+
 ## server监听多个interface
+
+### 目前的版本
+
+位于~/ngtcp2/examples/server.cc，在函数：
+
+```
+void create_sock(std::vector<int> *fds, const char *interface, const int port, int family, Server &s) 
+```
+
+绑定interface，目前只绑定eth0。
+
+### 可能存在的问题
+
+以前的版本，可以同时监听两个interface，一个是从client来的interface，一个是从dispatcher来的interface "bridge"。
+
+在mininet中，之前尝试过一种拓扑，使得server有两个interface，分别连接client和dispatcher，但是它无法监听从dispatcher来的interface的数据，未解决。
+
+为了赶ddl，最后的拓扑将client和dispatcher的链路同时连到一个switch上，该switch再转给server，使得server只需要监听一个interface。
