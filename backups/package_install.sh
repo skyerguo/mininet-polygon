@@ -40,10 +40,10 @@ sudo dpkg -i libiperf0_3.7-3_amd64.deb iperf3_3.7-3_amd64.deb
 
 echo "finish dpkg"
 
-root=${HOME}"/polygon"
-script_path=${HOME}"/mininet-polygon"
-data_path=${root}"/experiment/init_machine"
-cd ${root}
+# root=${HOME}"/polygon"
+# script_path=${HOME}"/mininet-polygon"
+# data_path=${root}"/experiment/init_machine"
+# cd ${root}
 
 ##  数据传输，由于文件共享，暂时也不需要了
 # [ -e data ] && rm -r data

@@ -53,7 +53,7 @@ def init():
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
-    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 1 # 前SN个，对应C-S，中间SN个，对应D-S，后DN个，对应C-D。最后一个用来连外网。
+    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 1 # 前SN个，对应C-S，后DN个，对应C-D。最后一个用来连外网。
     SERVER_THREAD = SELECT_TOPO['server_thread']
     DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
@@ -85,9 +85,8 @@ def init():
 
 
 def clear_logs():
-    # os.system("rm -f temp_*")
-    # os.system("sudo bash ../bash-scripts/clear_logs.sh")
-    os.system("sudo bash ../bash-scripts/kill_running.sh")
+    os.system("sudo mn -c")
+    # os.system("sudo bash ../bash-scripts/kill_running.sh")
 
 
 def myNetwork(net):
@@ -95,15 +94,11 @@ def myNetwork(net):
         ip地址：
             client: 10.0.0.0/16
                     10.0.x.1 clientx ip
-                    10.0.x.1 clientx->switch0 网卡
             server: 10.0.0.0/16
                     10.0.x.3 clientx ip
-                    10.0.x.3 clientx->switch0 网卡
             dispatcher: 10.0.0.0/16
                     10.0.x.5 dispatcherx ip
-                    10.0.x.5 dispatcherx->switch0 网卡
-                    10.0.x.7 dispatcherx->switch1 网卡
-        ## 由于mininet对于interface名字不能太长，因此使用cx,sx,dx来表示client，server，dispatcher
+        ## 由于mininet对于interface名字不能太长，因此使用cx,sx,dx来表示clientx，serverx，dispatcherx
     '''
 
     ## set eth1 ifconfig 0
