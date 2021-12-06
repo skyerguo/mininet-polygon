@@ -318,6 +318,16 @@ def test_run(net):
         client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode))
         time.sleep(3)
 
+    
+def save_config():
+    config_result_path = "/data/result-logs/config/%s/"%(str(start_time))
+    os.system("mkdir -p %s"%config_result_path)
+    os.system("cp /data/websites/cpu/cpu/www.cpu/src/cpu.py %s"%config_result_path)
+    # SELECT_TOPO
+    topo_file = open(config_result_path + 'topo.json','w',encoding='utf-8')
+    json.dump(SELECT_TOPO, topo_file)
+    topo_file.close()
+
 
 if __name__ == '__main__':
     setLogLevel( 'info' )
@@ -357,6 +367,7 @@ if __name__ == '__main__':
     
     ## 跑实验
     test_run(net)
+    save_config()
 
     CLI(net)
     net.stop()
