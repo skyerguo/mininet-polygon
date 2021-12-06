@@ -25,9 +25,9 @@
 
 ​	在Settings-Network中，需要开启两个Adapter。
 
-​	Adapter，设置Attached to “NAT”，这样才能保证，Mininet构建后，内部的switch能连外网。
+​	Adapter，设置Attached to "NAT"，这样才能保证，Mininet构建后，内部的switch能连外网。
 
-​	Adapter，设置Attached to “Bridged Adapter”，Name选择“enp0s31f6”。这样Mininet构建后，内部网络能从dhcp获得一个ip，从而能远程ssh登陆。
+​	Adapter，设置Attached to "Bridged Adapter"，Name选择"enp0s31f6"。这样Mininet构建后，内部网络能从dhcp获得一个ip，从而能远程ssh登陆。
 
 #### 配置硬盘
 
@@ -44,7 +44,7 @@ VBoxManage modifyhd "/home/myzhou/VirtualBox VMs/Mininet-VM/mininet-vm-x86-64.vd
 
 ```
 sudo vim /etc/fstab
-在最后一行添加”/dev/sda3 /data ext4 defaults 0 0“，然后:wq退出保存
+在最后一行添加"/dev/sda3 /data ext4 defaults 0 0"，然后:wq退出保存
 这样在/data，就能有个40G的硬盘了
 ```
 
@@ -201,7 +201,7 @@ $ sudo /usr/bin/redis-server /etc/redis/redis.conf
  $ redis-cli -a Hestia123456 ping
 ```
 
-​	如果返回一行“PONG”，则redis-server启动成功
+​	如果返回一行"PONG"，则redis-server启动成功
 
 #### 清空mininet旧有的配置信息
 
@@ -293,14 +293,14 @@ Middleware_client_dispatcher_server_test = { # 拓扑名称
 
 文件位置：~/mininet-polygon/py-scripts/main.py
 
-修改“SELECT_TOPO = copy.deepcopy()”括号里，为上面的拓扑名称
+修改"SELECT_TOPO = copy.deepcopy()"括号里，为上面的拓扑名称
 
 #### 拓扑数据来源
 
 1. delay： 通过测量谷歌云不同地区机器的ping值，设定client_server的delay。设定client_dispatcher为client_server的2/3，dispatcher_server为client_server的1/3。
 2. bw：通过iperf3，测量谷歌云不同地区机器的带宽。假设最大带宽为5Mbits/sec，用此作为上线，等比例配置所有client_server的bw。设定client_dispatcher均为5Mbits/sec，dispatcher_server和client_server保持一致。
 3. cpu：主要是server需要较高的cpu。
-4. 具体谷歌云测量数据，可见“~/mininet-polygon/data_prepare/5*5demo.xlsx”
+4. 具体谷歌云测量数据，可见"~/mininet-polygon/data_prepare/5*5demo.xlsx"
 
 ## 常用命令
 
@@ -371,7 +371,7 @@ mininet-polygon
 ### client
 
 1. 所有client的IP地址为：10.0.x.1，其中x表示是第x个client，从0开始编号。
-2. 每个client有SERVER_NUMBER(SN)+DISPATCHER_NUMBER(DN)个interface。前SN个interface名字为"cx-ethy"，表示这是第x个client，用来和第y个server边直连的interface；后DN个interface名字为“cx-ethz”，其中z=SN+w，表示这是第x个client，用来和第w个dispatcher边直连的interface。
+2. 每个client有SERVER_NUMBER(SN)+DISPATCHER_NUMBER(DN)个interface。前SN个interface名字为"cx-ethy"，表示这是第x个client，用来和第y个server边直连的interface；后DN个interface名字为"cx-ethz"，其中z=SN+w，表示这是第x个client，用来和第w个dispatcher边直连的interface。
 3. 每个client的IP地址子网为/16。
 4. 每个client的cpu能力为topo.py里设定的CPU能力，平均分给所有client
 
@@ -385,7 +385,7 @@ mininet-polygon
 ### dispatcher
 
 1. 所有dispatcher的IP地址为：10.0.x.5，其中x表示是第x个dispatcher，从0开始编号。
-2. 每个dispatcher有SN+2个interface。前SN个interface名字为"dx-ethy"，表示这是第x个dispatcher，用来和第y个server边直连的interface；第SN+1个interface名字为“dx-ethz”，其中z=SN，表示这是第x个dispatcher，用来和所有client相连的interface。第SN+2个interface名字为"dx-ethw"，其中w=SN+1，表示这是第x个dispatcher，用来和mongodb、redis相连，可以连通外网。
+2. 每个dispatcher有SN+2个interface。前SN个interface名字为"dx-ethy"，表示这是第x个dispatcher，用来和第y个server边直连的interface；第SN+1个interface名字为"dx-ethz"，其中z=SN，表示这是第x个dispatcher，用来和所有client相连的interface。第SN+2个interface名字为"dx-ethw"，其中w=SN+1，表示这是第x个dispatcher，用来和mongodb、redis相连，可以连通外网。
 3. 每个dispatcher的IP地址子网为/16。
 4. 每个dispatcher的cpu能力为topo.py里设定的CPU能力，平均分给所有dispatcher
 
@@ -396,42 +396,126 @@ mininet-polygon
    + 接着DN个switch，主要用来服务所有dispatcher。switchy(y=SN+z, 0<=z<DN)首先连接网络接口"dz-ethw"(w=SN)，z表示第z个dispatcher。其次，它连接所有和dispatcherz相连的client的网络接口。具体在[links](#links)中说明。
    + 最后一个switch，用来和外网相连。
 
-2. 所有switch需要允许IPv4的转发：“sysctl -w net.ipv4.ip_forward=1”
+2. 所有switch需要允许IPv4的转发："sysctl -w net.ipv4.ip_forward=1"
 3. switch的路由详见[switch](#switch-routing)
 
 ### 网卡
 
 ​	eth0：第0号网卡，主要标记了本虚拟机的IP地址（通过ifconfig获取），可以在外网ssh连接，同时也能用来做数据库查询指定地址等操作。
 
-​	eth1：第1号网卡，对应的是虚拟机启动配置的NAT Adapter，用来和某个switch（这里定义的是最后一个）相连，从而使得mininet内部节点可以通过连接最后一个switch，连入外网。每次实验前，需要用“ifconfig eth1 0”刷新eth1的配置。
+​	eth1：第1号网卡，对应的是虚拟机启动配置的NAT Adapter，用来和某个switch（这里定义的是最后一个）相连，从而使得mininet内部节点可以通过连接最后一个switch，连入外网。每次实验前，需要用"ifconfig eth1 0"刷新eth1的配置。
 
 ### links
 
 1. 有设定权重的边，即设定了如延迟、带宽等：
    + client-server：
-     + “cx-ethy”连向“switchy”。表示这是第x个client，用来和第y个server边直连的interface。
+     + "cx-ethy"连向"switchy"。表示这是第x个client，用来和第y个server边直连的interface。
    + dispatcher-server：
-     + “dx-ethy”连向“switchz”。z=SN+y。表示这是第x个dispatcher，用来和第y个server边直连的interface；
+     + "dx-ethy"连向"switchz"。z=SN+y。表示这是第x个dispatcher，用来和第y个server边直连的interface；
    + client-dispatcher：
-     + “cx-ethz”连向“switchw”。z=SN+y，w=SN+y。表示这是第x个client，用来和第y个dispatcher边直连的interface。
+     + "cx-ethz"连向"switchw"。z=SN+y，w=SN+y。表示这是第x个client，用来和第y个dispatcher边直连的interface。
 2. 没有设定权重的边：
    + 最后一个switch和所有的dispatcher，server相连。因为client不用访问外网，所有没有和client相连
-   + switchx(0<=x<SN)和网络接口“sx-eth0”的边，x表示第x个server。
+   + switchx(0<=x<SN)和网络接口"sx-eth0"的边，x表示第x个server。
    + switchy(y=SN+z, 0<=z<DN)和网络接口"dz-ethw"(w=SN)的边，z表示第z个dispatcher。
 
 
 
 ## 路由说明
 
-TODO
-
 ### client
+
+1. 添加到每个server和dispatcher的route，注意用的是"-host"。
 
 ### server
 
+1. 首先将serverx的最后一个网卡"sx-eth1"清空配置。'ifconfig s%s-eth%s 0'%(str(server_id), str(1))
+2. 再将serverx的最后一个网卡配置和最后一个switch有相同前缀IP地址。'ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3), str(50+server_id))
+3. 添加到每个client和dispatcher的route，注意用的是"-host"。
+4. 添加到最后一个switch的route，注意用的是"-net"。
+
 ### dispatcher
 
+1. 首先将dispatcherx的最后一个网卡"dx-ethy"(y=SN+1)清空配置。'ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER + 1))
+2. 再将dispatcherx的最后一个网卡配置和最后一个switch有相同前缀IP地址。'ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3), str(100+dispatcher_id))
+3. 将dispatcherx前SN个网卡"dx-ethy"(0<=y<SN)，都绑定同样的IP地址"10.0.x.5"。
+4. 添加到每个client和server的route，注意用的是"-host"。
+5. 添加到最后一个switch的route，注意用的是"-net"。
+
 ### switch <span id = "switch-routing"></span>
+
+1. 在ovs平面，将最后一个switch和eth1网卡相连"sudo ovs-vsctl add-port switch%s eth1"%str(SWITCH_NUMBER - 1)
+2. 配置最后一个switch的IP地址"sudo ifconfig switch%s 10.0.100.15/24" %str(SWITCH_NUMBER - 1)"
+
+## 测量说明
+
+### 存储
+
+​	我们使用一个统一的redis数据库的表，来存储所有server和所有dispatcher之间的测量结果。
+
+​	该表格需要认证，密码为"Hestia123456"，在[安装redis-server](#安装redis-server)处可以修改。
+
+​	所有测量数据存储在0号表格，每次实验开始的时候，会对该表格进行一次flush清空操作。
+
+​	表格的key记录type_sx_dy。其中type为["latency", "cpu", "throughput"]三者之一。x为第x个server(0<=x<SN)，y为第y个dispatcher(0<=y<DN)。
+
+​	中间过程存储的文件详见[测量数据](#测量数据)
+
+### 测量初始化
+
+​	文件"~/mininet-polygon/bash-scripts/init_measurement_from_server.sh"。
+
+​	从每个server开始，主要是在后台运行iftop。
+
+#### latency的测量值
+
+​	文件"main.py"里，将latency_sx_dy的值，设定为topo.py里的定值(RTT的结果)。
+
+### 测量主文件
+
+​	文件"~/bash-scripts/measurement_from_server.sh"。
+
+​	该测量脚本在每个server运行。
+
+​	每次测量结束后，"sleep 1.5"等待1.5秒，进行下一次判断和测量。
+
+#### cpu的测量值
+
+​	通过"ps aux | grep mininet:sx | xxx"，获得第x个server的pid。
+
+​	对这个pid，进行间隔0.1秒的top记录，并持续输出到文件中。
+
+​	每次提取文件的倒数第二行，cpu idle的数值a[0,100]，表示空闲的百分比，写入redis中。
+
+#### throughput的测量值
+
+​	总体逻辑：测量值 = 当前剩余 * ((总 - used)/总)
+
+​	首先，将topo.py设定的，当前server到所有dispatcher的带宽累加，记录为"total_bw_capability"。
+
+​	每次测量时，通过iftop日志中，最后一个"Total send rate"的解析，获得当前使用的总带宽"temp_now_used"，并转换为单位为Kb/sec的数值形式"now_used"。
+
+​	计算剩余的bw，total_res_bw = total_bw_capability / now_used。
+
+​	计算total_res_rate = 1 - total_res_bw。该项为测量值的右边项。
+
+​	对于每个dispatcherx，运行"~/mininet-polygon/py-scripts/get_n_video.py"，测量当前server到dispathcerx的流量，记录为"exist_throughput"。
+
+​	当前剩余为dispatcher_bw[i] - exist_throughput。
+
+​	因此对于dispatcherx，测量值的最终结果为(dispatcher_bw[i] - exist_throughput) * total_res_rate。记录为"avg_throughput"，写入redis中。
+
+
+
+### 测量记录
+
+​	文件"~/mininet-polygon/bash-scripts/measurement_record.sh"。
+
+​	该测量脚本在每个dispatcher运行。
+
+​	每次测量记录后，"sleep 1"等待1秒，进行下一次记录。
+
+​	每次测量，记录所有server到当前dispatcher，redis数据库记录的实时测量结果，输出到文件，用于后续的demo展示。
 
 
 
@@ -471,43 +555,51 @@ $ sudo python3 get_std_data_Polygon.py
 
 #### 测量数据
 
-对于每组实验，记录一个开始时间戳st，格式为“年-月-日_时:分:秒” (举例而言，2021-11-28_11:56:26)。 每组实验的测量数据根目录为 “/data/measurement_log/${st}/”。
+对于每组实验，记录一个开始时间戳st，格式为"年-月-日_时:分:秒" (举例而言，2021-11-28_11:56:26)。 每组实验的测量数据根目录为 "/data/measurement_log/${st}/"。
 
-​      在每组实验测量数据的根目录下，分别有三个文件夹“iftop”，“server”和“record”。其中：
+​      在每组实验测量数据的根目录下，分别有三个文件夹"iftop"，"server"和"record"。其中：
 
-1．“server”文件夹记录了iftop命令的结果，用服务器的id进行区分。该数据用来计算实时的可获得带宽参数。举例而言，服务器3的iftop记录绝对路径为“/data/measurement_log/${st}/iftop/iftop_log_3.txt”；
+1．"server"文件夹记录了iftop命令的结果，用服务器的id进行区分。该数据用来计算实时的可获得带宽参数。举例而言，服务器3的iftop记录绝对路径为"/data/measurement_log/${st}/iftop/iftop_log_3.txt"；
 
-2． “server”文件夹记录了cpu的测量情况，用服务器的id进行区分。cpu数据使用top命令以0.1秒的间隔记录。“server”文件夹同时记录了不同服务调度器在分析对该服务器测量数据的中间过程，包含了现有流量、cpu空闲率、剩余带宽等；
+2． "server"文件夹记录了cpu的测量情况，用服务器的id进行区分。cpu数据使用top命令以0.1秒的间隔记录。"server"文件夹同时记录了不同服务调度器在分析对该服务器测量数据的中间过程，包含了现有流量、cpu空闲率、剩余带宽等；
 
-3．“record”文件夹记录了redis数据库的情况，用服务调度器的id进行区分。通过每秒对redis数据的访问，获取当前时刻所有服务器中redis中记录的三种资源的评分。
+3．"record"文件夹记录了redis数据库的情况，用服务调度器的id进行区分。通过每秒对redis数据的访问，获取当前时刻所有服务器中redis中记录的三种资源的评分。
 
 #### 实验数据
 
-类似于测量数据，每组实验的实验数据也用同样的开始时间戳st标识。每组实验的实验数据根目录为“/data/result-logs/x/${st}”，其中x为client或server或dispatcher，分别表示从某种类型的机器上获取的数据。
+类似于测量数据，每组实验的实验数据也用同样的开始时间戳st标识。每组实验的实验数据根目录为"/data/result-logs/x/${st}"，其中x为client或server或dispatcher，分别表示从某种类型的机器上获取的数据。
 
-​      对于client数据，每条请求记录一个该请求的时间tc。每条请求包含三个文件，分别为“{client_id}\_\{client_port}\_{tc}\_{type}.txt”。其中type为1表示标准输出，type为2表示用来记录结果的输出，type为tmp表示运行该请求的相关参数信息。
+​      对于client数据，每条请求记录一个该请求的时间tc。每条请求包含三个文件，分别为"{client_id}\_\{client_port}\_{tc}\_{type}.txt"。其中type为1表示标准输出，type为2表示用来记录结果的输出，type为tmp表示运行该请求的相关参数信息。
 
-​      对于server数据，由于服务器持续监听，因此无法像客户端一样记录请求的时间。server的数据格式为“{server_id}\_\{server_port}\_{type}.txt”。其中type为1表示标准输出，type为2表示用来记录结果的输出，type为tmp表示运行该服务器的相关参数信息。
+​      对于server数据，由于服务器持续监听，因此无法像客户端一样记录请求的时间。server的数据格式为"{server_id}\_\{server_port}\_{type}.txt"。其中type为1表示标准输出，type为2表示用来记录结果的输出，type为tmp表示运行该服务器的相关参数信息。
 
-​      对于dispatcher数据，由于服务调度器持续监听，格式类似服务器的数据。dispatcher的数据格式为“{dispatcherr_id}\_\{dispatcher_port}\_{type}.txt”。其中type为1表示标准输出，type为2表示用来记录结果的输出，type为tmp表示运行该服务调度器的相关参数信息。
+​      对于dispatcher数据，由于服务调度器持续监听，格式类似服务器的数据。dispatcher的数据格式为"{dispatcherr_id}\_\{dispatcher_port}\_{type}.txt"。其中type为1表示标准输出，type为2表示用来记录结果的输出，type为tmp表示运行该服务调度器的相关参数信息。
+
+#### 配置数据
+
+类似于测量数据，每组实验的配置数据也用同样的开始时间戳st标识。每组实验的配置数据根目录为"/data/result-logs/config/${st}
+
+topo.json，记录了实际使用的拓扑配置
+
+cpu.py，记录了该次实验使用的cpu查询。代码中，变量n为查询次数；变量collection为查询的表，如"shuffle_100w"表示查询一个大小为100万条数据的表。
 
 
 
 ### 标准数据
 
-​      将上述测量数据和实验数据进行整合，为了更方便直观地进行原型机数据的展示。每组实验的实验数据也用同样的开始时间戳st标识。标准数据存储的根目录为“/data/saved_results/${st}/${mode}”，其中mode为DNS表示这是一组DNS的实验数据，mode为Polygon表示这是一组Polygon的实验数据。
+​      将上述测量数据和实验数据进行整合，为了更方便直观地进行原型机数据的展示。每组实验的实验数据也用同样的开始时间戳st标识。标准数据存储的根目录为"/data/saved_results/${st}/${mode}"，其中mode为DNS表示这是一组DNS的实验数据，mode为Polygon表示这是一组Polygon的实验数据。
 
 ​      对于两种mode，均存储了以下文件夹和文件。
 
-1．文件夹“{client_ip}\_jct”存储了该客户端的jct数据结果。文件夹下，每个文件为“{client_ip}\_{client_port}.txt”。文件中，每行由三个字符串，以空格分割。第一个字符串表示该请求的时间，第二个字符串表示请求的类型，第三个字符串表示jct的时间（单位为1E-6秒）。
+1．文件夹"{client_ip}\_jct"存储了该客户端的jct数据结果。文件夹下，每个文件为"{client_ip}\_{client_port}.txt"。文件中，每行由三个字符串，以空格分割。第一个字符串表示该请求的时间，第二个字符串表示请求的类型，第三个字符串表示jct的时间（单位为1E-6秒）。
 
-2．文件夹“{dispatcher_ip}\_bw”存储了该服务调度器对n个服务器测量的bw指标结果。文件夹下，有一个“bw.txt”的文件。文件中，每行由若干个字符串组成，以空格分割。第一个字符串表示测量的时间，接下来n个字符串，分别表示该服务调度器到对应的服务器的可获得带宽指标（指标为[0,10000]的小数）。
+2．文件夹"{dispatcher_ip}\_bw"存储了该服务调度器对n个服务器测量的bw指标结果。文件夹下，有一个"bw.txt"的文件。文件中，每行由若干个字符串组成，以空格分割。第一个字符串表示测量的时间，接下来n个字符串，分别表示该服务调度器到对应的服务器的可获得带宽指标（指标为[0,10000]的小数）。
 
-3．文件夹“{dispatcher_ip}\_cpu”存储了该服务调度器对n个服务器测量的cpu指标结果。文件夹下，有一个“cpu.txt”的文件。文件中，每行由若干个字符串组成，以空格分割。第一个字符串表示测量的时间，接下来n个字符串，分别表示该服务调度器到对应的服务器的cpu空闲率指标（指标为[0,100]的小数）。
+3．文件夹"{dispatcher_ip}\_cpu"存储了该服务调度器对n个服务器测量的cpu指标结果。文件夹下，有一个"cpu.txt"的文件。文件中，每行由若干个字符串组成，以空格分割。第一个字符串表示测量的时间，接下来n个字符串，分别表示该服务调度器到对应的服务器的cpu空闲率指标（指标为[0,100]的小数）。
 
 对于mode为Polygon的实验，还额外存储了以下文件夹和文件。
 
-1．文件夹“{dispatcher_ip}\_routing”存储了该服务调度器的DRA算法选择逻辑以及选择的结果。文件夹下，有一个“routing.txt”的文件。文件中，每行由五个字符串，以空格分割。第一个字符串表示接受到请求的时间，第二个字符串表示发出请求的客户端的IP地址，第三个字符串为请求的敏感资源的类型，第四个字符串为routing_type，第五个字符串为响应请求的服务器的IP地址。其中routing_type为local表示转发给本区域的服务器，routing_type为forward表示转发给其他地区更优的服务器。
+1．文件夹"{dispatcher_ip}\_routing"存储了该服务调度器的DRA算法选择逻辑以及选择的结果。文件夹下，有一个"routing.txt"的文件。文件中，每行由五个字符串，以空格分割。第一个字符串表示接受到请求的时间，第二个字符串表示发出请求的客户端的IP地址，第三个字符串为请求的敏感资源的类型，第四个字符串为routing_type，第五个字符串为响应请求的服务器的IP地址。其中routing_type为local表示转发给本区域的服务器，routing_type为forward表示转发给其他地区更优的服务器。
 
 ​      
 
@@ -564,7 +656,7 @@ void create_sock(std::vector<int> *fds, const char *interface, const int port, i
 
 ### 目前版本
 
-​	使用“util::getUniqueLogFile”， 获得client存储的结果文件，并调用nohup python3将cpu调用mongodb查询的结果写入。
+​	使用"util::getUniqueLogFile"， 获得client存储的结果文件，并调用nohup python3将cpu调用mongodb查询的结果写入。
 
 ### 可能存在的问题
 
@@ -576,13 +668,13 @@ void create_sock(std::vector<int> *fds, const char *interface, const int port, i
 
 ### 目前版本
 
-​	sensitive_type目前按照1:0:0来，在代码“~/ngtcp2/examples/client.cc”中，使用98,1,1来表示。这是因为目前版本的ngtcp2，不允许添加sensitive参数为0的数据，会报错。
+​	sensitive_type目前按照1:0:0来，在代码"~/ngtcp2/examples/client.cc"中，使用98,1,1来表示。这是因为目前版本的ngtcp2，不允许添加sensitive参数为0的数据，会报错。
 
 ### 可能存在的问题
 
-​	之后修改“~/ngtcp2/examples/client.cc”中不同资源的sensitive权重，需要注意0的问题。
+​	之后修改"~/ngtcp2/examples/client.cc"中不同资源的sensitive权重，需要注意0的问题。
 
-​	“~/ngtcp2/examples/client.cc”中，对于权重加权排序，目前是只考虑收到98,1,1的情况并硬解码为1,0,0，需要修改这块解码逻辑，同时权重加权排序待检验。
+​	"~/ngtcp2/examples/client.cc"中，对于权重加权排序，目前是只考虑收到98,1,1的情况并硬解码为1,0,0，需要修改这块解码逻辑，同时权重加权排序待检验。
 
 ​	
 
@@ -594,7 +686,7 @@ void create_sock(std::vector<int> *fds, const char *interface, const int port, i
 
 ​	redis数据库无法在每个host节点内创建，只能采用统一的，建立在虚拟机上的redis。
 
-​	redis-server数据库运行“service方法”总报错，采用“$ sudo /usr/bin/redis-server /etc/redis/redis.conf”手动运行
+​	redis-server数据库运行"service方法"总报错，采用"$ sudo /usr/bin/redis-server /etc/redis/redis.conf"手动运行
 
 ​	每台host的redis-cli，需要指定虚拟机上的IP地址。要保证host能连接上虚拟机上的IP地址。（详见下述[Mininet的节点连接外网](#Mininet的节点连接外网)）
 
@@ -612,13 +704,15 @@ void create_sock(std::vector<int> *fds, const char *interface, const int port, i
 
 ### switch网关
 
-TODO
+最后一个switch的IP地址为10.0.100.15，是一个写死的值。
 
-10.0.2写死了
+需要满足和"10.0.x.x"保持一致，这样dispatcher和server能连到最后一个switch。
 
 ### 多个网卡
 
-TODO
+在Oracle VM VirtualBox创建虚拟机的时候，需要用两个网卡，且顺序必须为第一个是"NAT"，第二个是"bridge"。这个才能使得eth1可以用来协助mininet里的host连接外网，且eth0的IP地址能接受外网的ssh连接。
+
+将eth1和最后一个switch在ovs平面连接，并添加"route add -net xxx gw xxx"的路由规则，使得dispatcher和server能通过eth1连通外网。
 
 
 
@@ -639,7 +733,7 @@ net.addLInk(x,y,cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatche
 
 ### CPULimitedHost
 
-在创建net的时候，设置所有的host都为CPU限制型的“host=CPULimitedHost,”。
+在创建net的时候，设置所有的host都为CPU限制型的"host=CPULimitedHost,"。
 
 在实际建立节点addHost时，每个点cpu=t，t为一个小数，表示占据整个虚拟机cpu能力的百分比。
 
@@ -695,24 +789,146 @@ Mininet创建后，由于我们配置了大量的TCLink和CPULiminitedHost，还
 
 ## ngtcp2 GRE/socket
 
-TODO
-
 ### 学兵关于GRE的逻辑
+
+在dispatcher和server之间建立GRE，用来进行转发。（因为raw socket发送的时候源地址写的的client的地址而不是自己的地址，所以会被认为是恶意程序。网络的很多中间环节都有可能主动丢弃源地址不匹配的数据包）
+
+在dispatcher内部，socket的sendto，只将包转发到dispatcher的某个网卡，再由该网卡的路由，将包通过GRE通道转发给server。
+
+因为使用了GRE的话Linux的routing相关的机制就被bypass了，所以不用修改UDP包的checksum。
+
+因为在GRE通道里，server GRE通道的IP和dispatcher GRE通道的IP是一样的，所以不需要修改IP包的destination和checksum。（因为我们使用GRE手动实现了路由转发，所以IP地址就不重要了）
 
 ### 如何改为socket远程的sendto
 
+在~/ngtcp2/examples/server.cc里
 
+```
+sa.sin_addr.s_addr = inet_addr(config.unicast_ip); // 把socket改为本机的ip地址 
+```
 
+在~/ngtcp2/examples/dispatcher.cc里
 
+```
+iph->daddr = inet_addr(config.server_ips[i].c_str());  // 改IP包头的desitination IP地址sa.sin_addr.s_addr = inet_addr(config.server_ips[i].c_str()); // 改socket的server IP地址
+
+iph->check = 0; // 修改对应的IP包头的checksum，需要先清零再计算
+iph->check = util::ip_checksum((unsigned short *)iph, sizeof(struct iphdr));
+
+udph->check = 0; // 修改对应的UDP包头的checksum，需要先清零再计算
+udph->check = util::udp_checksum((uint16_t *)udph, htons(udph->len), iph->saddr, iph->daddr);
+```
+
+### 说明
+
+tcpdump里，抓到的ICMP包由操作系统发的。
+
+socket：server用的是UDP socket，而dispatcher用的是raw socket（才能重新封装转发）。
+
+socket sendto给server，没有改UDP数据包的话，目的地址就是dispatcher自己，Linux的routing会直接拦截这个数据包的，自然就发不出去了。
+
+对于收到的包，如何取包头所在的地址。
+
+```
+  uint8_t *data = buf.data();
+  ether_header *eh = (ether_header *) data;
+  iphdr *iph = (iphdr *) (data + sizeof(ether_header));
+  udphdr *udph = (udphdr *) (data + sizeof(iphdr) + sizeof(ether_header));
+  uint8_t *quic = data + sizeof(udphdr) + sizeof(iphdr) + sizeof(ether_header);
+  nread -= sizeof(udphdr) + sizeof(iphdr) + sizeof(ether_header);
+
+  int udp_size = ntohs(udph->len) - sizeof(struct udphdr);
+```
 
 ## ngtcp2老版本存在的问题
 
-### http使用的是我们自定义的lexbor
+### html使用的是我们自定义的lexbor
+
+​	新版ngtcp2已经包含了html的解析。我们当初版本未包含，使用的是lexbor解析网页。
 
 ### 多并发出现Error
 
+​	因为网络错误、CPU吃紧、多并发同时decode QUIC head时TLS出错，导致的各种问题。
+
+​	常见的错误"ERR_TLS_DECRYPT"，"ERR_INVALID_STATE"，没有收到plt。
+
 ### 没有重传机制
+
+​	目前版本的ngtcp2没有丢包重传机制。我们目前处理的包，当接受异常时，没有重传，client端也不知道是否接受完成。
+
+​	对于接受完成，我们在实际实验中，使用的是数PLT的数量是否能对应上。
 
 ### transport_parameters的修改
 
 ​	需要手动修改很多库文件。要保证加解密的位数正确。
+
+​	需要修改的地方包括：
+
+具体涉及到的代码为：lib/ngtcp2_crypto.c，lib/includes/ngtcp2/ngtcp2.h，examples/balancer.h，examples/balancer.cc，client.cc，debug.cc。(全局搜索cpu_sensitive来操作)
+
+1. lib/ngtcp2_crypto.c：主要用于修改ngtcp2的metadata加解密的操作。
+
+```c++
+  if (params->cpu_sensitive) {
+   len += 8;
+  }
+
+  \--------
+  if (params->cpu_sensitive) {
+   p = ngtcp2_put_uint16be(p, NGTCP2_TRANSPORT_PARAM_CPU_SENSITIVE);
+   p = ngtcp2_put_uint16be(p, 4);
+   p = ngtcp2_put_uint32be(p, params->cpu_sensitive);
+  }
+  \--------
+
+  case NGTCP2_TRANSPORT_PARAM_CPU_SENSITIVE:
+     flags |= 1u << NGTCP2_TRANSPORT_PARAM_CPU_SENSITIVE;
+     if (ngtcp2_get_uint16(p) != sizeof(uint32_t)) {
+     		return NGTCP2_ERR_MALFORMED_TRANSPORT_PARAM;
+     }
+     p += sizeof(uint16_t);
+     if ((size_t)(end - p) < sizeof(uint32_t)) {
+ 	     return NGTCP2_ERR_MALFORMED_TRANSPORT_PARAM;
+	   }
+	   params->cpu_sensitive = ngtcp2_get_uint32(p);
+		 p += sizeof(uint32_t);
+		 break;
+```
+
+2. lib/includes/ngtcp2/ngtcp2.h
+
+```
+  NGTCP2_TRANSPORT_PARAM_CPU_SENSITIVE = 12,
+   uint32_t cpu_sensitive;
+   ...
+ } ngtcp2_transport_params;
+
+  uint32_t cpu_sensitive;
+   ...
+ } ngtcp2_settings;
+```
+
+3.    examples/balancer.h
+
+ ```
+ struct Config {
+    ...
+    uint32_t cpu_sensitive = 0;
+ ```
+
+4.    examples/balancer.cc
+
+ 和具体request选择算法相关的地方。
+
+5.    client.cc
+
+ 控制请求发出，具体params的内容。
+
+将config.cpu_sensitive统计成params.cpu_sensitive等参数来控制
+
+6.    debug.cc
+
+```
+ fprintf(outfile, "; cpu_sensitive=%u\n", params->cpu_sensitive);
+```
+
