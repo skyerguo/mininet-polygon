@@ -1,10 +1,116 @@
-[TOC]
+- [1. Mininet环境配置](#1-mininet环境配置)
+  - [1.1. Mininet简介](#11-mininet简介)
+  - [1.2. 搭建](#12-搭建)
+    - [1.2.1. 第零步：安装Mininet虚拟机](#121-第零步安装mininet虚拟机)
+    - [1.2.2. 第一步：虚拟机的配置](#122-第一步虚拟机的配置)
+      - [1.2.2.1. 配置网卡](#1221-配置网卡)
+      - [1.2.2.2. 配置硬盘](#1222-配置硬盘)
+      - [1.2.2.3. 配置CPU核数](#1223-配置cpu核数)
+    - [1.2.3. 第二步：虚拟机的安装（有镜像跳过）](#123-第二步虚拟机的安装有镜像跳过)
+      - [1.2.3.1. 设置时区](#1231-设置时区)
+      - [1.2.3.2. 安装mongodb](#1232-安装mongodb)
+      - [1.2.3.3. 安装redis](#1233-安装redis)
+        - [1.2.3.3.1. 安装hiredis](#12331-安装hiredis)
+        - [1.2.3.3.2. 安装redis-server](#12332-安装redis-server)
+      - [1.2.3.4. 配置语言环境](#1234-配置语言环境)
+      - [1.2.3.5. 安装git，并导入mininet-polygon仓库](#1235-安装git并导入mininet-polygon仓库)
+      - [1.2.3.6. 编译ngtcp2](#1236-编译ngtcp2)
+        - [1.2.3.6.1. 配置环境](#12361-配置环境)
+        - [1.2.3.6.2. 编译openssl](#12362-编译openssl)
+        - [1.2.3.6.3. 编译ngtcp2](#12363-编译ngtcp2)
+        - [1.2.3.6.4. 将编译成功的可执行文件复制到制定目录](#12364-将编译成功的可执行文件复制到制定目录)
+      - [1.2.3.7. 安装iperf3](#1237-安装iperf3)
+    - [1.2.4. 第三步：虚拟机的初始化](#124-第三步虚拟机的初始化)
+      - [1.2.4.1. 初始化mongodb](#1241-初始化mongodb)
+      - [1.2.4.2. 初始化redis](#1242-初始化redis)
+      - [1.2.4.3. 清空mininet旧有的配置信息](#1243-清空mininet旧有的配置信息)
+    - [1.2.5. 第四步：添加数据（有镜像跳过）](#125-第四步添加数据有镜像跳过)
+      - [1.2.5.1. 添加websites](#1251-添加websites)
+      - [1.2.5.2. 为CPU请求添加mongodb数据](#1252-为cpu请求添加mongodb数据)
+  - [1.3. 构建拓扑](#13-构建拓扑)
+    - [1.3.1. 修改拓扑文件](#131-修改拓扑文件)
+    - [1.3.2. 应用修改后的拓扑](#132-应用修改后的拓扑)
+    - [1.3.3. 拓扑数据来源](#133-拓扑数据来源)
+  - [1.4. 常用命令](#14-常用命令)
+- [2. 代码说明](#2-代码说明)
+  - [2.1. 代码结构](#21-代码结构)
+  - [2.2. 拓扑设置](#22-拓扑设置)
+    - [2.2.1. client](#221-client)
+    - [2.2.2. server](#222-server)
+    - [2.2.3. dispatcher](#223-dispatcher)
+    - [2.2.4. switch](#224-switch)
+    - [2.2.5. 网卡](#225-网卡)
+    - [2.2.6. links](#226-links)
+  - [2.3. 路由说明](#23-路由说明)
+    - [2.3.1. client](#231-client)
+    - [2.3.2. server](#232-server)
+    - [2.3.3. dispatcher](#233-dispatcher)
+    - [2.3.4. switch <span id = "switch-routing"></span>](#234-switch-)
+  - [2.4. 测量说明](#24-测量说明)
+    - [2.4.1. 存储](#241-存储)
+    - [2.4.2. 测量初始化](#242-测量初始化)
+      - [2.4.2.1. latency的测量值](#2421-latency的测量值)
+    - [2.4.3. 测量主文件](#243-测量主文件)
+      - [2.4.3.1. cpu的测量值](#2431-cpu的测量值)
+      - [2.4.3.2. throughput的测量值](#2432-throughput的测量值)
+    - [2.4.4. 测量记录](#244-测量记录)
+  - [2.5. 运行说明](#25-运行说明)
+    - [2.5.1. 运行主文件](#251-运行主文件)
+    - [2.5.2. 数据处理获取标准数据](#252-数据处理获取标准数据)
+- [3. 数据说明](#3-数据说明)
+  - [3.1. 数据文件](#31-数据文件)
+    - [3.1.1. 原始数据](#311-原始数据)
+      - [3.1.1.1. 测量数据](#3111-测量数据)
+      - [3.1.1.2. 实验数据](#3112-实验数据)
+      - [3.1.1.3. 配置数据](#3113-配置数据)
+    - [3.1.2. 标准数据](#312-标准数据)
+  - [3.2. 数据处理](#32-数据处理)
+- [4. 可能存在问题](#4-可能存在问题)
+  - [4.1. CPU测量](#41-cpu测量)
+    - [4.1.1. 目前版本](#411-目前版本)
+    - [4.1.2. 可能存在的问题](#412-可能存在的问题)
+  - [4.2. server监听多个interface](#42-server监听多个interface)
+    - [4.2.1. 目前版本](#421-目前版本)
+    - [4.2.2. 可能存在的问题](#422-可能存在的问题)
+  - [4.3. server 运行cpu并写入时间](#43-server-运行cpu并写入时间)
+    - [4.3.1. 目前版本](#431-目前版本)
+    - [4.3.2. 可能存在的问题](#432-可能存在的问题)
+  - [4.4. dispatcher中对于不同sensitive的敏感度排序](#44-dispatcher中对于不同sensitive的敏感度排序)
+    - [4.4.1. 目前版本](#441-目前版本)
+    - [4.4.2. 可能存在的问题](#442-可能存在的问题)
+- [5. 遇到的坑点](#5-遇到的坑点)
+  - [5.1. mininet内的节点连接数据库](#51-mininet内的节点连接数据库)
+    - [5.1.1. redis](#511-redis)
+    - [5.1.2. mongo](#512-mongo)
+  - [5.2. Mininet的节点连接外网](#52-mininet的节点连接外网)
+    - [5.2.1. switch网关](#521-switch网关)
+    - [5.2.2. 多个网卡](#522-多个网卡)
+  - [5.3. Mininet如何配置网络拓扑](#53-mininet如何配置网络拓扑)
+    - [5.3.1. TCLink](#531-tclink)
+    - [5.3.2. CPULimitedHost](#532-cpulimitedhost)
+    - [5.3.3. 边应该建立在哪里](#533-边应该建立在哪里)
+    - [5.3.4. 网络路由表](#534-网络路由表)
+    - [5.3.5. interface起名](#535-interface起名)
+    - [5.3.6. 创建时间](#536-创建时间)
+  - [5.4. Mininet权限管理](#54-mininet权限管理)
+    - [5.4.1. hosts](#541-hosts)
+    - [5.4.2. sh](#542-sh)
+    - [5.4.3. switches](#543-switches)
+  - [5.5. ngtcp2 GRE/socket](#55-ngtcp2-gresocket)
+    - [5.5.1. 学兵关于GRE的逻辑](#551-学兵关于gre的逻辑)
+    - [5.5.2. 如何改为socket远程的sendto](#552-如何改为socket远程的sendto)
+    - [5.5.3. 说明](#553-说明)
+  - [5.6. ngtcp2老版本存在的问题](#56-ngtcp2老版本存在的问题)
+    - [5.6.1. html使用的是我们自定义的lexbor](#561-html使用的是我们自定义的lexbor)
+    - [5.6.2. 多并发出现Error](#562-多并发出现error)
+    - [5.6.3. 没有重传机制](#563-没有重传机制)
+    - [5.6.4. transport_parameters的修改](#564-transport_parameters的修改)
 
-# 1. Mininet网络拓扑
+# 1. Mininet环境配置
 
 ## 1.1. Mininet简介
 
-​	Mininet是一种运行在单台机器上的SDN网络仿真环境。(https://github.com/mininet/mininet)
+​	Mininet是一种运行在单台机器上的SDN网络仿真环境。(http://mininet.org/)
 
 ​	Mininet主要有几种部件：host，switch，controller，link。
 
@@ -16,29 +122,37 @@
 ​		
 
 ## 1.2. 搭建
+ 搭建Mininet虚拟机分为有配置好的镜像和没有镜像两种情况。我们将各种环境配置好的Mininet打包成了一个镜像，因为在这个配置好的打包镜像下，环境包和一些数据不再需要配置，可以知己运行。你也可以从Mininet裸镜像从头开始配置我们Polygon Mininet Version。
 
-### 1.2.1. 第一步：虚拟机的配置
+### 1.2.1. 第零步：安装Mininet虚拟机
+ Mininet官方是以镜像分发的方式进行传播。最简单的Mininet安装方法是下载一个预先打包好的 Mininet/Ubuntu VM。 该 VM 包括 Mininet 本身、所有预安装的 OpenFlow 二进制文件和工具，以及对内核配置的调整以支持更大的 Mininet 网络。
+请按照此官方 http://mininet.org/download/ 中的Option 1 tutorial来安装Mininet镜像。
+
+ 镜像的账号和密码都是mininet。
+
+### 1.2.2. 第一步：虚拟机的配置
 
 ​	我们使用Oracle VM VirtualBox创建了一个具有6核的CPU和10G内存的虚拟机，搭建我们的Mininet网络结构。
 
-#### 1.2.1.1. 配置网卡
+#### 1.2.2.1. 配置网卡
 
-​	在Settings-Network中，需要开启两个Adapter。
+​	在VM VirtualBox Settings-Network中，需要开启（Enable）两个Adapter。
 
 ​	Adapter，设置Attached to "NAT"，这样才能保证，Mininet构建后，内部的switch能连外网。
 
 ​	Adapter，设置Attached to "Bridged Adapter"，Name选择"enp0s31f6"。这样Mininet构建后，内部网络能从dhcp获得一个ip，从而能远程ssh登陆。
 
-#### 1.2.1.2. 配置硬盘
+#### 1.2.2.2. 配置硬盘
 
-​	首先在虚拟机创建足够大的盘
+​	调整（resize）虚拟机磁盘大小，使得其有足够大的盘。
 
+在宿主机的Terminal中运行：
 ```
 VBoxManage list hdds
-VBoxManage modifyhd "/home/myzhou/VirtualBox VMs/Mininet-VM/mininet-vm-x86-64.vdi 3e57acdb-62e5-4f3a-bc9c-15a9892f08a6 --resize 40960
+VBoxManage modifyhd "~/VirtualBox VMs/Mininet-VM/mininet-vm-x86-64.vdi 3e57acdb-62e5-4f3a-bc9c-15a9892f08a6 --resize 40960
 ```
 
-​	在Settgings-Storage里分配硬盘
+​	在VM VirtualBox Settgings-Storage里分配硬盘
 
 ​	进入mininet后，挂载上该硬盘
 
@@ -48,13 +162,13 @@ sudo vim /etc/fstab
 这样在/data，就能有个40G的硬盘了
 ```
 
-#### 1.2.1.3. 配置CPU核数
+#### 1.2.2.3. 配置CPU核数
 
-​	在Settings-Processor-Processors(s)里，通过拖动滑块，给mininet的虚拟机分配核数
+​	在VM VirtualBox Settings-Processor-Processors(s)里，通过拖动滑块，给mininet的虚拟机分配核数
 
-### 1.2.2. 第二步：虚拟机的安装（有镜像跳过）
+### 1.2.3. 第二步：虚拟机的安装（有镜像跳过）
 
-#### 1.2.2.1. 设置时区
+#### 1.2.3.1. 设置时区
 
 ```
 cd ${HOME}
@@ -63,7 +177,7 @@ sudo cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 
 
-#### 1.2.2.2. 安装mongodb
+#### 1.2.3.2. 安装mongodb
 
 ```
 
@@ -76,9 +190,9 @@ $ sudo service mongod restart
 $ sudo apt-get install -y python3-pymongo
 ```
 
-#### 1.2.2.3. 安装redis
+#### 1.2.3.3. 安装redis
 
-##### 1.2.2.3.1. 安装hiredis
+##### 1.2.3.3.1. 安装hiredis
 
 ```
 $ cd ~
@@ -90,7 +204,7 @@ $ sudo cp -r ~/hiredis /usr/local/lib
 $ sudo ldconfig /usr/local/lib
 ```
 
-##### 1.2.2.3.2. 安装redis-server
+##### 1.2.3.3.2. 安装redis-server
 
 ```
 $ sudo apt-get -y install redis-server
@@ -99,31 +213,28 @@ $ sudo sed -i 's/# requirepass foobared/requirepass Hestia123456/g' /etc/redis/r
 $ sudo service redis-server restart
 ```
 
-#### 1.2.2.4. 配置语言环境
+#### 1.2.3.4. 配置语言环境
 
 ```
 echo "export LC_ALL=C" >> ~/.zshrc 
 source ~/.zshrc
 ```
 
-#### 1.2.2.5. 安装git，并导入仓库
+#### 1.2.3.5. 安装git，并导入mininet-polygon仓库
 
 ```
 $ sudo apt-get update
 $ sudo apt-get -y install git
-$ git clone git@github.com:skyerguo/Hestia.git
-$ cd ~/ngtcp2
-$ git checkout -b resource-demand
-$ git branch --set-upstream-to=origin/resource-demand resource-demand
 $ git clone git@github.com:skyerguo/mininet-polygon.git
 $ cd ~/mininet-polygon
 $ git checkout -b csd_version
 $ git branch --set-upstream-to=origin/csd-version csd-version
 ```
+mininet-polygon的文件结构请参考[2.1. 代码结构](#21-代码结构)
 
-#### 1.2.2.6. 编译ngtcp2
+#### 1.2.3.6. 编译ngtcp2
 
-##### 1.2.2.6.1. 安装需要的包
+##### 1.2.3.6.1. 配置环境
 
 ```
 $ sudo apt-get install -yqq pkg-config autoconf automake autotools-dev libtool libev-dev gdb zip unzip libcunit1 libcunit1-doc libcunit1-dev
@@ -139,7 +250,7 @@ $ sudo apt-get update
 $ sudo apt-get install -yqq liblexbor liblexbor-dev
 ```
 
-##### 1.2.2.6.2. 配置openssl
+##### 1.2.3.6.2. 编译openssl
 
  ```
 $ cd ~/
@@ -149,15 +260,18 @@ $ ./config enable-tls1_3 --prefix=$PWD/build
 $ make -j$(nproc) && make install_sw
  ```
 
-##### 1.2.2.6.3. 配置ngtcp2
+##### 1.2.3.6.3. 编译ngtcp2
 
 ```
+$ git clone git@github.com:skyerguo/Hestia.git
 $ cd ~/ngtcp2
+$ git checkout -b resource-demand
+$ git branch --set-upstream-to=origin/resource-demand resource-demand
 $ autoreconf -i
 $ ./configure.sh && make
 ```
 
-##### 1.2.2.6.4. 移动可执行文件
+##### 1.2.3.6.4. 将编译成功的可执行文件复制到制定目录
 
 ```
 $ cd ~/ngtcp2
@@ -167,7 +281,7 @@ $ cp examples/client /data/clent
 ¥ cp -r ~/openssl /data/
 ```
 
-#### 1.2.2.7. 安装iperf3
+#### 1.2.3.7. 安装iperf3
 
 ```
 sudo apt -y remove iperf3 libiperf0 
@@ -179,15 +293,15 @@ sudo dpkg -i libiperf0_3.7-3_amd64.deb iperf3_3.7-3_amd64.deb
 
 
 
-### 1.2.3. 第三步：虚拟机的初始化
+### 1.2.4. 第三步：虚拟机的初始化
 
-#### 1.2.3.1. 初始化mongodb
+#### 1.2.4.1. 初始化mongodb
 
-​	由于mininet内部的host不能通过访问127.0.0.1访问mongo，只能通过mininet虚拟机的外网IP地址（ssh能连通的IP地址访问），且不能使用27017端口。后统一改为27117端口。
+​	由于mininet内部的host不能通过访问127.0.0.1访问mongo，只能通过mininet虚拟机的外网IP地址（即enp0s31f6网卡对应的ip），且不能使用27017端口。后统一改为27117端口。
 
 ​	该初始化文件在执行main.py函数，会自动运行
 
-#### 1.2.3.2. 初始化redis
+#### 1.2.4.2. 初始化redis
 
 ​	由于service 启动redis-server可能存在问题，可以用手动的方式启动redis-server
 
@@ -203,7 +317,7 @@ $ sudo /usr/bin/redis-server /etc/redis/redis.conf
 
 ​	如果返回一行"PONG"，则redis-server启动成功
 
-#### 1.2.3.3. 清空mininet旧有的配置信息
+#### 1.2.4.3. 清空mininet旧有的配置信息
 
 本步骤在每次实验结束后进行一次，否则上一次实验如果没有完全关闭mininet，会导致一些错误。
 
@@ -213,9 +327,10 @@ $ sudo mn -c
 
 
 
-### 1.2.4. 第四步：添加数据（有镜像跳过）
+### 1.2.5. 第四步：添加数据（有镜像跳过）
+数据分为三类，normal_1，video和cpu，其中normal_1和video主要为静态文件下载请求，而CPU是以将多次查询作为请求。
 
-#### 1.2.4.1. 添加websites
+#### 1.2.5.1. 添加websites
 
 在/data/websites下，分别存放cpu, normal_1和video三个文件夹，请求的文件都将从这里获取
 
@@ -225,7 +340,7 @@ $ cp -r ~/mininet-polygon/data_prepare/websites /data/websites
 
 
 
-#### 1.2.4.2. 添加mongodb数据
+#### 1.2.5.2. 为CPU请求添加mongodb数据
 
 首先执行
 
@@ -239,7 +354,7 @@ $ python3 ~/mininet-polygon/data_prepare/insert_shuffle.py
 
 ## 1.3. 构建拓扑
 
-#### 1.3.0.1. 修改拓扑文件
+### 1.3.1. 修改拓扑文件
 
 文件位置：~/mininet-polygon/py-scripts/topo.py
 
@@ -289,13 +404,13 @@ Middleware_client_dispatcher_server_test = { # 拓扑名称
 }
 ```
 
-#### 1.3.0.2. 应用修改后的拓扑
+### 1.3.2. 应用修改后的拓扑
 
 文件位置：~/mininet-polygon/py-scripts/main.py
 
 修改"SELECT_TOPO = copy.deepcopy()"括号里，为上面的拓扑名称
 
-#### 1.3.0.3. 拓扑数据来源
+### 1.3.3. 拓扑数据来源
 
 1. delay： 通过测量谷歌云不同地区机器的ping值，设定client_server的delay。设定client_dispatcher为client_server的2/3，dispatcher_server为client_server的1/3。
 2. bw：通过iperf3，测量谷歌云不同地区机器的带宽。假设最大带宽为5Mbits/sec，用此作为上线，等比例配置所有client_server的bw。设定client_dispatcher均为5Mbits/sec，dispatcher_server和client_server保持一致。
@@ -319,7 +434,7 @@ iperfudp h1 h2 两个hosts，h1和h2之间用制定带宽udp进行测试
 
 # 2. 代码说明
 
-## 2.1. 代码文件
+## 2.1. 代码结构
 
 ```
 mininet-polygon                                                         
@@ -364,7 +479,7 @@ mininet-polygon
 ├─ README_main.md  # README主文档                                                                                                                
 ```
 
-## 2.2. 拓扑说明
+## 2.2. 拓扑设置
 
 为了实现设定网络，最终的拓扑结构如下：
 
