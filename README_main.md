@@ -45,7 +45,7 @@
     - [2.3.1. client](#231-client)
     - [2.3.2. server](#232-server)
     - [2.3.3. dispatcher](#233-dispatcher)
-    - [2.3.4. switch <span id = "switch-routing"></span>](#234-switch-)
+    - [2.3.4. switch ](#234-switch-)
   - [2.4. 测量说明](#24-测量说明)
     - [2.4.1. 存储](#241-存储)
     - [2.4.2. 测量初始化](#242-测量初始化)
@@ -104,7 +104,7 @@
     - [5.6.1. html使用的是我们自定义的lexbor](#561-html使用的是我们自定义的lexbor)
     - [5.6.2. 多并发出现Error](#562-多并发出现error)
     - [5.6.3. 没有重传机制](#563-没有重传机制)
-    - [5.6.4. transport_parameters的修改](#564-transport_parameters的修改)
+    - [5.6.4. transport\_parameters的修改](#564-transport_parameters的修改)
 
 # 1. Mininet环境配置
 
@@ -335,7 +335,7 @@ $ sudo mn -c
 在/data/websites下，分别存放cpu, normal_1和video三个文件夹，请求的文件都将从这里获取
 
 ``` 
-$ cp -r ~/mininet-polygon/data_prepare/websites /data/websites
+$ cp -r ~/mininet-polygon/data-prepare/websites /data/websites
 ```
 
 
@@ -345,7 +345,7 @@ $ cp -r ~/mininet-polygon/data_prepare/websites /data/websites
 首先执行
 
 ```
-$ python3 ~/mininet-polygon/data_prepare/insert_shuffle.py
+$ python3 ~/mininet-polygon/data-prepare/insert_shuffle.py
 ```
 
 数据添加到mongo的shuffle_index数据库里，shuffle_100w的表格。
@@ -415,7 +415,7 @@ Middleware_client_dispatcher_server_test = { # 拓扑名称
 1. delay： 通过测量谷歌云不同地区机器的ping值，设定client_server的delay。设定client_dispatcher为client_server的2/3，dispatcher_server为client_server的1/3。
 2. bw：通过iperf3，测量谷歌云不同地区机器的带宽。假设最大带宽为5Mbits/sec，用此作为上线，等比例配置所有client_server的bw。设定client_dispatcher均为5Mbits/sec，dispatcher_server和client_server保持一致。
 3. cpu：主要是server需要较高的cpu。
-4. 具体谷歌云测量数据，可见"~/mininet-polygon/data_prepare/5*5demo.xlsx"
+4. 具体谷歌云测量数据，可见"~/mininet-polygon/data-prepare/5*5demo.xlsx"
 
 ## 1.4. 常用命令
 
@@ -444,7 +444,7 @@ mininet-polygon
 │  ├─ init_mongodb.sh # mongodb初始化                                                                                                     
 │  ├─ measurement_from_server.sh # 在每个server调用此脚本，开始测量                                         
 │  ├─ measurement_record.sh # 记录每秒redis数据库里记录的测量结果，用来结果展示                                                                                         
-├─ data_prepare # 需要的数据准备                                                        
+├─ data-prepare # 需要的数据准备                                                        
 │  ├─ websites # 用来传输的websites                                                         
 │  │  ├─ cpu # cpu资源，对应cpu sensitive                                                           
 │  │  │  ├─ cpu                                                                                                 
@@ -811,7 +811,7 @@ void create_sock(std::vector<int> *fds, const char *interface, const int port, i
 
 ​	在main.py里，有每次重制mongod的操作，此操作是必须的，否则会导致mongodb有些情况下出现数据库错误问题，访问不到。
 
-​	目前在~/mininet-polygon/data_prepare/websites/cpu/cpu/www.cpu/src/cpu.py（调用cpu sensitive的mongodb请求的文件）里，写死了host的ip地址，因为cpu.py里调用的太多了，如果每次都用ifconfig调用，代价消耗较大。
+​	目前在~/mininet-polygon/data-prepare/websites/cpu/cpu/www.cpu/src/cpu.py（调用cpu sensitive的mongodb请求的文件）里，写死了host的ip地址，因为cpu.py里调用的太多了，如果每次都用ifconfig调用，代价消耗较大。
 
 
 

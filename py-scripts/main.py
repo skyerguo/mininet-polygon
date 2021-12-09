@@ -14,6 +14,7 @@ import time
 import os
 import subprocess
 import sys
+import configparser
 
 SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_main)
 
@@ -285,6 +286,29 @@ def myNetwork(net):
                                      'mac1': temp_mac, 'mac2': temp_mac,
                                      'zone': str(client_id)}
         json.dump(machines, f)
+    
+    ## 输出到ip.conf
+    config = configparser.ConfigParser()
+    config['DNS']={}
+    config['client']={}
+    config['client']['ips'] = ''
+    config['server']={}
+    config['DNS'] = {
+                'inter': '10.0.200.1',
+                'exter': '10.0.200.1'
+            }
+    for client_id in range(CLIENT_NUMBER):
+        config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
+    config['client']['ips'] = config['client']['ips'][:-1]
+    for server_id in range(SERVER_NUMBER):
+        config['server']['s%s'%str(server_id)] = '10.0.%s.3'%str(server_id)
+    config['layer'] = {}
+    config['layer']['s0'] = 's2'
+    config['layer']['s3'] = 's4'
+    config['layer']['s2'] = 's1'
+    config['layer']['s4'] = 's1'
+    with open('../FastRoute-files/ip.conf','w') as cfg:
+        config.write(cfg)
 
 def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
