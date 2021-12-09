@@ -40,9 +40,14 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
+DNS_IP = "10.0.200.1"
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
-mode = sys.argv[1]
+if len(sys.argv) < 2:
+    mode = modes[0]
+    print("未输入方案，默认选择Polygon")
+else:
+    mode = sys.argv[1]
 # mode = modes[0]
 
 print("mode: ", mode)
@@ -53,7 +58,7 @@ def init():
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
-    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 1 # 前SN个，对应C-S，后DN个，对应C-D。最后一个用来连外网。
+    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 1 + 1 # 前SN个，对应C-S，后DN个，对应C-D。导数第二个用来连DNS，最后一个用来连外网。
     SERVER_THREAD = SELECT_TOPO['server_thread']
     DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
@@ -115,6 +120,8 @@ def myNetwork(net):
         server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
+    
+    dns = net.addHost("dns", ip=DNS_IP, defaultRoute=None) # 添加DNS的ip
 
     print( '*** Add remote controller\n')
       
@@ -146,6 +153,11 @@ def myNetwork(net):
     for server_id in range(SERVER_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 1], server[server_id])
 
+    ## add links from client to DNS IP
+    for client_id in range(CLIENT_NUMBER):
+        net.addLink(switch[SWITCH_NUMBER - 2], client[client_id])
+    net.addLink(switch[SWITCH_NUMBER - 2], dns)
+
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
     
     print( '*** Starting network\n')
@@ -169,7 +181,7 @@ def myNetwork(net):
     ## 将最后一个switch和网卡eth1相连，并获取网关地址
     os.system("sudo ovs-vsctl add-port switch%s eth1"%str(SWITCH_NUMBER - 1))
 
-    ## 别用了，傻逼dhclient
+    ## 别用dhclient
     # os.system("sudo dhclient -r switch%s" %str(SWITCH_NUMBER - 1))
     # os.system("sudo dhclient switch%s" %str(SWITCH_NUMBER - 1))
 
@@ -211,14 +223,13 @@ def myNetwork(net):
             # client[client_id].cmdPrint("route add -host 10.0.%s.4 dev c%s-eth%s" % (str(server_id), str(client_id), str(server_id)))
         for dispatcher_id in range(DISPATCHER_NUMBER):
             client[client_id].cmdPrint("route add -host 10.0.%s.5 dev c%s-eth%s" % (str(dispatcher_id), str(client_id), str(SERVER_NUMBER + dispatcher_id)))
+        client[client_id].cmdPrint("route add -host %s dev c%s-eth%s"%(str(DNS_IP), str(client_id), str(SERVER_NUMBER + DISPATCHER_NUMBER)))
     
     for server_id in range(SERVER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
             server[server_id].cmdPrint("route add -host 10.0.%s.1 dev s%s-eth%s" % (str(client_id), str(server_id), str(0)))
         for dispatcher_id in range(DISPATCHER_NUMBER):
             server[server_id].cmdPrint("route add -host 10.0.%s.5 dev s%s-eth%s" % (str(dispatcher_id), str(server_id), str(0)))
-            # for interface_id in range(SERVER_NUMBER):
-                # server[server_id].cmdPrint("route add -host 10.0.%s.%s dev s%s-eth%s" % (str(dispatcher_id), str(5+interface_id), str(server_id), str(0)))
         server[server_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
@@ -228,6 +239,8 @@ def myNetwork(net):
             dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.3 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(server_id)))
             # dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.4 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(server_id)))
         dispatcher[dispatcher_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
+    
+    dns.cmdPrint("route add default dev dns-eth0")
     
     ## 输出到machine_server.json
     machine_json_path = os.path.join(os.environ['HOME'], 'mininet-polygon/json-files')
@@ -354,9 +367,7 @@ if __name__ == '__main__':
             # client[client_id].cmdPrint("ping -i.2 -c5 d%s"%(dispatcher_id))
 
     ## 用socket，直接从dispatcher发送给server，不走gre了
-    ## 测量
-    print("measure_start! ")
-    measure_start(net)
+
 
     ## tcpdump
     # client[0].cmd("sudo tcpdump -nn -i c0-eth0 udp -w /home/mininet/test_client_sendquic_1127_c0eth0.cap &")
@@ -365,9 +376,13 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth0 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth0.cap &")
     # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth2 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth2.cap &")
     
+    ## 测量
+    # print("measure_start! ")
+    # measure_start(net)
+
     ## 跑实验
-    test_run(net)
-    save_config()
+    # test_run(net)
+    # save_config()
 
     CLI(net)
     net.stop()
