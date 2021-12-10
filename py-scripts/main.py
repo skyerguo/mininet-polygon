@@ -16,7 +16,7 @@ import subprocess
 import sys
 import configparser
 
-SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_main)
+SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_test)
 
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0
@@ -41,7 +41,7 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "10.0.200.1"
+DNS_IP = "10.177.53.237"
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
 if len(sys.argv) < 2:
@@ -49,6 +49,9 @@ if len(sys.argv) < 2:
     print("未输入方案，默认选择Polygon")
 else:
     mode = sys.argv[1]
+    if mode not in modes:
+        mode = modes[0]
+        print("输入方案不合法，默认选择Polygon")
 # mode = modes[0]
 
 print("mode: ", mode)
@@ -92,12 +95,12 @@ def init():
 
 def clear_logs():
     os.system("sudo mn -c")
-    # os.system("sudo bash ../bash-scripts/kill_running.sh")
+    os.system("sudo bash ../bash-scripts/kill_running.sh")
 
 
 def myNetwork(net):
     ''' 
-        ip地址：
+        ip地址:
             client: 10.0.0.0/16
                     10.0.x.1 clientx ip
             server: 10.0.0.0/16
@@ -147,17 +150,22 @@ def myNetwork(net):
             net.addLink(switch[SERVER_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id],'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
         net.addLink(switch[SERVER_NUMBER + dispatcher_id], dispatcher[dispatcher_id])
     
-    ## add links from dispatchers and servers to virtual machine ip.
+    ## add links from client to DNS IP
+    for client_id in range(CLIENT_NUMBER):
+        net.addLink(switch[SWITCH_NUMBER - 2], client[client_id])
+    net.addLink(switch[SWITCH_NUMBER - 2], dns)
+    
+    ## add links to virtual machine ip.
+    for client_id in range(CLIENT_NUMBER):
+        net.addLink(switch[SWITCH_NUMBER - 1], client[client_id])
+
     for dispatcher_id in range(DISPATCHER_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 1], dispatcher[dispatcher_id])
 
     for server_id in range(SERVER_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 1], server[server_id])
-
-    ## add links from client to DNS IP
-    for client_id in range(CLIENT_NUMBER):
-        net.addLink(switch[SWITCH_NUMBER - 2], client[client_id])
-    net.addLink(switch[SWITCH_NUMBER - 2], dns)
+    
+    net.addLink(switch[SWITCH_NUMBER - 1], dns)
 
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
     
@@ -203,19 +211,23 @@ def myNetwork(net):
     for client_id in range(CLIENT_NUMBER):
         # for interface_id in range(1, DISPATCHER_NUMBER + SERVER_NUMBER):
             # client[client_id].cmdPrint('ifconfig c%s-eth%s 10.0.%s.1'%(str(client_id), str(interface_id), str(client_id)))
-        pass
+        client[client_id].cmdPrint('ifconfig c%s-eth%s 0'%(str(client_id), str(SERVER_NUMBER+DISPATCHER_NUMBER+1)))
+        client[client_id].cmdPrint('ifconfig c%s-eth%s %s.%s/24'%(str(client_id), str(SERVER_NUMBER+DISPATCHER_NUMBER+1), str(switch_gw_pre3), str(50+client_id)))
     
     for server_id in range(SERVER_NUMBER):
         # for interface_id in range(1, 2):
             # server[server_id].cmdPrint('ifconfig s%s-eth%s 10.0.%s.4'%(str(server_id), str(interface_id), str(server_id)))
         server[server_id].cmdPrint('ifconfig s%s-eth%s 0'%(str(server_id), str(1)))
-        server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3), str(50+server_id)))
+        server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3), str(100+server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for interface_id in range(SERVER_NUMBER): # 给dispatcher所有端口都绑定，保证每个端口都能转发，否则只能转发给server0
             dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER + 1)))
-        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3), str(100+dispatcher_id)))
+        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3), str(150+dispatcher_id)))
+    
+    dns.cmdPrint('ifconfig dns-eth1 0')
+    dns.cmdPrint('ifconfig dns-eth1 %s.%s/24'%(str(switch_gw_pre3), str(200)))
 
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
@@ -224,7 +236,10 @@ def myNetwork(net):
             # client[client_id].cmdPrint("route add -host 10.0.%s.4 dev c%s-eth%s" % (str(server_id), str(client_id), str(server_id)))
         for dispatcher_id in range(DISPATCHER_NUMBER):
             client[client_id].cmdPrint("route add -host 10.0.%s.5 dev c%s-eth%s" % (str(dispatcher_id), str(client_id), str(SERVER_NUMBER + dispatcher_id)))
+        client[client_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
         client[client_id].cmdPrint("route add -host %s dev c%s-eth%s"%(str(DNS_IP), str(client_id), str(SERVER_NUMBER + DISPATCHER_NUMBER)))
+
+        dns.cmdPrint("rroute add -host 10.0.%s.1 dev dns-eth0" % (str(client_id)))
     
     for server_id in range(SERVER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
@@ -241,7 +256,7 @@ def myNetwork(net):
             # dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.4 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(server_id)))
         dispatcher[dispatcher_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
     
-    dns.cmdPrint("route add default dev dns-eth0")
+    dns.cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw))) 
     
     ## 输出到machine_server.json
     machine_json_path = os.path.join(os.environ['HOME'], 'mininet-polygon/json-files')
@@ -294,8 +309,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '10.0.200.1',
-                'exter': '10.0.200.1'
+                'inter': '10.177.53.237',
+                'exter': '10.177.53.237'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
@@ -309,6 +324,8 @@ def myNetwork(net):
     config['layer']['s4'] = 's1'
     with open('../FastRoute-files/ip.conf','w') as cfg:
         config.write(cfg)
+
+    os.system("cd ../FastRoute-files && sudo python3 dns.py &")
 
 def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
@@ -400,12 +417,12 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth0 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth0.cap &")
     # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth2 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth2.cap &")
     
-    ## 测量
-    # print("measure_start! ")
-    # measure_start(net)
+    # 测量
+    print("measure_start! ")
+    measure_start(net)
 
-    ## 跑实验
-    # test_run(net)
+    # 跑实验
+    test_run(net)
     # save_config()
 
     CLI(net)

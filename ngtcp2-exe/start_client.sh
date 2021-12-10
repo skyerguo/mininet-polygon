@@ -46,13 +46,29 @@ type_list_normal=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal
 type_list_video=("video" "video" "video" "video" "video" "video" "video" "video" "video") ## 全是video
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu
 
+dns_ip=`python3 -c "import os
+import configparser
+config = configparser.ConfigParser()
+config.read('/home/mininet/mininet-polygon/FastRoute-files/ip.conf')
+dns_ip = config.get('DNS', 'inter')
+print(dns_ip)"`
+echo "dns_ip: " $dns_ip
+server_domain=`python3 -c "import os
+myhost = os.uname()[1]
+domain_id = myhost[-3]
+if domain_id != '1':
+    domain_id = '2'
+print('server' + str(domain_id) + '.example.com')"`
+echo "server_domain: " $server_domain
+export server_domain=${server_domain}
+
 type_list=(${type_list_all[*]})
 # type_list=(${type_list_video[*]})
 
 for i in `seq $client_thread`
 do
     {
-        for round in `seq 2000`
+        for round in `seq 1`
         do
             time_stamp=$(($(date +%s%N)/1000000))
             dispatcher_id=$client_id ## 定死
@@ -72,7 +88,7 @@ do
             elif [[ $mode == "Anycast" ]]; then
                 destination_ip="10.0."$client_id".3"
             elif [[ $mode == "FastRoute" ]]; then
-                destination_ip="10.0."$client_id".3"
+                destination_ip=`python3 -c "import dns.resolver;import os;dns_ip = '$dns_ip';my_resolver = dns.resolver.Resolver();my_resolver.nameservers = [dns_ip];DNS_resolving = my_resolver.query(os.environ['server_domain']);print(DNS_resolving[0].to_text().split(' ')[0]);"`
             else
                 echo "undefined mode!" >> ${output_file}_tmp.txt
                 continue
