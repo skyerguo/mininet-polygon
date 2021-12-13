@@ -63,6 +63,7 @@ if [[ $client_id < 3 ]]; then
     server_domain='server1.example.com'
 else
     server_domain='server2.example.com'
+fi
 echo "server_domain: " $server_domain
 # export server_domain=${server_domain}
 
