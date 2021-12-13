@@ -16,7 +16,7 @@ import subprocess
 import sys
 import configparser
 
-SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_test)
+SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_main)
 
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0
@@ -77,7 +77,7 @@ def init():
     global start_time
     start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
 
-    global virtual_machine_ip, virtual_machine_subnet
+    global virtual_machine_ip, virtual_machine_subnet, DNS_IP
     ret = subprocess.Popen("ifconfig eth0 | grep inet | awk '{print $2}' | cut -f 2 -d ':'",shell=True,stdout=subprocess.PIPE)
     virtual_machine_ip = ret.stdout.read().decode("utf-8").strip('\n')
     ret.stdout.close()
@@ -85,8 +85,8 @@ def init():
     virtual_machine_subnet = str(virtual_machine_ip.split('.')[0]) + '.' + \
                             str(virtual_machine_ip.split('.')[1]) + '.' + \
                             str(virtual_machine_ip.split('.')[2]) + '.0' + '/24'
-
     print("virtual_machine_subnet: ", virtual_machine_subnet)
+    DNS_IP = virtual_machine_ip
 
     # 每次重新启动mongodb，以防mininet网络变化
     os.system("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9")
@@ -125,7 +125,7 @@ def myNetwork(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
     
-    dns = net.addHost("dns", ip=DNS_IP, defaultRoute=None) # 添加DNS的ip
+    # dns = net.addHost("dns", ip=DNS_IP, defaultRoute=None) # 添加DNS的ip
 
     print( '*** Add remote controller\n')
       
@@ -153,7 +153,7 @@ def myNetwork(net):
     ## add links from client to DNS IP
     for client_id in range(CLIENT_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 2], client[client_id])
-    net.addLink(switch[SWITCH_NUMBER - 2], dns)
+    # net.addLink(switch[SWITsCH_NUMBER - 2], dns)
     
     ## add links to virtual machine ip.
     for client_id in range(CLIENT_NUMBER):
@@ -165,7 +165,7 @@ def myNetwork(net):
     for server_id in range(SERVER_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 1], server[server_id])
     
-    net.addLink(switch[SWITCH_NUMBER - 1], dns)
+    # net.addLink(switch[SWITCH_NUMBER - 1], dns)
 
     ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
     
@@ -173,10 +173,7 @@ def myNetwork(net):
     net.build()
 
     # print( '*** Starting controllers\n')
-    # for controller in net.controllers:
-    #     print("controller: ", controller)
-    #     controller.start()
- 
+
     print( '*** Starting switches\n')
     for switch_id in range(SWITCH_NUMBER):
         net.get('switch%s'%str(switch_id)).start([])
@@ -186,14 +183,8 @@ def myNetwork(net):
     for switch_id in range(SWITCH_NUMBER):
         switch[switch_id].cmd('sysctl -w net.ipv4.ip_forward=1')
 
-    
     ## 将最后一个switch和网卡eth1相连，并获取网关地址
     os.system("sudo ovs-vsctl add-port switch%s eth1"%str(SWITCH_NUMBER - 1))
-
-    ## 别用dhclient
-    # os.system("sudo dhclient -r switch%s" %str(SWITCH_NUMBER - 1))
-    # os.system("sudo dhclient switch%s" %str(SWITCH_NUMBER - 1))
-
     os.system("sudo ifconfig switch%s 10.0.100.15/24" %str(SWITCH_NUMBER - 1))
 
     print( '*** Post configure switches and hosts\n')
@@ -226,20 +217,19 @@ def myNetwork(net):
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER + 1)))
         dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3), str(150+dispatcher_id)))
     
-    dns.cmdPrint('ifconfig dns-eth1 0')
-    dns.cmdPrint('ifconfig dns-eth1 %s.%s/24'%(str(switch_gw_pre3), str(200)))
+    # dns.cmdPrint('ifconfig dns-eth1 0')
+    # dns.cmdPrint('ifconfig dns-eth1 %s.%s/24'%(str(switch_gw_pre3), str(200)))
 
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
         for server_id in range(SERVER_NUMBER):
             client[client_id].cmdPrint("route add -host 10.0.%s.3 dev c%s-eth%s" % (str(server_id), str(client_id), str(server_id)))
-            # client[client_id].cmdPrint("route add -host 10.0.%s.4 dev c%s-eth%s" % (str(server_id), str(client_id), str(server_id)))
         for dispatcher_id in range(DISPATCHER_NUMBER):
             client[client_id].cmdPrint("route add -host 10.0.%s.5 dev c%s-eth%s" % (str(dispatcher_id), str(client_id), str(SERVER_NUMBER + dispatcher_id)))
         client[client_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
-        client[client_id].cmdPrint("route add -host %s dev c%s-eth%s"%(str(DNS_IP), str(client_id), str(SERVER_NUMBER + DISPATCHER_NUMBER)))
+        # client[client_id].cmdPrint("route add -host %s dev c%s-eth%s"%(str(DNS_IP), str(client_id), str(SERVER_NUMBER + DISPATCHER_NUMBER)))
 
-        dns.cmdPrint("rroute add -host 10.0.%s.1 dev dns-eth0" % (str(client_id)))
+        # dns.cmdPrint("route add -host 10.0.%s.1 dev dns-eth0" % (str(client_id)))
     
     for server_id in range(SERVER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
@@ -253,10 +243,9 @@ def myNetwork(net):
             dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.1 dev d%s-eth%s" % (str(client_id), str(dispatcher_id), str(SERVER_NUMBER)))
         for server_id in range(SERVER_NUMBER):
             dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.3 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(server_id)))
-            # dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.4 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(server_id)))
         dispatcher[dispatcher_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
     
-    dns.cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw))) 
+    # dns.cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw))) 
     
     ## 输出到machine_server.json
     machine_json_path = os.path.join(os.environ['HOME'], 'mininet-polygon/json-files')
@@ -325,11 +314,10 @@ def myNetwork(net):
     with open('../FastRoute-files/ip.conf','w') as cfg:
         config.write(cfg)
 
-    os.system("cd ../FastRoute-files && sudo python3 dns.py &")
+    os.system("cd ../FastRoute-files && nohup sudo python3 dns.py >/home/mininet/a.txt 2>&1 &")
 
 def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
-    # os.system("redis-cli -a Hestia123456 -n 1 flushdb") # 清空redis的数据库，1号数据库存储Polygon的PLT结果
 
     # 设置latency的表格
     for server_id in range(SERVER_NUMBER):
@@ -401,14 +389,6 @@ if __name__ == '__main__':
     ## 等待网络构建好
     print("sleep 30 seconds to wait mininet construction! ")
     time.sleep(30)
-
-    # 测试网络连接
-    # for client_id in range(CLIENT_NUMBER):
-        # for dispatcher_id in range(DISPATCHER_NUMBER):
-            # client[client_id].cmdPrint("ping -i.2 -c5 d%s"%(dispatcher_id))
-
-    ## 用socket，直接从dispatcher发送给server，不走gre了
-
 
     ## tcpdump
     # client[0].cmd("sudo tcpdump -nn -i c0-eth0 udp -w /home/mininet/test_client_sendquic_1127_c0eth0.cap &")
