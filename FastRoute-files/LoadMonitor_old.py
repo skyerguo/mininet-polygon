@@ -1,4 +1,4 @@
-# import CpuUsage
+import CpuUsage
 import time
 import threading
 import requests
@@ -6,7 +6,6 @@ import base64
 import os
 import sys
 import configparser
-import subprocess
 
 
 class FixLenList:
@@ -34,28 +33,16 @@ class LoadMonitor(threading.Thread):
         self.threshold = float(threshold)
     
     def run(self):
-        redis_ip = dns_ip
+        cpuusage = CpuUsage.CpuUsage()
 
         count = 0
         size = 15
         flag_list = FixLenList(size)
         while True:
             count += 1
-        
-            ret = subprocess.Popen("redis-cli -h %s -a 'Hestia123456' get cpu_s%s_d%s"%(redis_ip,str(server_id),str(server_id)),shell=True,stdout=subprocess.PIPE)
-            cpu_idle = ret.stdout.read().decode("utf-8").strip('\n')
-            ret.stdout.close()
-
-            try:
-                cpu_idle = float(cpu_idle)
-            except:
-                ## redis没查到，认为是实验还买开始
-                time.sleep(self.BEAT_PERIOD)
-                continue
-            
-            # print("now_cpu_idle: ", cpu_idle)
-            if cpu_idle < self.threshold:
-                # print ('cpu usage: %d \t sum(flag_list.get()): %d'%(cpu_usage,sum(flag_list.get())))
+            cpu_usgae = cpuusage.getCpuUsage()
+            if cpu_usgae > self.threshold:
+                # print ('cpu usage: %d \t sum(flag_list.get()): %d'%(cpu_usgae,sum(flag_list.get())))
                 flag_list.push(1)
             else:
                 flag_list.push(0)
@@ -74,36 +61,35 @@ class LoadMonitor(threading.Thread):
 
 
 if __name__ == "__main__":  
-    if len(sys.argv) < 2:
-        print("pls provide the server id")
-        exit(0)
+    # if len(sys.argv) < 3:
+    #     print("pls provide the layer location of this server and threshold")
+    #     exit(0)
 
-    server_id = int(sys.argv[1])
-    print(server_id)
+    myhost = os.uname()[1]
+    print('myhost:\t', myhost)
+    server_id = myhost
 
     threshold = 50
-    if server_id < 3: ## 修改的话，需要对应修改start_client.sh
+    if server_id[-10] == '1' and server_id.split('-')[2] == 'southeast1':
         domain_id = 1
-    else:
+    if server_id[-10] == '1' and server_id.split('-')[2] != 'southeast1':
         domain_id = 2
-    if server_id == 1:
+    if server_id[-10] == '2':
+        domain_id = 1
         threshold = 100
-    
     print('domain_id:\t', domain_id)
     print('threshold:\t', threshold)
-
-    # print(111)
 
     config = configparser.ConfigParser()
     config.read('./ip.conf')
     dns_ip = config.get("DNS", "exter")
     print("DNS server's IP", dns_ip)
-    this_layer_ip = config.get("server", "s"+str(server_id))
+    this_layer_ip = config.get("server", server_id)
     print("This layer server's IP", this_layer_ip)
 
     # 监控心跳数据包
     if threshold != 100:
-        next_layer_ip = config.get("server", config.get("layer", "s"+str(server_id)))
+        next_layer_ip = config.get("server", config.get("layer", server_id))
         print("Next layer server's IP", next_layer_ip)
         udp = LoadMonitor(dns_ip, 
                         serverID=str(domain_id), 

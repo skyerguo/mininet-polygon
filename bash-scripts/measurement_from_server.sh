@@ -64,7 +64,7 @@ echo "output_file: " $output_file >> $output_file
 
 echo "total_bw_capability: " $total_bw_capability >> $output_file
 
-server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | awk '{print $2}'`
+server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | head -n 1 | awk '{print $2}'`
 echo "server_pid: " $server_pid >> $output_file
 
 echo "start_time: " $(date "+%Y-%m-%d-%H-%M-%S") "${measurement_result_path}server/cpu_$server_id.log"

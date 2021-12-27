@@ -53,19 +53,13 @@ config.read('/home/mininet/mininet-polygon/FastRoute-files/ip.conf')
 dns_ip = config.get('DNS', 'inter')
 print(dns_ip)"`
 echo "dns_ip: " $dns_ip
-# server_domain=`python3 -c "import os
-# myhost = os.uname()[1]
-# domain_id = myhost[-3]
-# if domain_id != '1':
-#     domain_id = '2'
-# print('server' + str(domain_id) + '.example.com')"`
-if [[ $client_id < 3 ]]; then
+
+if [[ $client_id < 3 ]]; then ## 修改的话，需要对应修改LoadMonitory.py
     server_domain='server1.example.com'
 else
     server_domain='server2.example.com'
 fi
-echo "server_domain: " $server_domain
-# export server_domain=${server_domain}
+# echo "server_domain: " $server_domain
 
 type_list=(${type_list_all[*]})
 # type_list=(${type_list_video[*]})
@@ -73,7 +67,7 @@ type_list=(${type_list_all[*]})
 for i in `seq $client_thread`
 do
     {
-        for round in `seq 1`
+        for round in `seq 2000`
         do
             time_stamp=$(($(date +%s%N)/1000000))
             dispatcher_id=$client_id ## 定死
@@ -93,7 +87,7 @@ do
             elif [[ $mode == "Anycast" ]]; then
                 destination_ip="10.0."$client_id".3"
             elif [[ $mode == "FastRoute" ]]; then
-                destination_ip=`python3 -c "import dns.resolver;import os;dns_ip = '$dns_ip';my_resolver = dns.resolver.Resolver();my_resolver.nameservers = [dns_ip];DNS_resolving = my_resolver.query($server_domain);print(DNS_resolving[0].to_text().split(' ')[0]);"`
+                destination_ip=`python3 -c "import dns.resolver;import os;dns_ip = '$dns_ip';my_resolver = dns.resolver.Resolver();my_resolver.nameservers = [dns_ip];DNS_resolving = my_resolver.query('$server_domain');print(DNS_resolving[0].to_text().split(' ')[0]);"`
             else
                 echo "undefined mode!" >> ${output_file}_tmp.txt
                 continue

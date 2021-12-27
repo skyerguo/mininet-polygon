@@ -201,49 +201,44 @@ def myNetwork(net):
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
         # for interface_id in range(1, DISPATCHER_NUMBER + SERVER_NUMBER):
-            # client[client_id].cmdPrint('ifconfig c%s-eth%s 10.0.%s.1'%(str(client_id), str(interface_id), str(client_id)))
-        client[client_id].cmdPrint('ifconfig c%s-eth%s 0'%(str(client_id), str(SERVER_NUMBER+DISPATCHER_NUMBER+1)))
-        client[client_id].cmdPrint('ifconfig c%s-eth%s %s.%s/24'%(str(client_id), str(SERVER_NUMBER+DISPATCHER_NUMBER+1), str(switch_gw_pre3), str(50+client_id)))
+        client[client_id].cmd('ifconfig c%s-eth%s 0'%(str(client_id), str(SERVER_NUMBER+DISPATCHER_NUMBER+1)))
+        client[client_id].cmd('ifconfig c%s-eth%s %s.%s/24'%(str(client_id), str(SERVER_NUMBER+DISPATCHER_NUMBER+1), str(switch_gw_pre3), str(50+client_id)))
     
     for server_id in range(SERVER_NUMBER):
-        # for interface_id in range(1, 2):
-            # server[server_id].cmdPrint('ifconfig s%s-eth%s 10.0.%s.4'%(str(server_id), str(interface_id), str(server_id)))
-        server[server_id].cmdPrint('ifconfig s%s-eth%s 0'%(str(server_id), str(1)))
-        server[server_id].cmdPrint('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3), str(100+server_id)))
+        server[server_id].cmd('ifconfig s%s-eth%s 0'%(str(server_id), str(1)))
+        server[server_id].cmd('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3), str(100+server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for interface_id in range(SERVER_NUMBER): # 给dispatcher所有端口都绑定，保证每个端口都能转发，否则只能转发给server0
-            dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
-        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER + 1)))
-        dispatcher[dispatcher_id].cmdPrint('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3), str(150+dispatcher_id)))
+            dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
+        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER + 1)))
+        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3), str(150+dispatcher_id)))
     
-    # dns.cmdPrint('ifconfig dns-eth1 0')
-    # dns.cmdPrint('ifconfig dns-eth1 %s.%s/24'%(str(switch_gw_pre3), str(200)))
 
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
         for server_id in range(SERVER_NUMBER):
-            client[client_id].cmdPrint("route add -host 10.0.%s.3 dev c%s-eth%s" % (str(server_id), str(client_id), str(server_id)))
+            client[client_id].cmd("route add -host 10.0.%s.3 dev c%s-eth%s" %(str(server_id), str(client_id), str(server_id)))
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            client[client_id].cmdPrint("route add -host 10.0.%s.5 dev c%s-eth%s" % (str(dispatcher_id), str(client_id), str(SERVER_NUMBER + dispatcher_id)))
-        client[client_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
+            client[client_id].cmd("route add -host 10.0.%s.5 dev c%s-eth%s" %(str(dispatcher_id), str(client_id), str(SERVER_NUMBER + dispatcher_id)))
+        client[client_id].cmd("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
         # client[client_id].cmdPrint("route add -host %s dev c%s-eth%s"%(str(DNS_IP), str(client_id), str(SERVER_NUMBER + DISPATCHER_NUMBER)))
 
         # dns.cmdPrint("route add -host 10.0.%s.1 dev dns-eth0" % (str(client_id)))
     
     for server_id in range(SERVER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
-            server[server_id].cmdPrint("route add -host 10.0.%s.1 dev s%s-eth%s" % (str(client_id), str(server_id), str(0)))
+            server[server_id].cmd("route add -host 10.0.%s.1 dev s%s-eth%s" %(str(client_id), str(server_id), str(0)))
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            server[server_id].cmdPrint("route add -host 10.0.%s.5 dev s%s-eth%s" % (str(dispatcher_id), str(server_id), str(0)))
-        server[server_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
+            server[server_id].cmd("route add -host 10.0.%s.5 dev s%s-eth%s" %(str(dispatcher_id), str(server_id), str(0)))
+        server[server_id].cmd("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
-            dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.1 dev d%s-eth%s" % (str(client_id), str(dispatcher_id), str(SERVER_NUMBER)))
+            dispatcher[dispatcher_id].cmd("route add -host 10.0.%s.1 dev d%s-eth%s" %(str(client_id), str(dispatcher_id), str(SERVER_NUMBER)))
         for server_id in range(SERVER_NUMBER):
-            dispatcher[dispatcher_id].cmdPrint("route add -host 10.0.%s.3 dev d%s-eth%s" % (str(server_id), str(dispatcher_id), str(server_id)))
-        dispatcher[dispatcher_id].cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
+            dispatcher[dispatcher_id].cmd("route add -host 10.0.%s.3 dev d%s-eth%s" %(str(server_id), str(dispatcher_id), str(server_id)))
+        dispatcher[dispatcher_id].cmd("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw)))  
     
     # dns.cmdPrint("route add -net %s gw %s"%(str(virtual_machine_subnet), str(switch_gw))) 
     
@@ -326,13 +321,15 @@ def measure_start(net):
 
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -a %s" %(str(server_id), str(start_time)))
+        if mode == "FastRoute": ## 开启FastRoute的cpu监控和转移规则
+            server[server_id].cmdPrint("cd ../FastRoute-files && sudo python3 LoadMonitor.py %s &"%(str(server_id)))
     
-    time.sleep(5)
+    time.sleep(10)
     
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmdPrint("bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(bw['dispatcher_server'][server_id]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time)))
+        server[server_id].cmdPrint("cd ../py-scripts && bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(bw['dispatcher_server'][server_id]).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time)))
     
-    time.sleep(5)
+    time.sleep(10)
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
 
@@ -402,7 +399,7 @@ if __name__ == '__main__':
     measure_start(net)
 
     # 跑实验
-    test_run(net)
+    # test_run(net)
     # save_config()
 
     CLI(net)
