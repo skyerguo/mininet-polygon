@@ -399,8 +399,8 @@ if __name__ == '__main__':
     measure_start(net)
 
     # 跑实验
-    # test_run(net)
-    # save_config()
+    test_run(net)
+    save_config()
 
     CLI(net)
     net.stop()
