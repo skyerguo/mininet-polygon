@@ -16,7 +16,7 @@ import subprocess
 import sys
 import configparser
 
-SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_main)
+SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_large)
 
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0
@@ -62,7 +62,7 @@ def init():
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
-    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 1 + 1 # 前SN个，对应C-S，后DN个，对应C-D。导数第二个用来连DNS，最后一个用来连外网。
+    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 1 + 1 # 前SN个，对应C-S，后DN个，对应C-D。导数第二个用来连DNS，最后三个用来连外网。
     SERVER_THREAD = SELECT_TOPO['server_thread']
     DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
@@ -115,7 +115,7 @@ def myNetwork(net):
 
     print( '*** Add switches\n')
     for switch_id in range(SWITCH_NUMBER):
-        switch.append(net.addSwitch('switch%s'%str(switch_id), cls=OVSKernelSwitch, failMode='standalone', stp=True)) ## 防止回路
+        switch.append(net.addSwitch('sw%s'%str(switch_id), cls=OVSKernelSwitch, failMode='standalone', stp=True)) ## 防止回路
 
     print( '*** Add hosts\n')
     for client_id in range(CLIENT_NUMBER):
@@ -153,7 +153,6 @@ def myNetwork(net):
     ## add links from client to DNS IP
     for client_id in range(CLIENT_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 2], client[client_id])
-    # net.addLink(switch[SWITsCH_NUMBER - 2], dns)
     
     ## add links to virtual machine ip.
     for client_id in range(CLIENT_NUMBER):
@@ -164,32 +163,30 @@ def myNetwork(net):
 
     for server_id in range(SERVER_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 1], server[server_id])
-    
-    # net.addLink(switch[SWITCH_NUMBER - 1], dns)
 
-    ## 通过多次调用addlink，使得switch之间创建多个网关的链接关系
     
     print( '*** Starting network\n')
     net.build()
 
-    # print( '*** Starting controllers\n')
-
     print( '*** Starting switches\n')
+
+    setLogLevel( 'info' )
+    print('SWITCH_NUMBER = ',SWITCH_NUMBER)
     for switch_id in range(SWITCH_NUMBER):
-        net.get('switch%s'%str(switch_id)).start([])
+        net.get('sw%s'%str(switch_id)).start([])
     
     ## 定义网卡
     
     for switch_id in range(SWITCH_NUMBER):
         switch[switch_id].cmd('sysctl -w net.ipv4.ip_forward=1')
-
+    
     ## 将最后一个switch和网卡eth1相连，并获取网关地址
-    os.system("sudo ovs-vsctl add-port switch%s eth1"%str(SWITCH_NUMBER - 1))
-    os.system("sudo ifconfig switch%s 10.0.100.15/24" %str(SWITCH_NUMBER - 1))
+    os.system("sudo ovs-vsctl add-port sw%s eth1"%str(SWITCH_NUMBER - 1))
+    os.system("sudo ifconfig sw%s 10.0.100.15/24" %str(SWITCH_NUMBER - 1))
 
     print( '*** Post configure switches and hosts\n')
         
-    ret = subprocess.Popen("ifconfig switch%s | grep inet | awk '{print $2}' | cut -f 2 -d ':'"%(str(SWITCH_NUMBER - 1)),shell=True,stdout=subprocess.PIPE)
+    ret = subprocess.Popen("ifconfig sw%s | grep inet | awk '{print $2}' | cut -f 2 -d ':'"%(str(SWITCH_NUMBER - 1)),shell=True,stdout=subprocess.PIPE)
     switch_gw = ret.stdout.read().decode("utf-8").strip('\n')
     ret.stdout.close()
     print("switch_gw: ", switch_gw)
@@ -369,7 +366,7 @@ def save_config():
 
 
 if __name__ == '__main__':
-    setLogLevel( 'info' )
+    setLogLevel( 'warning' )
     clear_logs()
 
     init()

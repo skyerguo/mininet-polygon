@@ -1,6 +1,7 @@
 import os
 import subprocess
 import numpy as np
+import sys
 
 data_root_path = "/data/"
 
@@ -9,8 +10,20 @@ result_root_path = data_root_path + "result-logs/"
 server_files = os.listdir(result_root_path + "server")
 server_files.sort(reverse=True)
 
-start_time = server_files[0]
-start_time = "2021-12-02_17:49:32"
+
+if len(sys.argv) < 2:
+    file_order = 0
+    print("未输入文件次序，默认选择最新的")
+else:
+    try:
+        file_order = int(sys.argv[1])
+        print("选择第%s新的文件"%(str(file_order)))
+    except:
+        file_order = 0
+        print("参数错误，不为int类型，默认选择最新的")
+
+start_time = server_files[file_order]
+# start_time = "2021-12-02_17:49:32"
 print("start_time: ", start_time)
 
 plt_total = {"delay": [], "bw": [], "cpu": [], "mongo": []}
