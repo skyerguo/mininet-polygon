@@ -225,9 +225,9 @@ Middleware_client_dispatcher_server_main = {
 
 
 Middleware_client_dispatcher_server_large = {
-    'client_number': 10,
-    'server_number': 10,
-    'dispatcher_number': 10,
+    'client_number': 19,
+    'server_number': 19,
+    'dispatcher_number': 19,
     'server_thread': 5,
     'client_thread': 5,
     'dispatcher_thread': 5,
