@@ -225,12 +225,12 @@ Middleware_client_dispatcher_server_main = {
 
 
 Middleware_client_dispatcher_server_large = {
-    'client_number': 19,
-    'server_number': 19,
-    'dispatcher_number': 19,
-    'server_thread': 5,
-    'client_thread': 5,
-    'dispatcher_thread': 5,
+    'client_number': 27,
+    'server_number': 27,
+    'dispatcher_number': 27,
+    'server_thread': 2,
+    'client_thread': 2,
+    'dispatcher_thread': 2,
     'bw': {
         'client_server': [
             [5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15,5.00,2.07,1.98,1.89,3.15],
