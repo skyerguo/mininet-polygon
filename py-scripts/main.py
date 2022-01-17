@@ -16,7 +16,8 @@ import subprocess
 import sys
 import configparser
 
-SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_large)
+# SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_large)
+SELECT_TOPO = json.load(open('../json-files/new_topo.json', 'r'))
 
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0
@@ -33,10 +34,13 @@ switch = []
 client = []
 dispatcher = []
 server = []
+
+CLIENT_ZONE= []
+DISPATCHER_ZONE = []
+SERVER_ZONE = []
 bw = {}
 delay = {}
 cpu = {}
-# zone = {}
 start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
@@ -59,15 +63,21 @@ print("mode: ", mode)
 def init():
     global CLIENT_NUMBER, SERVER_NUMBER, DISPATCHER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD, DISPATCHER_THREAD
     global bw, delay, cpu
+    global CLIENT_ZONE, DISPATCHER_ZONE, SERVER_ZONE
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
     SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 3 # 前SN个，对应C-S，后DN个，对应C-D。最后3个用来连外网。
+
+    print('SWITCH_NUMBER = ',SWITCH_NUMBER)
+
     SERVER_THREAD = SELECT_TOPO['server_thread']
     DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
 
-    print("SWITCH_NUMBER: ", SWITCH_NUMBER)
+    CLIENT_ZONE = SELECT_TOPO['client_zone']
+    DISPATCHER_ZONE = SELECT_TOPO['dispatcher_zone']
+    SERVER_ZONE = SELECT_TOPO['server_zone']
 
     bw = SELECT_TOPO['bw']
     delay = SELECT_TOPO['delay']
@@ -127,44 +137,54 @@ def myNetwork(net):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
     
     print( '*** Add remote controller\n')
-      
+
+
     print( '*** Add links\n')
     
     ## add links among clients, servers and dispatchers
+    ## bw和delay都+1，防止0的情况报错
+
     ## C-S
     for server_id in range(SERVER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
-            net.addLink(switch[server_id], client[client_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id],'delay':str(int(delay['client_server'][client_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-        net.addLink(switch[server_id], server[server_id])
-
+            # print(server_id, client_id, str(int(float(delay['client_server'][client_id][server_id]) / 2 + 1)))
+            net.addLink(switch[server_id], client[client_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id]+1,'delay':str(int(delay['client_server'][client_id][server_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+        net.addLink(switch[server_id], server[server_id], cls=None)
+    # print(1111)
     ## D-S
     for server_id in range(SERVER_NUMBER):
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            net.addLink(switch[server_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id],'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-
+            net.addLink(switch[server_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id]+1,'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+    # print(2222)
     ## C-D
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
-            net.addLink(switch[SERVER_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id],'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-        net.addLink(switch[SERVER_NUMBER + dispatcher_id], dispatcher[dispatcher_id])
-    
+            if DISPATCHER_ZONE[dispatcher_id] == CLIENT_ZONE[client_id]: ## 减少一些用不到的边
+                net.addLink(switch[SERVER_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id]+1,'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+        net.addLink(switch[SERVER_NUMBER + dispatcher_id], dispatcher[dispatcher_id], cls=None)
+    # print(3333)
     
     ## add links to virtual machine ip.
     for client_id in range(CLIENT_NUMBER):
-        net.addLink(switch[SWITCH_NUMBER - 3], client[client_id])
+        net.addLink(switch[SWITCH_NUMBER - 3], client[client_id], cls=None)
+
+    # print(4444)
     
     for server_id in range(SERVER_NUMBER):
-        net.addLink(switch[SWITCH_NUMBER - 2], server[server_id])
+        net.addLink(switch[SWITCH_NUMBER - 2], server[server_id], cls=None)
+
+    # print(5555)
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        net.addLink(switch[SWITCH_NUMBER - 1], dispatcher[dispatcher_id])
+        net.addLink(switch[SWITCH_NUMBER - 1], dispatcher[dispatcher_id], cls=None)
+
+    # return
     
     print( '*** Starting network\n')
     net.build()
 
     print( '*** Starting switches\n')
 
-    print('SWITCH_NUMBER = ',SWITCH_NUMBER)
     for switch_id in range(SWITCH_NUMBER):
         net.get('sw%s'%str(switch_id)).start([])
     
@@ -205,8 +225,8 @@ def myNetwork(net):
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
         # for interface_id in range(1, DISPATCHER_NUMBER + SERVER_NUMBER):
-        client[client_id].cmd('ifconfig c%s-eth%s 0'%(str(client_id), str(SERVER_NUMBER+DISPATCHER_NUMBER)))
-        client[client_id].cmd('ifconfig c%s-eth%s %s.%s/24'%(str(client_id), str(SERVER_NUMBER+DISPATCHER_NUMBER), str(switch_gw_pre3[2]), str(50+client_id)))
+        client[client_id].cmd('ifconfig c%s-eth%s 0'%(str(client_id), str(SERVER_NUMBER+1))) # 一个client只连一个dispatcher
+        client[client_id].cmd('ifconfig c%s-eth%s %s.%s/24'%(str(client_id), str(SERVER_NUMBER+1), str(switch_gw_pre3[2]), str(50+client_id)))
     
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmd('ifconfig s%s-eth%s 0'%(str(server_id), str(1)))
@@ -254,7 +274,7 @@ def myNetwork(net):
             machines[server_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
                                      'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
                                      'mac1': temp_mac, 'mac2': temp_mac,
-                                     'zone': str(server_id)}
+                                     'zone': str(SERVER_ZONE[server_id])}
         json.dump(machines, f)
     
     ## 输出到machine_dispatcher.json
@@ -268,7 +288,7 @@ def myNetwork(net):
             machines[dispatcher_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
                                      'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
                                      'mac1': temp_mac, 'mac2': temp_mac,
-                                     'zone': str(dispatcher_id)}
+                                     'zone': str(DISPATCHER_ZONE[dispatcher_id])}
         json.dump(machines, f)
     
     ## 输出到machine_client.json
@@ -282,7 +302,7 @@ def myNetwork(net):
             machines[client_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
                                      'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
                                      'mac1': temp_mac, 'mac2': temp_mac,
-                                     'zone': str(client_id)}
+                                     'zone': str(CLIENT_ZONE[client_id])}
         json.dump(machines, f)
     
     ## 输出到ip.conf
@@ -353,7 +373,7 @@ def test_run(net):
     print("start_clients!")
 
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode))
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s -d %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id])))
         time.sleep(3)
 
     
@@ -361,6 +381,7 @@ def save_config():
     config_result_path = "/data/result-logs/config/%s/"%(str(start_time))
     os.system("mkdir -p %s"%config_result_path)
     os.system("cp /data/websites/cpu/cpu/www.cpu/src/cpu.py %s"%config_result_path)
+
     # SELECT_TOPO
     topo_file = open(config_result_path + 'topo.json','w',encoding='utf-8')
     json.dump(SELECT_TOPO, topo_file)
@@ -394,13 +415,13 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth0 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth0.cap &")
     # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth2 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth2.cap &")
     
-    ## 测量
-    print("measure_start! ")
-    measure_start(net)
+    # ## 测量
+    # print("measure_start! ")
+    # measure_start(net)
 
-    ## 跑实验
-    test_run(net)
-    save_config()
+    # ## 跑实验
+    # test_run(net)
+    # save_config()
 
     CLI(net)
     net.stop()

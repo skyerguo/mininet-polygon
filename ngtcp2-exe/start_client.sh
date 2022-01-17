@@ -2,7 +2,7 @@ root_path=/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
-while getopts ":i:s:p:t:y:r:a:m:" opt
+while getopts ":i:s:p:t:d:y:r:a:m:" opt
 do
     case $opt in
         i)
@@ -31,6 +31,9 @@ do
         m)
             mode=$OPTARG
             # saved_result_path=${saved_result_path}$mode'/'
+        ;;
+        d)
+            dispatcher_id=$OPTARG # 通过zone，用参数传入dispatcher_id
         ;;
         ?)
             echo "未知参数"
@@ -70,7 +73,7 @@ do
         for round in `seq 2000`
         do
             time_stamp=$(($(date +%s%N)/1000000))
-            dispatcher_id=$client_id ## 定死
+            # dispatcher_id=$client_id ## 定死
             dispatcher_ip="10.0."$dispatcher_id".5"
             start_port=$init_port ## 定死
             

@@ -2,6 +2,7 @@ import os
 import csv
 import random
 import json
+import copy
 
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
 CLIENT_NUMBER = 40
@@ -31,8 +32,8 @@ client2dispatcher[21] = client2dispatcher[22] = 8
 client2dispatcher[23] = client2dispatcher[24] = client2dispatcher[25] = client2dispatcher[26] = 9
 
 client_zone = []
-dispatcher_zone = zone_dispatcher
-server_zone = zone_dispatcher
+dispatcher_zone = copy.deepcopy(zone_dispatcher)
+server_zone = copy.deepcopy(zone_dispatcher)
 
 zone_number = 0
 zone_map = {}
@@ -104,8 +105,21 @@ result['cpu'] = {}
 result['cpu']['client'] = .3
 result['cpu']['server'] = .4
 result['cpu']['dispatcher'] = .3
+
+result['client_zone'] = []
+result['server_zone'] = []
+result['dispatcher_zone'] = []
+for client_area in client_zone:
+    result['client_zone'].append(client2dispatcher[zone_map[client_area]])
+for server_area in client_zone:
+    result['server_zone'].append(client2dispatcher[zone_map[server_area]])
+for dispatcher_area in dispatcher_zone:
+    result['dispatcher_zone'].append(client2dispatcher[zone_map[dispatcher_area]])
+
+
 result['bw'] = {}
 result['delay'] = {}
+
 
 result['bw']['client_server'] = [[] for _ in range(CLIENT_NUMBER)]
 result['delay']['client_server'] = [[] for _ in range(CLIENT_NUMBER)]
@@ -114,7 +128,7 @@ for client_id in range(CLIENT_NUMBER):
     for server_id in range(SERVER_NUMBER):
         server_pos = zone_map[server_zone[server_id]]
         result['bw']['client_server'][client_id].append(bandwidth_topo[client_pos][server_pos])
-        result['delay']['client_server'][client_id].append(bandwidth_topo[client_pos][server_pos])
+        result['delay']['client_server'][client_id].append(latency_topo[client_pos][server_pos])
 
 result['bw']['client_dispatcher'] = [[] for _ in range(CLIENT_NUMBER)]
 result['delay']['client_dispatcher'] = [[] for _ in range(CLIENT_NUMBER)]
@@ -123,7 +137,7 @@ for client_id in range(CLIENT_NUMBER):
     for dispathcer_id in range(DISPATCHER_NUMBER):
         dispatcher_pos = zone_map[dispatcher_zone[dispathcer_id]]
         result['bw']['client_dispatcher'][client_id].append(bandwidth_topo[client_pos][dispatcher_pos])
-        result['delay']['client_dispatcher'][client_id].append(bandwidth_topo[client_pos][dispatcher_pos])
+        result['delay']['client_dispatcher'][client_id].append(latency_topo[client_pos][dispatcher_pos])
 
 result['bw']['dispatcher_server'] = [[] for _ in range(DISPATCHER_NUMBER)]
 result['delay']['dispatcher_server'] = [[] for _ in range(DISPATCHER_NUMBER)]
@@ -132,9 +146,11 @@ for dispatcher_id in range(DISPATCHER_NUMBER):
     for server_id in range(SERVER_NUMBER):
         server_pos = zone_map[server_zone[server_id]]
         result['bw']['dispatcher_server'][dispatcher_id].append(bandwidth_topo[dispatcher_pos][server_pos])
-        result['delay']['dispatcher_server'][dispatcher_id].append(bandwidth_topo[dispatcher_pos][server_pos])
+        result['delay']['dispatcher_server'][dispatcher_id].append(latency_topo[dispatcher_pos][server_pos])
     
 # print(result)
+
+
 
 json_file = '../json-files/new_topo.json'
 f_out = open(json_file, 'w')
