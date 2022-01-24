@@ -2,7 +2,7 @@ root_path=/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
-while getopts ":i:s:p:t:d:y:r:a:m:" opt
+while getopts ":i:s:p:t:y:r:a:m:z:" opt
 do
     case $opt in
         i)
@@ -32,8 +32,8 @@ do
             mode=$OPTARG
             # saved_result_path=${saved_result_path}$mode'/'
         ;;
-        d)
-            dispatcher_id=$OPTARG # 通过zone，用参数传入dispatcher_id
+        z)
+            client_zone=$OPTARG # 通过client_zone，用参数传入需要转发给的dispatcher
         ;;
         ?)
             echo "未知参数"
@@ -70,11 +70,9 @@ type_list=(${type_list_all[*]})
 for i in `seq $client_thread`
 do
     {
-        for round in `seq 2000`
+        for round in `seq 20`
         do
             time_stamp=$(($(date +%s%N)/1000000))
-            # dispatcher_id=$client_id ## 定死
-            dispatcher_ip="10.0."$dispatcher_id".5"
             start_port=$init_port ## 定死
             
             port=$(($start_port+$i))
@@ -84,11 +82,11 @@ do
             # echo "current_time: "$time_stamp >> ${output_file}_tmp.txt
 
             if [[ $mode == "Polygon" ]]; then
-                destination_ip="10.0."$client_id".5"
+                destination_ip="10.0."$client_zone".5"
             elif [[ $mode == "DNS" ]]; then
-                destination_ip="10.0."$client_id".3"
+                destination_ip="10.0."$client_zone".3"
             elif [[ $mode == "Anycast" ]]; then
-                destination_ip="10.0."$client_id".3"
+                destination_ip="10.0."$client_zone".3"
             elif [[ $mode == "FastRoute" ]]; then
                 destination_ip=`python3 -c "import dns.resolver;import os;dns_ip = '$dns_ip';my_resolver = dns.resolver.Resolver();my_resolver.nameservers = [dns_ip];DNS_resolving = my_resolver.query('$server_domain');print(DNS_resolving[0].to_text().split(' ')[0]);"`
             else
