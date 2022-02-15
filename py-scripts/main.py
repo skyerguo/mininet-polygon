@@ -45,7 +45,10 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "10.177.53.237"
+DNS_IP = "10.177.53.232"
+
+zone2server_ids = []
+dispatcher_eth_number = []
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
 if len(sys.argv) < 2:
@@ -64,6 +67,7 @@ def init():
     global CLIENT_NUMBER, SERVER_NUMBER, DISPATCHER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD, DISPATCHER_THREAD
     global bw, delay, cpu
     global CLIENT_ZONE, DISPATCHER_ZONE, SERVER_ZONE
+    global zone2server_ids
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
@@ -82,7 +86,8 @@ def init():
     bw = SELECT_TOPO['bw']
     delay = SELECT_TOPO['delay']
     cpu = SELECT_TOPO['cpu']
-    # zone = SELECT_TOPO['zone']
+
+    zone2server_ids = [[] for _ in range(len(DISPATCHER_ZONE))]
 
     global start_time
     start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
@@ -143,7 +148,9 @@ def myNetwork(net):
     
     ## add links among clients, servers and dispatchers
     ## bw和delay都+1，防止0的情况报错
-
+    global dispatcher_eth_number
+    dispatcher_eth_number = [0 for _ in range(DISPATCHER_NUMBER)] ## 记录dispatcher和多少个client相连
+ 
     ## C-S
     for server_id in range(SERVER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
@@ -160,6 +167,7 @@ def myNetwork(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
             if DISPATCHER_ZONE[dispatcher_id] == CLIENT_ZONE[client_id]: ## 减少一些用不到的边
+                dispatcher_eth_number[dispatcher_id] += 1
                 net.addLink(switch[SERVER_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id]+1,'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
         net.addLink(switch[SERVER_NUMBER + dispatcher_id], dispatcher[dispatcher_id], cls=None)
     # print(3333)
@@ -235,8 +243,8 @@ def myNetwork(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for interface_id in range(SERVER_NUMBER): # 给dispatcher所有端口都绑定，保证每个端口都能转发，否则只能转发给server0
             dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
-        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER + 1))) ## 还有一个给了client，所以要+1
-        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER + 1),  str(switch_gw_pre3[0]), str(150+dispatcher_id)))
+        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER+dispatcher_eth_number[dispatcher_id]))) ## server个数加上和client相连的个数。
+        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER+dispatcher_eth_number[dispatcher_id]),  str(switch_gw_pre3[0]), str(150+dispatcher_id)))
     
 
     ## client,server,dispatcher发出
@@ -278,6 +286,7 @@ def myNetwork(net):
                                      'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
                                      'mac1': temp_mac, 'mac2': temp_mac,
                                      'zone': str(SERVER_ZONE[server_id])}
+            zone2server_ids[SERVER_ZONE[server_id]].append(server_id)
         json.dump(machines, f)
     
     ## 输出到machine_dispatcher.json
@@ -315,8 +324,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '10.177.53.237',
-                'exter': '10.177.53.237'
+                'inter': '10.177.53.232',
+                'exter': '10.177.53.232'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
@@ -373,14 +382,14 @@ def test_run(net):
     now_port = START_PORT
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER + 1), DISPATCHER_ZONE[dispatcher_id]))
+        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+dispatcher_eth_number[dispatcher_id]), DISPATCHER_ZONE[dispatcher_id]))
     
     print("sleep " + str(60 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 5 * SERVER_NUMBER)
     print("start_clients!")
 
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s -z %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id])))
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s -z %s -d %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]]))))
         time.sleep(3)
 
     

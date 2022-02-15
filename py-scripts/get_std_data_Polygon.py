@@ -2,6 +2,7 @@ import os
 import subprocess
 import numpy as np
 import sys
+import json
 
 data_root_path = "/data/"
 
@@ -27,6 +28,7 @@ start_time = server_files[file_order]
 print("start_time: ", start_time)
 
 plt_total = {"delay": [], "bw": [], "cpu": [], "mongo": []}
+req_total_number = {"delay": 0, "bw": 0, "cpu": 0}
 
 saved_results_root_path = data_root_path + "saved_results/" + str(start_time) + "/"
 os.system("sudo rm -rf %s" %(saved_results_root_path))
@@ -58,13 +60,6 @@ for client_file in client_files:
                     plt_times += 1
                 if "time_duration:" in line:
                     cpu_duration = int(float(line.split(" ")[-1].strip()) * 1000000)
-                # if "start_time:" in line:
-                #     cpu_start_time = float(line.split(" ")[-1].strip())
-                # if "{'_id'" in line:
-                #     cpu_search_count += 1
-                # if "end_time:" in line:
-                #     cpu_end_time = float(line.split(" ")[-1].strip())
-                #     cpu_duration = int((cpu_end_time - cpu_start_time) * 1000000)
 
     if "_tmp.txt" in client_file:
         client_ip = "10.0.%s.1" % (client_file.split("_")[0])
@@ -88,11 +83,13 @@ for client_file in client_files:
 
         os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/"))
 
+        req_total_number[sensitive_type] += 1
+
         if plt == 0: # 应该有plt，但是没有查到
             continue
-        if sensitive_type == "cpu" and (cpu_duration == 0): # 应该是cpu，但是没查到cpu
-            continue
         if plt_times != 2: # 应该都是两个plt
+            continue
+        if sensitive_type == "cpu" and (cpu_duration == 0): # 应该是cpu，但是没查到cpu
             continue
 
         plt = plt + cpu_duration
@@ -105,12 +102,6 @@ for client_file in client_files:
 
         print(str(current_time) + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))
 
-
-# print("plt_bw: ", np.mean(plt_total["bw"]) / 1000000, len(plt_total["bw"]))
-# print("plt_cpu: ", np.mean(plt_total["cpu"]) / 1000000, len(plt_total["cpu"]))
-# print("plt_delay: ", np.mean(plt_total["delay"]) / 1000000, len(plt_total["delay"]))
-# print("mongo_duration: ", np.mean(plt_total["mongo"]) / 1000000, np.median(plt_total["mongo"]) / 1000000)
-# exit()
 
 ## dispatcher data
 dispatcher_result_path = result_root_path + "dispatcher/" + str(start_time) + "/"
@@ -146,14 +137,12 @@ for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个�
                         sensitive_type = "error"
                     # sensitive_type = line.split(" ")[-1].strip()
                 if ("!Forwarded") in line:
-                    forward_dc = line.split(" ")[5].strip()
-                    server_ip = "10.0.%s.3" % (str(forward_dc))
-                    if ("server") in line:
+                    forward_server_id = line.split(" ")[-2].strip()
+                    server_ip = "10.0.%s.3" % (str(forward_server_id))
+                    if ("local") in line:
                         forward_to = "local"
-                    elif ("dispatcher") in line:
-                        forward_to = "forward"
-
-                    # print(3333)
+                    elif ("remote") in line:
+                        forward_to = "remote"
 
                     os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + dispatcher_ip + "_routing/"))
 
@@ -183,7 +172,12 @@ for server_file in os.listdir(result_root_path + "server/" + start_time):
     if server_file.split("_")[0] not in server_id:
         server_id[server_file.split("_")[0]] = 1
         server_number += 1
+
+config_file_path = result_root_path + 'config/' + str(start_time) + '/topo.json'
+config_file = json.load(open(config_file_path, 'r'))
+print("client_number: ", config_file['client_number'])
 print("server_number: ", server_number)
+print("dispatcher_number: ", config_file['dispatcher_number'])
 
 for measurement_file in measurement_files:
     dispatcher_ip = "10.0.%s.5"%(measurement_file.split('.')[0])
@@ -218,7 +212,7 @@ for measurement_file in measurement_files:
 
                 current_time = line.split(' ')[-1].strip()
 
-print("plt_bw: ", np.mean(plt_total["bw"]) / 1000000, len(plt_total["bw"]))
-print("plt_cpu: ", np.mean(plt_total["cpu"]) / 1000000, len(plt_total["cpu"]))
-print("plt_delay: ", np.mean(plt_total["delay"]) / 1000000, len(plt_total["delay"]))
-print("mongo_duration: ", np.mean(plt_total["mongo"]) / 1000000, np.median(plt_total["mongo"]) / 1000000)
+print("plt_bw_avg: ", np.mean(plt_total["bw"]) / 1000000, "\t数量: ", len(plt_total["bw"]), "\t成功率: ", str(len(plt_total["bw"]) / req_total_number["bw"] * 100) + "%")
+print("plt_cpu_avg: ", np.mean(plt_total["cpu"]) / 1000000, "\t数量: ", len(plt_total["cpu"]), "\t成功率: ", str(len(plt_total["cpu"]) / req_total_number["cpu"] * 100) + "%")
+print("plt_delay_avg: ", np.mean(plt_total["delay"]) / 1000000, "\t数量: ", len(plt_total["delay"]), "\t成功率: ", str(len(plt_total["delay"]) / req_total_number["delay"] * 100) + "%")
+print("mongo_duration: ", "平均值: ", np.mean(plt_total["mongo"]) / 1000000, "\t中位数: ", np.median(plt_total["mongo"]) / 1000000)
