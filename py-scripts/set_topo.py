@@ -5,9 +5,9 @@ import json
 import copy
 
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
-CLIENT_NUMBER = 40
-DISPATCHER_NUMBER = 10
-SERVER_NUMBER = 30
+CLIENT_NUMBER = 10
+DISPATCHER_NUMBER = 5 # 最多10个
+SERVER_NUMBER = 10
 THREAD_NUMBER = 5 # 假设所有线程都是5（5个端口并行）
 
 csv_file_path = '../data-prepare/measure.csv'
@@ -19,6 +19,8 @@ area_all = ['asia-east1','asia-east2','asia-northeast1','asia-northeast2','asia-
 zone_ignore = ['asia-southeast1', 'us-central1']
 
 zone_dispatcher = ['asia-east1', 'asia-northeast2', 'asia-south2', 'australia-southeast1', 'europe-north1', 'europe-west3', 'northamerica-northeast1', 'southamerica-west1', 'us-east4', 'us-west2']
+
+zone_dispatcher = zone_dispatcher[:DISPATCHER_NUMBER]
 
 client2dispatcher = [0 for _ in range(len(area_all))]
 client2dispatcher[0] = client2dispatcher[1] = 0
@@ -52,10 +54,8 @@ for line in csv_reader:
     if area not in zone_map:    
         zone_map[area] = zone_number
         zone_number += 1
-        # print("'%s'"%(area), end=',')  
 
     if not line[3]:
-        # print(line[0], line[1])
         continue
     elif 'Mb' in line[3].split('_')[1]:
         line[3] = float(line[3].split('_')[0])
@@ -70,8 +70,8 @@ for line in csv_reader:
 latency_topo = [[0 for _ in range(zone_number)] for _ in range(zone_number)]
 bandwidth_topo = [[0 for _ in range(zone_number)] for _ in range(zone_number)]
 
-print("max bandwidth: ", max_bw)
-print("zone_number:", zone_number)
+# print("max bandwidth: ", max_bw)
+# print("zone_number:", zone_number)
 
 for line in lines:
     if (line[0][:-2] in zone_ignore) or (line[1][7:-2] in zone_ignore):
@@ -90,10 +90,18 @@ for line in lines:
 # print(bandwidth_topo[0])
 
 for i in range(CLIENT_NUMBER):
-    client_zone.append(random.choice(area_all))
+    temp = random.choice(area_all)
+    while (client2dispatcher[zone_map[temp]] >= DISPATCHER_NUMBER):
+        temp = random.choice(area_all)
+    client_zone.append(temp)
+    # client_zone.append(random.choice(area_all))
 
-for i in range(10, SERVER_NUMBER):
-    server_zone.append(random.choice(area_all))
+for i in range(DISPATCHER_NUMBER, SERVER_NUMBER):
+    temp = random.choice(area_all)
+    while (client2dispatcher[zone_map[temp]] >= DISPATCHER_NUMBER):
+        temp = random.choice(area_all)
+    server_zone.append(temp)
+    # server_zone.append(random.choice(area_all))
 
 result = {}
 result['client_number'] = CLIENT_NUMBER
@@ -112,7 +120,7 @@ result['server_zone'] = []
 result['dispatcher_zone'] = []
 for client_area in client_zone:
     result['client_zone'].append(client2dispatcher[zone_map[client_area]])
-for server_area in client_zone:
+for server_area in server_zone:
     result['server_zone'].append(client2dispatcher[zone_map[server_area]])
 for dispatcher_area in dispatcher_zone:
     result['dispatcher_zone'].append(client2dispatcher[zone_map[dispatcher_area]])
@@ -149,13 +157,7 @@ for dispatcher_id in range(DISPATCHER_NUMBER):
         result['bw']['dispatcher_server'][dispatcher_id].append(bandwidth_topo[dispatcher_pos][server_pos])
         result['delay']['dispatcher_server'][dispatcher_id].append(latency_topo[dispatcher_pos][server_pos])
     
-# print(result)
-
-
-
 json_file = '../json-files/new_topo.json'
 f_out = open(json_file, 'w')
 json.dump(result, f_out, indent=4)
 f_out.close()
-
-# Middleware_client_dispatcher_server_large
