@@ -59,6 +59,7 @@ for client_file in client_files:
                     plt = int(line.split(" ")[1].strip())
                     plt_times += 1
                 if "time_duration:" in line:
+                    # print(client_file, line, float(line.split(" ")[-1].strip()) * 1000000)
                     cpu_duration = int(float(line.split(" ")[-1].strip()) * 1000000)
 
     if "_tmp.txt" in client_file:
@@ -87,7 +88,9 @@ for client_file in client_files:
 
         if plt == 0: # 应该有plt，但是没有查到
             continue
-        if plt_times != 2: # 应该都是两个plt
+        # if sensitive_type == "cpu":
+        #     print(plt, plt_times, cpu_duration)
+        if plt_times != 2 and sensitive_type != "cpu": # bw和delay应该都是两个plt
             continue
         if sensitive_type == "cpu" and (cpu_duration == 0): # 应该是cpu，但是没查到cpu
             continue

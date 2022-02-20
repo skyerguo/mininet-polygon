@@ -2,7 +2,7 @@ root_path=/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
-while getopts ":i:s:p:t:y:r:a:m:z:" opt
+while getopts ":i:s:p:t:y:r:a:m:z:d:" opt
 do
     case $opt in
         i)
@@ -35,6 +35,9 @@ do
         z)
             client_zone=$OPTARG # 通过client_zone，用参数传入需要转发给的dispatcher
         ;;
+        d)
+            des_server_id=$OPTARG # 随机选择的，同一个zone的server_id
+        ;;
         ?)
             echo "未知参数"
             exit 1
@@ -65,12 +68,13 @@ fi
 # echo "server_domain: " $server_domain
 
 type_list=(${type_list_all[*]})
-# type_list=(${type_list_video[*]})
+# type_list=(${type_list_cpu[*]})
+
 
 for i in `seq $client_thread`
 do
     {
-        for round in `seq 20`
+        for round in `seq 2000`
         do
             time_stamp=$(($(date +%s%N)/1000000))
             start_port=$init_port ## 定死
@@ -86,7 +90,7 @@ do
             elif [[ $mode == "DNS" ]]; then
                 destination_ip="10.0."$client_zone".3"
             elif [[ $mode == "Anycast" ]]; then
-                destination_ip="10.0."$client_zone".3"
+                destination_ip="10.0."$des_server_id".3"
             elif [[ $mode == "FastRoute" ]]; then
                 destination_ip=`python3 -c "import dns.resolver;import os;dns_ip = '$dns_ip';my_resolver = dns.resolver.Resolver();my_resolver.nameservers = [dns_ip];DNS_resolving = my_resolver.query('$server_domain');print(DNS_resolving[0].to_text().split(' ')[0]);"`
             else
@@ -126,7 +130,7 @@ do
             current_time=$(date "+%Y-%m-%d_%H:%M:%S")
             echo "current_time: "$current_time >> ${output_file}_tmp.txt
 
-            echo "sudo LD_LIBRARY_PATH=/data /data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q" >> ${output_file}_tmp.txt
+            echo "sudo LD_LIBRARY_PATH=/data /data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
             sudo LD_LIBRARY_PATH=/data /data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
 
             sleep 3

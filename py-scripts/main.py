@@ -48,7 +48,6 @@ virtual_machine_subnet = "127.0.0.1"
 DNS_IP = "10.177.53.232"
 
 zone2server_ids = []
-dispatcher_eth_number = []
 
 modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
 if len(sys.argv) < 2:
@@ -148,8 +147,6 @@ def myNetwork(net):
     
     ## add links among clients, servers and dispatchers
     ## bw和delay都+1，防止0的情况报错
-    global dispatcher_eth_number
-    dispatcher_eth_number = [0 for _ in range(DISPATCHER_NUMBER)] ## 记录dispatcher和多少个client相连
  
     ## C-S
     for server_id in range(SERVER_NUMBER):
@@ -167,7 +164,6 @@ def myNetwork(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
             if DISPATCHER_ZONE[dispatcher_id] == CLIENT_ZONE[client_id]: ## 减少一些用不到的边
-                dispatcher_eth_number[dispatcher_id] += 1
                 net.addLink(switch[SERVER_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id]+1,'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
         net.addLink(switch[SERVER_NUMBER + dispatcher_id], dispatcher[dispatcher_id], cls=None)
     # print(3333)
@@ -243,8 +239,8 @@ def myNetwork(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for interface_id in range(SERVER_NUMBER): # 给dispatcher所有端口都绑定，保证每个端口都能转发，否则只能转发给server0
             dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
-        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER+dispatcher_eth_number[dispatcher_id]))) ## server个数加上和client相连的个数。
-        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER+dispatcher_eth_number[dispatcher_id]),  str(switch_gw_pre3[0]), str(150+dispatcher_id)))
+        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER+1))) ## server个数加上和1个和client相连的sw。
+        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER+1),  str(switch_gw_pre3[0]), str(150+dispatcher_id)))
     
 
     ## client,server,dispatcher发出
@@ -382,7 +378,7 @@ def test_run(net):
     now_port = START_PORT
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+dispatcher_eth_number[dispatcher_id]), DISPATCHER_ZONE[dispatcher_id]))
+        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+1), DISPATCHER_ZONE[dispatcher_id]))
     
     print("sleep " + str(60 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 5 * SERVER_NUMBER)
@@ -431,11 +427,11 @@ if __name__ == '__main__':
     # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth0 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth0.cap &")
     # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth2 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth2.cap &")
     
-    # ## 测量
+    ## 测量
     print("measure_start! ")
     measure_start(net)
 
-    # ## 跑实验
+    ## 跑实验
     test_run(net)
     save_config()
 
