@@ -6,7 +6,6 @@ from mininet.node import IVSSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
-from subprocess import call
 from topo import *
 import copy
 import json
@@ -103,14 +102,22 @@ def init():
     DNS_IP = virtual_machine_ip
 
     # 每次重新启动mongodb和redis，以防mininet网络变化
-    os.system("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9")
-    os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/data/mongo.log --logappend"%(virtual_machine_ip))
-    os.system("sudo /usr/bin/redis-server /etc/redis/redis.conf")
+    ret = subprocess.Popen("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9 && \
+                        sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/data/mongo.log --logappend && \
+                        sudo /usr/bin/redis-server /etc/redis/redis.conf"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)
+    data=ret.communicate() #如果启用此相会阻塞主程序
+    ret.wait() #等待子程序运行完毕
+
+    # os.system("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9")
+    # os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/data/mongo.log --logappend"%(virtual_machine_ip))
+    # os.system("sudo /usr/bin/redis-server /etc/redis/redis.conf")
 
 
 def clear_logs():
-    os.system("sudo mn -c")
-    os.system("sudo bash ../bash-scripts/kill_running.sh")
+    ret = subprocess.Popen("sudo mn -c && sudo bash ../bash-scripts/kill_running.sh", shell=True, stdout=subprocess.PIPE)
+    data=ret.communicate() #如果启用此相会阻塞主程序
+
+    ret.wait() #等待子程序运行完毕
 
 
 def myNetwork(net):

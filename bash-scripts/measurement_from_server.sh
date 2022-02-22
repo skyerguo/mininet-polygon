@@ -39,11 +39,7 @@ dispatcher_bw=(`echo $bw_set | tr '+' ' '`)
 # echo "server_hostnames: " $server_hostnames
 # echo "dispatcher_hostnames: " $dispatcher_hostnames
 
-# ps -ef | grep "top -b -d 0.1" | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1
 start_time=$(date "+%Y%m%d%H%M%S")
-# echo "start_time:" $start_time > ~/cpu.log
-# top -b -d 0.1 | grep -a '%Cpu' >> ~/cpu.log &
-
 
 dispatcher_ip=()
 total_bw_capability=0
@@ -77,8 +73,6 @@ do
     temp_now_used=`tac ${measurement_result_path}iftop/iftop_log_$server_id.txt | grep -a "Total send rate" |head -n 1| awk '{print $4}'`
     
     if [ ! -n "$temp_now_used" ]; then
-        # sleep 1.5
-        # continue
         temp_now_used=0
     fi
 
@@ -93,7 +87,7 @@ do
     then
         now_used=`awk 'BEGIN{print "'$now_used'" * "1000000"}'`
     fi
-    if [[ `echo "$temp_now_used > $total_bw_capability" | bc` -eq 1 ]]
+    if [[ `echo "$now_used > $total_bw_capability" | bc` -eq 1 ]]
     then
         now_used=$total_bw_capability
     fi
@@ -106,33 +100,37 @@ do
 
     for i in `seq 0 $((${#dispatcher_ip[*]} - 1))`
     do
-        echo "dispatcher_log: dispatcher"$i >> $output_file
-        echo "{dispatcher_bw[i]}: "${dispatcher_bw[i]} >> $output_file
+        {
+            output_file_2="${measurement_result_path}server/server_${server_id}_${i}.log"
+            echo "dispatcher_log: dispatcher"$i >> $output_file_2
+            echo "{dispatcher_bw[i]}: "${dispatcher_bw[i]} >> $output_file_2
 
-        # latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
-        
-        ## exist_throughput 测量当前server到当前dispathcer的流量
-        exist_throughput=`python3 /home/mininet/mininet-polygon/py-scripts/get_n_video.py $server_id $i ${measurement_result_path}`
-        echo "exist_throughput: "$exist_throughput >> $output_file
-        if [[ `echo "$exist_throughput > ${dispatcher_bw[i]}" | bc` -eq 1 ]]
-        then
-            exist_throughput=${dispatcher_bw[i]}
-        fi
+            latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
+            
+            ## exist_throughput 测量当前server到当前dispathcer的流量
+            echo "before get_n_vide time", $(date "+%Y%m%d%H%M%S") >> $output_file_2
+            exist_throughput=`python3 /home/mininet/mininet-polygon/py-scripts/get_n_video.py $server_id $i ${measurement_result_path}`
+            echo "after get_n_video time", $(date "+%Y%m%d%H%M%S") >> $output_file_2
+            echo "exist_throughput: "$exist_throughput >> $output_file_2
+            if [[ `echo "$exist_throughput > ${dispatcher_bw[i]}" | bc` -eq 1 ]]
+            then
+                exist_throughput=${dispatcher_bw[i]}
+            fi
 
-        # current_res_throughput=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" - "'$exist_throughput'"}'`
-        ## 总体逻辑：当前剩余 * (1-used/总)
+            # current_res_throughput=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" - "'$exist_throughput'"}'`
+            ## 总体逻辑：当前剩余 * (1-used/总)
 
-        avg_throughput=`awk 'BEGIN{print ("'${dispatcher_bw[i]}'" - "'$exist_throughput'") * "'${total_res_rate}'"}'`
-        echo "avg_throughput: "$avg_throughput >> $output_file
-        redis-cli -h $redis_ip -a 'Hestia123456' set throughput_s${server_id}_d$i ${avg_throughput} > /dev/null
+            avg_throughput=`awk 'BEGIN{print ("'${dispatcher_bw[i]}'" - "'$exist_throughput'") * "'${total_res_rate}'"}'`
+            echo "avg_throughput: "$avg_throughput >> $output_file_2
+            redis-cli -h $redis_ip -a 'Hestia123456' set throughput_s${server_id}_d$i ${avg_throughput} > /dev/null
 
-        # echo "latency: "$latency >> $output_file
-        # redis-cli -h $redis_ip -a 'Hestia123456' set latency_server${server_id}_dispatcher$i ${latency} > /dev/null
-
-        echo "cpu_idle: "$cpu_idle >> $output_file
-        redis-cli -h $redis_ip -a 'Hestia123456' set cpu_s${server_id}_d$i ${cpu_idle} > /dev/null
-        
-        # redis-cli -h ${dispatcher_ip[$i]} -a 'Hestia123456' set cpu_idle_$hostname $cpu_idle > /dev/null
+            # echo "latency: "$latency >> $output_file_2
+            # redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${server_id}_d$i ${latency} > /dev/null
+        } &
     done
-    sleep 1.5
+
+    echo "cpu_idle: "$cpu_idle >> $output_file
+    redis-cli -h $redis_ip -a 'Hestia123456' set cpu_s${server_id} ${cpu_idle} > /dev/null
+
+    sleep 15
 done
