@@ -24,11 +24,6 @@ done
 server_ips=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_server.json")); print(" ".join([machines[x]["internal_ip1"] for x in machines if "s" in x]));'`)
 
 
-# server_ip=()
-# for i in `seq 0 $((${#server_ips[*]} - 1))`
-# do
-#     server_ip[$i]=${server_ips[$i]}
-# done
 
 output_file=${measurement_result_path}$dispatcher_id'.log'
 while true

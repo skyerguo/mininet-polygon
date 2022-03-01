@@ -28,6 +28,7 @@ DISPATCHER_THREAD = 1
 SERVER_THREAD = 1
 
 START_PORT = 4433
+MAX_THROUGHPUT = 5 * 1024 # 最大带宽
 
 switch = []
 client = []
@@ -350,14 +351,16 @@ def measure_start(net):
 
     # 设置latency的表格
     for server_id in range(SERVER_NUMBER):
-        for dispatcher_id in range(DISPATCHER_NUMBER):
-            os.system("redis-cli -h %s -a 'Hestia123456' set latency_s%s_d%s %s"%(str(virtual_machine_ip), str(server_id), str(dispatcher_id), str(delay['dispatcher_server'][dispatcher_id][server_id])))
-
-    for server_id in range(SERVER_NUMBER):
-        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -a %s" %(str(server_id), str(start_time)))
+        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -m %s" %(str(server_id), str(MAX_THROUGHPUT)))
         if mode == "FastRoute": ## 开启FastRoute的cpu监控和转移规则
             server[server_id].cmdPrint("cd ../FastRoute-files && sudo python3 LoadMonitor.py %s &"%(str(server_id)))
     
+    for server_id in range(SERVER_NUMBER):
+        for dispatcher_id in range(DISPATCHER_NUMBER):
+            os.system("redis-cli -h %s -a 'Hestia123456' set latency_s%s_d%s %s"%(str(virtual_machine_ip), str(server_id), str(dispatcher_id), str(delay['dispatcher_server'][dispatcher_id][server_id])))
+    
+    for client_id in range(CLIENT_NUMBER): 
+        client[client_id].cmdPrint("bash ../bash-scripts/init_measurement_from_client.sh -i %s -a %s -z %s -n %s"%(str(client_id), str(start_time), str(CLIENT_ZONE[client_id]), str(SERVER_NUMBER)))
     time.sleep(10)
     
     for server_id in range(SERVER_NUMBER):
@@ -367,9 +370,9 @@ def measure_start(net):
         print(temp_bw)
         server[server_id].cmdPrint("cd ../py-scripts && bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(temp_bw).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time)))
     
-    time.sleep(10)
-    for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
+    # time.sleep(10)
+    # for dispatcher_id in range(DISPATCHER_NUMBER):
+    #     dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
 
 
 def test_run(net):
@@ -438,9 +441,9 @@ if __name__ == '__main__':
     print("measure_start! ")
     measure_start(net)
 
-    ## 跑实验
-    test_run(net)
-    save_config()
+    # ## 跑实验
+    # test_run(net)
+    # save_config()
 
     CLI(net)
     net.stop()
