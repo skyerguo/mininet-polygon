@@ -1,9 +1,11 @@
-nload_path='/data/measurement_log/2022-02-28_11:03:00/nload/'
-server_id=1
-for file_name in `ls ${nload_path}*$server_id.txt`
+cat "/data/measurement_log/2022-03-02_14:16:43/competitiveness/competitiveness.txt"
+bw_set=`sed -n '1,1p' /data/measurement_log/2022-03-02_14:16:43/competitiveness/competitiveness.txt`
+echo $bw_set
+dispatcher_bw=(`echo $bw_set`)
+echo ${dispatcher_bw[*]}
+
+for i in `seq 0 $((${#dispatcher_bw[*]} - 1))`
 do
-    # echo $file_name
-    new_file_name=${file_name//txt}"log"
-    # cat -A $file_name | grep "Curr: "
-    sed -e "s/\x1b\[[?]*[0-9]*[a-zA-Z]//g; s/\x1b\[[?]*[0-9]*\;[0-9]*[a-zA-Z=]//g; s/\x1b\[[?]*[0-9]*\;[0-9]*\;[0-9]*[a-zA-Z=]//g; s/\x1b([a-zA-Z]//g; s/\x1b=//g; s//\r\n/g;"  $file_name > $new_file_name
+    echo ${dispatcher_bw[i]}
+    # bw_competitiveness[i]=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" / "'$max_dispatcher_bw'"}'`
 done

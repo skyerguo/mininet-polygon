@@ -1,12 +1,16 @@
 root_path=/data
 measurement_result_path=$root_path/measurement_log/
 
-while getopts ":i:m:" opt
+while getopts ":i:m:a:" opt
 do
     case $opt in
         i)
             server_id=$OPTARG
-            hostname="server"$server_id
+        ;;
+        a)
+            measurement_result_path=${measurement_result_path}$OPTARG'/'
+            mkdir -p $measurement_result_path
+            mkdir -p ${measurement_result_path}"competitiveness"
         ;;
         m)
             max_throughput=$OPTARG
@@ -15,7 +19,10 @@ do
 done
 
 ## 使用wondershaper，设置每个server进出口，最大的带宽总量
-s$server_id sudo wondershaper clear s$server_id-eth0
-s$server_id sudo wondershaper s$server_id-eth0 $max_throughput $max_throughput
+sudo wondershaper clear s$server_id-eth0
+sudo wondershaper s$server_id-eth0 $max_throughput $max_throughput
 
-## 启动ngtcp2，做第一次竞争力测量
+server_ip="10.0."$server_id".3"
+output_file=${measurement_result_path}"competitiveness/server_"$server_id
+## 启动ngtcp2的server端，为第一次竞争力测量做准备
+sudo LD_LIBRARY_PATH=/data /data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 4432 /data/server.key /data/server.crt -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt

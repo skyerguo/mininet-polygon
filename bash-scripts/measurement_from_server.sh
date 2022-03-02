@@ -1,7 +1,7 @@
 root_path=/data
 measurement_result_path=$root_path/measurement_log/
 
-while getopts ":i:s:t:a:r:" opt
+while getopts ":i:s:t:a:r:m:" opt
 do
     case $opt in
         i)
@@ -13,7 +13,6 @@ do
         ;;
         t)
             bw_set=$OPTARG
-            # echo "bw_set:" $bw_set
         ;;
         a)
             measurement_result_path=${measurement_result_path}$OPTARG'/'
@@ -22,6 +21,9 @@ do
         ;;
         r)
             redis_ip=$OPTARG
+        ;;
+        m)
+            max_throughput=$OPTARG
         ;;
         ?)
             echo "未知参数"
@@ -33,40 +35,20 @@ done
 dispatcher_ips=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_dispatcher.json")); print(" ".join([machines[x]["internal_ip1"] for x in machines if "d" in x]));'`)
 server_hostnames=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_server.json")); print(" ".join([x for x in machines if "server" in x]));'`)
 dispatcher_hostnames=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_dispatcher.json")); print(" ".join([x for x in machines if "d" in x]));'`)
+## 在mininet中设置的链路值，当前server到所有的dispatcher
 dispatcher_bw=(`echo $bw_set | tr '+' ' '`)
 
-# echo "dispatcher_ips: " $dispatcher_ips
-# echo "server_hostnames: " $server_hostnames
-# echo "dispatcher_hostnames: " $dispatcher_hostnames
-
-## 以下所有流量相关的变量，单位均为Kb/sec
+## 以下所有流量相关的变量，单位均为Kbit/sec
 start_time=$(date "+%Y%m%d%H%M%S")
 
-dispatcher_ip=() 
-max_dispatcher_bw=0 ## 该server到所有dispatcher中，设定的最大流量
-for i in `seq 0 $((${#dispatcher_ips[*]} - 1))`
-do
-    dispatcher_ip[$i]=${dispatcher_ips[$i]}
-    dispatcher_bw[$i]=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" * "1000"}'`
-    if [[ `echo "${dispatcher_bw[i]} > $max_dispatcher_bw" | bc` -eq 1  ]]
-    then
-        max_dispatcher_bw=${dispatcher_bw[i]}
-    fi
-done
-
-bw_competitiveness=() ## 流量竞争力，指每个dispatcher到server，一条传输流大概能占多少流量的能力。按照mininet设定的来做相对对比。
-for i in `seq 0 $((${#dispatcher_ips[*]} - 1))`
-do
-    bw_competitiveness[i]=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" / "'$max_dispatcher_bw'"}'`
-done
+raw_bw_competitiveness=`sed -n "$(($server_id+1)),$(($server_id+1))p" ${measurement_result_path}competitiveness/competitiveness.txt` ## 从文件读取的，当前server_id对应行的流量竞争力
+bw_competitiveness=(`echo $raw_bw_competitiveness`) ## 流量竞争力，指每个dispatcher到server，一条传输流大概能占多少流量的能力。按照mininet设定的来做相对对比。
 
 output_file="${measurement_result_path}server/server_$server_id.log"
 
-echo "dispatcher_ip: "${dispatcher_ip[*]} >> $output_file
+echo "dispatcher_ips: "${dispatcher_ips[*]} >> $output_file
 echo "dispatcher_bw: "${dispatcher_bw[*]} >> $output_file
 echo "bw_competitiveness: "${bw_competitiveness[*]} >> $output_file
-
-echo "max_dispatcher_bw"$max_dispatcher_bw >> $output_file
 
 server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | head -n 1 | awk '{print $2}'`
 echo "server_pid: " $server_pid >> $output_file
@@ -82,32 +64,29 @@ do
     cpu_idle=`echo $cpu_idle_temp | tr -cd "[0-9][.]"`
 
     ## 把文件从不可读的ANSI，通过sed替换编码改为可以用cat操作的常规编码
-    echo "before file translation time", $(date "+%Y%m%d%H%M%S") >> $output_file
     for file_name in `ls ${nload_path}*$server_id.txt`
     do
-        {
-            new_file_name=${file_name//txt}"log"
-            sed -e "s/\x1b\[[?]*[0-9]*[a-zA-Z]//g; s/\x1b\[[?]*[0-9]*\;[0-9]*[a-zA-Z=]//g; s/\x1b\[[?]*[0-9]*\;[0-9]*\;[0-9]*[a-zA-Z=]//g; s/\x1b([a-zA-Z]//g; s/\x1b=//g; s/
-/\r\n/g;"  $file_name > $new_file_name
-        } &
+        new_file_name=${file_name//txt}"log"
+        sudo bash /home/mininet/mininet-polygon/bash-scripts/translate_nloads_file.sh -o $file_name -n $new_file_name
+        echo $file_name $new_file_name >> $output_file
     done
-    echo "after file translation time", $(date "+%Y%m%d%H%M%S") >> $output_file
 
-    for i in `seq 0 $((${#dispatcher_ip[*]} - 1))`
+    for dispatcher_id in `seq 0 $((${#dispatcher_ips[*]} - 1))`
     do
         {
-            output_file_2="${measurement_result_path}server/server_${server_id}_${i}.log"
+            ## 用来记录以server_id和dispatcher_id为关键字的记录文件，以避免多进程并行导致的log记录错乱问题
+            output_file_2="${measurement_result_path}server/server_${server_id}_${dispatcher_id}.log"
 
             echo $(date "+%Y%m%d%H%M%S") >> $output_file_2
 
             ## 测量实时latency，并记录到redis中
-            latency=`ping -i.2 -c5 ${dispatcher_ip[i]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
+            latency=`ping -i.2 -c5 ${dispatcher_ips[dispatcher_id]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
             echo "latency: "$latency >> $output_file_2
-            redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${server_id}_d$i $latency > /dev/null
+            redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${server_id}_d${dispatcher_id} $latency > /dev/null
 
             ## 通过计算所有对应zone的nload，最近5秒的平均带宽
             sum_existing_bw_per_zone=0  
-            for file_name in `ls ${nload_path}*$i_$server_id.log`
+            for file_name in `ls ${nload_path}*${dispatcher_id}_${server_id}.log`
             do
                 existing_bw_per_client=`tail -n 10 $file_name | grep "Avg:" | head -n 1 | awk '{print $4}'`
                 sum_existing_bw_per_zone=`awk 'BEGIN{print "'${sum_existing_bw_per_zone}'" + "'$existing_bw_per_client'"}'`
@@ -117,9 +96,10 @@ do
             ## 计算如果加一条新的流量，可能可以使用的带宽大小
             ## 计算公式，总流量限制/(现有zone的所有流量+新的流量的竞争力*1)*新的流量的竞争力
             ## 流量竞争力，就用设定的流量来决定
-            throughput_value=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" / ("'${sum_existing_bw_per_zone}'" + "'${dispatcher_bw[i]}'") * "'${dispatcher_bw[i]}'"}'`
+            valid_ratio=0.12 ## 虽然用wondershaper设定了最大值，但是实际上每条流最多用到"限制*valid_ratio"这么多的流量
+            throughput_value=`awk 'BEGIN{print "'$max_throughput'" * "'$valid_ratio'" / ("'${sum_existing_bw_per_zone}'" + "'${bw_competitiveness[dispatcher_id]}'") * "'${bw_competitiveness[dispatcher_id]}'"}'`
             echo "throughput_value: "$throughput_value >> $output_file_2
-            redis-cli -h $redis_ip -a 'Hestia123456' set throughput_s${server_id}_d$i ${throughput_value} > /dev/null
+            redis-cli -h $redis_ip -a 'Hestia123456' set throughput_s${server_id}_d${dispatcher_id} ${throughput_value} > /dev/null
         } &
     done
     

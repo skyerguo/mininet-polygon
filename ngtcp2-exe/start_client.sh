@@ -65,11 +65,10 @@ if [[ $client_id < 3 ]]; then ## 修改的话，需要对应修改LoadMonitory.p
 else
     server_domain='server2.example.com'
 fi
-# echo "server_domain: " $server_domain
 
+## 选择某一类的type_list
 type_list=(${type_list_all[*]})
 # type_list=(${type_list_cpu[*]})
-
 
 for i in `seq $client_thread`
 do

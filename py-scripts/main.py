@@ -28,7 +28,7 @@ DISPATCHER_THREAD = 1
 SERVER_THREAD = 1
 
 START_PORT = 4433
-MAX_THROUGHPUT = 5 * 1024 # 最大带宽
+MAX_THROUGHPUT = 5 * 1024 ## wondershaper设置的最大带宽
 
 switch = []
 client = []
@@ -349,16 +349,58 @@ def myNetwork(net):
 def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
 
-    # 设置latency的表格
+    ## 对所有server设置wondershaper，并启动ngtcp2，为了发第一次包测量实际竞争力做准备
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -m %s" %(str(server_id), str(MAX_THROUGHPUT)))
+        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -m %s -a %s &" %(str(server_id), str(MAX_THROUGHPUT), str(start_time)))
         if mode == "FastRoute": ## 开启FastRoute的cpu监控和转移规则
             server[server_id].cmdPrint("cd ../FastRoute-files && sudo python3 LoadMonitor.py %s &"%(str(server_id)))
+
+    ## 测量竞争力
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/init_measurement_from_dispatcher.sh -i %s -n %s -a %s" %(str(dispatcher_id), str(SERVER_NUMBER), str(start_time))) ### 这里不能用&，否则会导致测量值不准
+
+    ## 将竞争力结果写入一个文件，方便后续使用 
+    file_size = os.path.getsize("/data/websites/video/downloadinginit/www.downloadinginit/cross.mp4")
+    file_size = file_size * 8 / 1024 ## 从Byte转换为Kbit的单位
+    ## 计算ngtcp2实际传输的速度
+    actual_speed = [[0 for _ in range(DISPATCHER_NUMBER)] for _ in range(SERVER_NUMBER)]
+    max_speed = 0
+    for server_id in range(SERVER_NUMBER):
+        for dispatcher_id in range(DISPATCHER_NUMBER):
+            f_in = open("/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
+            plt = 0
+            cnt = 0
+            for line in f_in:
+                if "PLT" in line:
+                    plt = plt + float(line.split(": ")[1].split(" ")[0])
+                    cnt += 1
+            if cnt != 2: # 初识测量出错了
+                print("ERROR measurement!")
+                exit(0)
+            f_in.close()
+            actual_speed[server_id][dispatcher_id] = file_size / (plt / 1000000) ## 单位，Kbit/s
+            max_speed = max(max_speed, file_size / (plt / 1000000))
+    # ## 计算ngtcp2实际传输的相对竞争力
+    # relative_competitiveness = [[0 for _ in range(DISPATCHER_NUMBER)] for _ in range(SERVER_NUMBER)]
+    # for server_id in range(SERVER_NUMBER):
+    #     for dispatcher_id in range(DISPATCHER_NUMBER):
+    #         relative_competitiveness[server_id][dispatcher_id] = actual_speed[server_id][dispatcher_id] / max_speed
+
+    ## 写入一个文件，方便后续读取
+    competitiveness_path = "/data/measurement_log/" + start_time + "/competitiveness/competitiveness.txt"
+    f_out = open(competitiveness_path, "w")
+    for server_id in range(SERVER_NUMBER):
+        for dispatcher_id in range(DISPATCHER_NUMBER):
+            f_out.write(str(actual_speed[server_id][dispatcher_id]) + ' ')
+        f_out.write('\n')
+    f_out.close()
     
+    ## 设置latency的表格
     for server_id in range(SERVER_NUMBER):
         for dispatcher_id in range(DISPATCHER_NUMBER):
             os.system("redis-cli -h %s -a 'Hestia123456' set latency_s%s_d%s %s"%(str(virtual_machine_ip), str(server_id), str(dispatcher_id), str(delay['dispatcher_server'][dispatcher_id][server_id])))
-    
+
+    ## 在client端启动nload    
     for client_id in range(CLIENT_NUMBER): 
         client[client_id].cmdPrint("bash ../bash-scripts/init_measurement_from_client.sh -i %s -a %s -z %s -n %s"%(str(client_id), str(start_time), str(CLIENT_ZONE[client_id]), str(SERVER_NUMBER)))
     time.sleep(10)
@@ -367,15 +409,17 @@ def measure_start(net):
         temp_bw = []
         for dispatcher_id in range(DISPATCHER_NUMBER):
             temp_bw.append(bw['dispatcher_server'][dispatcher_id][server_id])
-        print(temp_bw)
-        server[server_id].cmdPrint("cd ../py-scripts && bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s &"%(str(server_id), str(temp_bw).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time)))
+        server[server_id].cmdPrint("cd ../py-scripts && bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s -m %s &"%(str(server_id), str(temp_bw).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time), str(MAX_THROUGHPUT)))
     
     # time.sleep(10)
     # for dispatcher_id in range(DISPATCHER_NUMBER):
     #     dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
 
+    ## 删除测量带来的server进程，以免影响后续的实验结果
+    os.system("ps -ef | grep '/home/mininet/data/server' | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1")
 
-def test_run(net):
+
+def run(net):
 
     import random
     
@@ -392,6 +436,8 @@ def test_run(net):
     
     print("sleep " + str(60 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 5 * SERVER_NUMBER)
+
+    print("actual_start_time: ", time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))
     print("start_clients!")
 
     for client_id in range(CLIENT_NUMBER):
@@ -442,7 +488,7 @@ if __name__ == '__main__':
     measure_start(net)
 
     # ## 跑实验
-    # test_run(net)
+    # run(net)
     # save_config()
 
     CLI(net)
