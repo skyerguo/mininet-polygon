@@ -102,8 +102,8 @@ for client_file in client_files:
 
         if plt == 0: # 应该有plt，但是没有查到
             continue
-        if sensitive_type == "cpu":
-            print(plt, plt_times, cpu_duration)
+        # if sensitive_type == "cpu":
+        #     print(plt, plt_times, cpu_duration)
         if plt_times != 2: # bw和delay应该都是两个plt
             continue
         if sensitive_type == "cpu" and (cpu_duration == 0): # 应该是cpu，但是没查到cpu
@@ -114,8 +114,6 @@ for client_file in client_files:
         plt_total[sensitive_type].append(float(plt))
         if sensitive_type == "cpu":
             plt_total["mongo"].append(float(cpu_duration))
-            # if cpu_duration > 10 * 1000000:
-                # print(client_file)
 
         print(str(current_time) + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))
 

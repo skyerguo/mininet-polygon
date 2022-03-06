@@ -52,13 +52,16 @@ type_list_normal=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal
 type_list_video=("video" "video" "video" "video" "video" "video" "video" "video" "video") ## 全是video
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu
 
-dns_ip=`python3 -c "import os
-import configparser
-config = configparser.ConfigParser()
-config.read('/home/mininet/mininet-polygon/FastRoute-files/ip.conf')
-dns_ip = config.get('DNS', 'inter')
-print(dns_ip)"`
-echo "dns_ip: " $dns_ip
+
+if [[ $mode == "DNS" ]]; then
+    dns_ip=`python3 -c "import os
+    import configparser
+    config = configparser.ConfigParser()
+    config.read('/home/mininet/mininet-polygon/FastRoute-files/ip.conf')
+    dns_ip = config.get('DNS', 'inter')
+    print(dns_ip)"`
+    echo "dns_ip: " $dns_ip
+fi
 
 if [[ $client_id < 3 ]]; then ## 修改的话，需要对应修改LoadMonitory.py
     server_domain='server1.example.com'

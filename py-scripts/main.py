@@ -18,6 +18,8 @@ import configparser
 # SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_large)
 SELECT_TOPO = json.load(open('../json-files/new_topo.json', 'r'))
 
+actual_start_time = 0
+
 CLIENT_NUMBER = 0
 DISPATCHER_NUMBER = 0
 SERVER_NUMBER = 0
@@ -416,7 +418,7 @@ def measure_start(net):
     #     dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
 
     ## 删除测量带来的server进程，以免影响后续的实验结果
-    os.system("ps -ef | grep '/home/mininet/data/server' | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1")
+    os.system("ps -ef | grep '/data/server' | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1")
 
 
 def run(net):
@@ -436,8 +438,10 @@ def run(net):
     
     print("sleep " + str(60 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 5 * SERVER_NUMBER)
-
-    print("actual_start_time: ", time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))
+    
+    global actual_start_time
+    actual_start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())
+    print("actual_start_time: ", actual_start_time)
     print("start_clients!")
 
     for client_id in range(CLIENT_NUMBER):
@@ -454,7 +458,8 @@ def save_config():
     topo_file = open(config_result_path + 'topo.json','w',encoding='utf-8')
     json.dump(SELECT_TOPO, topo_file)
     topo_file.close()
-
+    
+    print(actual_start_time, file=open(config_result_path + "actual_start_time.txt", "w"))
 
 if __name__ == '__main__':
     setLogLevel( 'warning' )
@@ -487,9 +492,9 @@ if __name__ == '__main__':
     print("measure_start! ")
     measure_start(net)
 
-    # ## 跑实验
-    # run(net)
-    # save_config()
+    ## 跑实验
+    run(net)
+    save_config()
 
     CLI(net)
     net.stop()
