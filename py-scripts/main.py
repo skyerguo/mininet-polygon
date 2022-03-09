@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/users/myzhou/mininet")
 from mininet.net import Mininet
 from mininet.node import Controller, RemoteController, OVSController
 from mininet.node import CPULimitedHost, Host, Node
@@ -47,7 +49,7 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "10.177.53.232"
+DNS_IP = "198.22.255.15"
 
 zone2server_ids = []
 
@@ -94,7 +96,7 @@ def init():
     start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
 
     global virtual_machine_ip, virtual_machine_subnet, DNS_IP
-    ret = subprocess.Popen("ifconfig eth0 | grep inet | awk '{print $2}' | cut -f 2 -d ':'",shell=True,stdout=subprocess.PIPE)
+    ret = subprocess.Popen("ifconfig eno1 | grep inet | awk '{print $2}' | cut -f 2 -d ':'",shell=True,stdout=subprocess.PIPE)
     virtual_machine_ip = ret.stdout.read().decode("utf-8").strip('\n')
     ret.stdout.close()
     print("virtual_machine_ip: ", virtual_machine_ip)
@@ -106,13 +108,13 @@ def init():
 
     # 每次重新启动mongodb和redis，以防mininet网络变化
     ret = subprocess.Popen("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9 && \
-                        sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/data/mongo.log --logappend && \
+                        sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/run/user/20001/data/mongo.log --logappend && \
                         sudo /usr/bin/redis-server /etc/redis/redis.conf"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)
     data=ret.communicate() #如果启用此相会阻塞主程序
     ret.wait() #等待子程序运行完毕
 
     # os.system("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9")
-    # os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/data/mongo.log --logappend"%(virtual_machine_ip))
+    # os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/run/user/20001/data/mongo.log --logappend"%(virtual_machine_ip))
     # os.system("sudo /usr/bin/redis-server /etc/redis/redis.conf")
 
 
@@ -135,8 +137,8 @@ def myNetwork(net):
         ## 由于mininet对于interface名字不能太长，因此使用cx,sx,dx来表示clientx，serverx，dispatcherx
     '''
 
-    ## set eth1 ifconfig 0
-    os.system('ifconfig eth1 0')
+    ## set eno2 ifconfig 0
+    os.system('ifconfig eno2 0')
 
     print( '*** Add switches\n')
     for switch_id in range(SWITCH_NUMBER):
@@ -161,39 +163,29 @@ def myNetwork(net):
     ## C-S
     for server_id in range(SERVER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
-            # print(server_id, client_id, str(int(float(delay['client_server'][client_id][server_id]) / 2 + 1)))
             net.addLink(switch[server_id], client[client_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id]+1,'delay':str(int(delay['client_server'][client_id][server_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
         net.addLink(switch[server_id], server[server_id], cls=None)
-    # print(1111)
     ## D-S
     for server_id in range(SERVER_NUMBER):
         for dispatcher_id in range(DISPATCHER_NUMBER):
             net.addLink(switch[server_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id]+1,'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
-    # print(2222)
     ## C-D
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
             if DISPATCHER_ZONE[dispatcher_id] == CLIENT_ZONE[client_id]: ## 减少一些用不到的边
                 net.addLink(switch[SERVER_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id]+1,'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
         net.addLink(switch[SERVER_NUMBER + dispatcher_id], dispatcher[dispatcher_id], cls=None)
-    # print(3333)
     
     ## add links to virtual machine ip.
     for client_id in range(CLIENT_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 3], client[client_id], cls=None)
 
-    # print(4444)
-    
     for server_id in range(SERVER_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 2], server[server_id], cls=None)
-
-    # print(5555)
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
         net.addLink(switch[SWITCH_NUMBER - 1], dispatcher[dispatcher_id], cls=None)
 
-    # return
-    
     print( '*** Starting network\n')
     net.build()
 
@@ -207,15 +199,15 @@ def myNetwork(net):
     for switch_id in range(SWITCH_NUMBER):
         switch[switch_id].cmd('sysctl -w net.ipv4.ip_forward=1')
     
-    ## 将最后三个switch和网卡eth1相连，并获取网关地址
+    ## 将最后三个switch和网卡eno21相连，并获取网关地址
 
-    os.system("sudo ovs-vsctl add-port sw%s eth1"%str(SWITCH_NUMBER - 1))
+    os.system("sudo ovs-vsctl add-port sw%s eno2"%str(SWITCH_NUMBER - 1))
     os.system("sudo ifconfig sw%s 10.0.%s.15/24" %(str(SWITCH_NUMBER - 1), str(100)))
 
-    os.system("sudo ovs-vsctl add-port sw%s eth1"%str(SWITCH_NUMBER - 2))
+    os.system("sudo ovs-vsctl add-port sw%s eno2"%str(SWITCH_NUMBER - 2))
     os.system("sudo ifconfig sw%s 10.0.%s.15/24" %(str(SWITCH_NUMBER - 2), str(101)))
     
-    os.system("sudo ovs-vsctl add-port sw%s eth1"%str(SWITCH_NUMBER - 3))
+    os.system("sudo ovs-vsctl add-port sw%s eno2"%str(SWITCH_NUMBER - 3))
     os.system("sudo ifconfig sw%s 10.0.%s.15/24" %(str(SWITCH_NUMBER - 3), str(102)))
 
     print( '*** Post configure switches and hosts\n')
@@ -238,7 +230,6 @@ def myNetwork(net):
 
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
-        # for interface_id in range(1, DISPATCHER_NUMBER + SERVER_NUMBER):
         client[client_id].cmd('ifconfig c%s-eth%s 0'%(str(client_id), str(SERVER_NUMBER+1))) # 一个client只连一个dispatcher
         client[client_id].cmd('ifconfig c%s-eth%s %s.%s/24'%(str(client_id), str(SERVER_NUMBER+1), str(switch_gw_pre3[2]), str(50+client_id)))
     
@@ -252,7 +243,6 @@ def myNetwork(net):
         dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER+1))) ## server个数加上和1个和client相连的sw。
         dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER+1),  str(switch_gw_pre3[0]), str(150+dispatcher_id)))
     
-
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
         for server_id in range(SERVER_NUMBER):
@@ -286,7 +276,6 @@ def myNetwork(net):
             server_name = 's%s'%str(server_id)
             temp_host = net.get(server_name)
             temp_ip = "10.0.%s.3"%(server_id)
-            # temp_ip2 = "10.0.%s.4"%(server_id)
             temp_mac = temp_host.MAC()
             machines[server_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
                                      'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
@@ -330,8 +319,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '10.177.53.232',
-                'exter': '10.177.53.232'
+                'inter': '198.22.255.15',
+                'exter': '198.22.255.15'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
@@ -346,7 +335,7 @@ def myNetwork(net):
     with open('../FastRoute-files/ip.conf','w') as cfg:
         config.write(cfg)
 
-    os.system("cd ../FastRoute-files && nohup sudo python3 dns.py >/home/mininet/a.txt 2>&1 &")
+    os.system("cd ../FastRoute-files && nohup sudo python3 dns.py >/users/myzhou/a.txt 2>&1 &")
 
 def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
@@ -362,14 +351,14 @@ def measure_start(net):
         dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/init_measurement_from_dispatcher.sh -i %s -n %s -a %s" %(str(dispatcher_id), str(SERVER_NUMBER), str(start_time))) ### 这里不能用&，否则会导致测量值不准
 
     ## 将竞争力结果写入一个文件，方便后续使用 
-    file_size = os.path.getsize("/data/websites/video/downloadinginit/www.downloadinginit/cross.mp4")
+    file_size = os.path.getsize("/run/user/20001/data/websites/video/downloadinginit/www.downloadinginit/cross.mp4")
     file_size = file_size * 8 / 1024 ## 从Byte转换为Kbit的单位
     ## 计算ngtcp2实际传输的速度
     actual_speed = [[0 for _ in range(DISPATCHER_NUMBER)] for _ in range(SERVER_NUMBER)]
     max_speed = 0
     for server_id in range(SERVER_NUMBER):
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            f_in = open("/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
+            f_in = open("/run/user/20001/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
             plt = 0
             cnt = 0
             for line in f_in:
@@ -382,14 +371,14 @@ def measure_start(net):
             f_in.close()
             actual_speed[server_id][dispatcher_id] = file_size / (plt / 1000000) ## 单位，Kbit/s
             max_speed = max(max_speed, file_size / (plt / 1000000))
-    # ## 计算ngtcp2实际传输的相对竞争力
+    # ## 计算ngtcp2实际传输的相对竞争力，现在以实际值计算，暂时不使用
     # relative_competitiveness = [[0 for _ in range(DISPATCHER_NUMBER)] for _ in range(SERVER_NUMBER)]
     # for server_id in range(SERVER_NUMBER):
     #     for dispatcher_id in range(DISPATCHER_NUMBER):
     #         relative_competitiveness[server_id][dispatcher_id] = actual_speed[server_id][dispatcher_id] / max_speed
 
     ## 写入一个文件，方便后续读取
-    competitiveness_path = "/data/measurement_log/" + start_time + "/competitiveness/competitiveness.txt"
+    competitiveness_path ="/run/user/20001/data/measurement_log/" + start_time + "/competitiveness/competitiveness.txt"
     f_out = open(competitiveness_path, "w")
     for server_id in range(SERVER_NUMBER):
         for dispatcher_id in range(DISPATCHER_NUMBER):
@@ -413,9 +402,10 @@ def measure_start(net):
             temp_bw.append(bw['dispatcher_server'][dispatcher_id][server_id])
         server[server_id].cmdPrint("cd ../py-scripts && bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s -m %s &"%(str(server_id), str(temp_bw).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time), str(MAX_THROUGHPUT)))
     
-    # time.sleep(10)
-    # for dispatcher_id in range(DISPATCHER_NUMBER):
-    #     dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
+    # 这一块用来周期性记录redis实验数据的，暂时先不启动，会带来一定的overhead
+    time.sleep(10)
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
 
     ## 删除测量带来的server进程，以免影响后续的实验结果
     os.system("ps -ef | grep '/data/server' | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1")
@@ -450,12 +440,13 @@ def run(net):
 
     
 def save_config():
-    config_result_path = "/data/result-logs/config/%s/"%(str(start_time))
+    config_result_path ="/run/user/20001/data/result-logs/config/%s/"%(str(start_time))
     os.system("mkdir -p %s"%config_result_path)
-    os.system("cp /data/websites/cpu/cpu/www.cpu/src/cpu.py %s"%config_result_path)
+    os.system("cp /run/user/20001/data/websites/cpu/cpu/www.cpu/src/cpu.py %s"%config_result_path)
 
     # SELECT_TOPO
     topo_file = open(config_result_path + 'topo.json','w',encoding='utf-8')
+    SELECT_TOPO['mode'] = mode
     json.dump(SELECT_TOPO, topo_file)
     topo_file.close()
     
@@ -480,14 +471,7 @@ if __name__ == '__main__':
     print("sleep 30 seconds to wait mininet construction! ")
     time.sleep(30)
     setLogLevel( 'info' )
-
-    ## tcpdump
-    # client[0].cmd("sudo tcpdump -nn -i c0-eth0 udp -w /home/mininet/test_client_sendquic_1127_c0eth0.cap &")
-    # client[0].cmd("sudo tcpdump -nn -i c0-eth2 udp -w /home/mininet/test_client_sendquic_1127_c0eth2.cap &")
-    # server[0].cmd("sudo tcpdump -nn -i s0-eth0 udp -w /home/mininet/test_server_sendquic_1127_s0eth0..cap &")
-    # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth0 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth0.cap &")
-    # dispatcher[0].cmd("sudo tcpdump -nn -i d0-eth2 udp -w /home/mininet/test_dispatcher_sendquic_1127_d0eth2.cap &")
-    
+      
     ## 测量
     print("measure_start! ")
     measure_start(net)

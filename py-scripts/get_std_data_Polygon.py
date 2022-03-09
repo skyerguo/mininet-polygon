@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import json
 
-data_root_path = "/data/"
+data_root_path ="/run/user/20001/data/"
 
 result_root_path = data_root_path + "result-logs/"
 
@@ -44,9 +44,11 @@ for server_file in os.listdir(result_root_path + "server/" + start_time):
 config_file_path = result_root_path + 'config/' + str(start_time) + '/topo.json'
 config_file = json.load(open(config_file_path, 'r'))
 print("client_number: ", config_file['client_number'])
+print("client_thread: ", config_file['client_thread'])
 print("server_number: ", server_number)
 print("dispatcher_number: ", config_file['dispatcher_number'])
-
+if 'mode' in config_file:
+    print("mode: ", config_file['mode'])
 
 ## client data
 client_result_path = result_root_path + "client/" + str(start_time) + "/"

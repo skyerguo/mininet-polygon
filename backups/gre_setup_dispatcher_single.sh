@@ -14,7 +14,7 @@ do
 done
 
 cd ${HOME}
-root_path="/home/mininet/mininet-polygon/"
+root_path="/users/myzhou/mininet-polygon/"
 machine_server_path=$root_path"json-files/machine_server.json"
 machine_dispatcher_path=$root_path"json-files/machine_dispatcher.json"
 

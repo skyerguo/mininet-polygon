@@ -1,6 +1,6 @@
 cd ${HOME}
 
-root_path="/home/mininet/mininet-polygon/"
+root_path="/users/myzhou/mininet-polygon/"
 # date > ${root_path}timestamp-records/gre.router.sh.start_ts
 
 ## 删除现有的路由表，server_all已经删了，这里不需要了
@@ -21,8 +21,8 @@ root_path="/home/mininet/mininet-polygon/"
 # servers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item for item in machines.keys() if item.endswith("sv")]))'`)
 # pure_routers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item.replace("_","") for item in machines.keys() if item.endswith("rt")]))'`) # 将router的下划线去除
 # pure_servers=(`python3 -c 'import os; import json; machines=json.load(open(os.environ["machine_server_path"])); print(" ".join([item.replace("_","") for item in machines.keys() if item.endswith("sv")]))'`) # 将server的下划线去除
-servers=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_server.json")); print(" ".join([x for x in machines if "server" in x]));'`)
-routers=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_router.json")); print(" ".join([x for x in machines if "router" in x]));'`)
+servers=(`python3 -c 'import json; import os; machines=json.load(open("/users/myzhou/mininet-polygon/json-files/machine_server.json")); print(" ".join([x for x in machines if "server" in x]));'`)
+routers=(`python3 -c 'import json; import os; machines=json.load(open("/users/myzhou/mininet-polygon/json-files/machine_router.json")); print(" ".join([x for x in machines if "router" in x]));'`)
 
 for i in `seq 0 $((${#routers[*]} - 1))`
 do

@@ -1,4 +1,4 @@
-root_path=/data
+root_path=/run/user/20001/data
 measurement_result_path=$root_path/measurement_log/
 
 while getopts ":i:m:a:" opt
@@ -25,4 +25,5 @@ sudo wondershaper s$server_id-eth0 $max_throughput $max_throughput
 server_ip="10.0."$server_id".3"
 output_file=${measurement_result_path}"competitiveness/server_"$server_id
 ## 启动ngtcp2的server端，为第一次竞争力测量做准备
-sudo LD_LIBRARY_PATH=/data /data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 4432 /data/server.key /data/server.crt -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+echo sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 4432 /run/user/20001/data/server.key /run/user/20001/data/server.crt >> ${output_file}_1.txt
+sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 4432 /run/user/20001/data/server.key /run/user/20001/data/server.crt -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt

@@ -5,4 +5,4 @@ sudo apt-get install -y mongodb-org
 sudo systemctl enable mongod
 sudo service mongod restart
 sudo apt-get install -y python3-pymongo
-sudo mongorestore --db shuffle_index --drop /data/shuffle_index
+sudo mongorestore --db shuffle_index --drop /run/user/20001/data/shuffle_index

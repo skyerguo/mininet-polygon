@@ -1,4 +1,4 @@
-root_path=/data
+root_path=/run/user/20001/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
@@ -57,7 +57,7 @@ if [[ $mode == "DNS" ]]; then
     dns_ip=`python3 -c "import os
     import configparser
     config = configparser.ConfigParser()
-    config.read('/home/mininet/mininet-polygon/FastRoute-files/ip.conf')
+    config.read('/users/myzhou/mininet-polygon/FastRoute-files/ip.conf')
     dns_ip = config.get('DNS', 'inter')
     print(dns_ip)"`
     echo "dns_ip: " $dns_ip
@@ -132,8 +132,8 @@ do
             current_time=$(date "+%Y-%m-%d_%H:%M:%S")
             echo "current_time: "$current_time >> ${output_file}_tmp.txt
 
-            echo "sudo LD_LIBRARY_PATH=/data /data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
-            sudo LD_LIBRARY_PATH=/data /data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+            echo "sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
+            sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
 
             sleep 3
         done

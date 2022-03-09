@@ -75,7 +75,7 @@ def init():
 
     # 每次重新启动mongodb，以防mininet网络变化
     os.system("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9")
-    os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/data/mongo.log --logappend"%(virtual_machine_ip))
+    os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/run/user/20001/data/mongo.log --logappend"%(virtual_machine_ip))
 
 
 def clear_logs():
@@ -338,10 +338,10 @@ if __name__ == '__main__':
     measure_start(net)
 
     ## tcpdump
-    # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /home/mininet/test_client_sendquic_newipudp.cap &")
-    # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /home/mininet/test_server_sendquic_newipudp.cap &")
-    # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /home/mininet/test_dispatcher_sendquic_d0all.cap &")
-    # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /home/mininet/test_dispatcher_sendquic_newipudp.cap &")
+    # client[0].cmd("sudo tcpdump -enn 'host 10.0.0.1' -w /users/myzhou/test_client_sendquic_newipudp.cap &")
+    # server[0].cmd("sudo tcpdump -enn 'host 10.0.0.3' -w /users/myzhou/test_server_sendquic_newipudp.cap &")
+    # dispatcher[0].cmd("sudo tcpdump -i any -enn -w /users/myzhou/test_dispatcher_sendquic_d0all.cap &")
+    # dispatcher[0].cmd("sudo tcpdump -enn 'host 10.0.0.5' -w /users/myzhou/test_dispatcher_sendquic_newipudp.cap &")
     
     ## 跑实验
     test_run(net)

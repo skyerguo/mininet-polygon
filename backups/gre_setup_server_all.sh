@@ -1,4 +1,4 @@
-root_path="/home/mininet/mininet-polygon/"
+root_path="/users/myzhou/mininet-polygon/"
 date > ${root_path}timestamp-records/gre.server.sh.start_ts
 
 ## 删除现有的路由表

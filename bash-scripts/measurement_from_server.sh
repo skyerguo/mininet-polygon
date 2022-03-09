@@ -1,4 +1,4 @@
-root_path=/data
+root_path=/run/user/20001/data
 measurement_result_path=$root_path/measurement_log/
 
 while getopts ":i:s:t:a:r:m:" opt
@@ -32,9 +32,9 @@ do
     esac
 done
 
-dispatcher_ips=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_dispatcher.json")); print(" ".join([machines[x]["internal_ip1"] for x in machines if "d" in x]));'`)
-server_hostnames=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_server.json")); print(" ".join([x for x in machines if "server" in x]));'`)
-dispatcher_hostnames=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_dispatcher.json")); print(" ".join([x for x in machines if "d" in x]));'`)
+dispatcher_ips=(`python3 -c 'import json; import os; machines=json.load(open("/users/myzhou/mininet-polygon/json-files/machine_dispatcher.json")); print(" ".join([machines[x]["internal_ip1"] for x in machines if "d" in x]));'`)
+server_hostnames=(`python3 -c 'import json; import os; machines=json.load(open("/users/myzhou/mininet-polygon/json-files/machine_server.json")); print(" ".join([x for x in machines if "server" in x]));'`)
+dispatcher_hostnames=(`python3 -c 'import json; import os; machines=json.load(open("/users/myzhou/mininet-polygon/json-files/machine_dispatcher.json")); print(" ".join([x for x in machines if "d" in x]));'`)
 ## 在mininet中设置的链路值，当前server到所有的dispatcher
 dispatcher_bw=(`echo $bw_set | tr '+' ' '`)
 
@@ -67,7 +67,7 @@ do
     for file_name in `ls ${nload_path}*$server_id.txt`
     do
         new_file_name=${file_name//txt}"log"
-        sudo bash /home/mininet/mininet-polygon/bash-scripts/translate_nloads_file.sh -o $file_name -n $new_file_name
+        sudo bash /users/myzhou/mininet-polygon/bash-scripts/translate_nloads_file.sh -o $file_name -n $new_file_name
         echo $file_name $new_file_name >> $output_file
     done
 

@@ -1,4 +1,4 @@
-root_path=/data
+root_path=/run/user/20001/data
 measurement_result_path=$root_path/measurement_log/
 
 while getopts ":i:r:a:" opt
@@ -21,9 +21,7 @@ do
     esac
 done
 
-server_ips=(`python3 -c 'import json; import os; machines=json.load(open("/home/mininet/mininet-polygon/json-files/machine_server.json")); print(" ".join([machines[x]["internal_ip1"] for x in machines if "s" in x]));'`)
-
-
+server_ips=(`python3 -c 'import json; import os; machines=json.load(open("/users/myzhou/mininet-polygon/json-files/machine_server.json")); print(" ".join([machines[x]["internal_ip1"] for x in machines if "s" in x]));'`)
 
 output_file=${measurement_result_path}$dispatcher_id'.log'
 while true
@@ -33,7 +31,7 @@ do
     for i in `seq 0 $((${#server_ips[*]} - 1))`
     do
         throughput_record=`redis-cli -h $redis_ip -a 'Hestia123456' get throughput_s${i}_d${dispatcher_id}`
-        cpu_record=`redis-cli -h $redis_ip -a 'Hestia123456' get cpu_s${i}_d${dispatcher_id}`        
+        cpu_record=`redis-cli -h $redis_ip -a 'Hestia123456' get cpu_s${i}`        
         echo $i'+'$throughput_record'+'$cpu_record >> $output_file
     done
     sleep 1

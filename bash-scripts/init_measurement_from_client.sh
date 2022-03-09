@@ -1,4 +1,4 @@
-root_path=/data
+root_path=/run/user/20001/data
 measurement_result_path=$root_path/measurement_log/
 
 while getopts ":i:a:z:n:" opt

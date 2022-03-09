@@ -1,6 +1,6 @@
 import re
 
-data_path = "/data/measurement_log/2022-02-28_11:03:00/nload/nload_log_3_3_4.txt"
+data_path ="/run/user/20001/data/measurement_log/2022-02-28_11:03:00/nload/nload_log_3_3_4.txt"
 f = open(data_path, "r")
 cnt = 0
 
@@ -26,7 +26,7 @@ for line in f:
 
 # sed -r "s/\x1b\[[?]*[0-9]*[a-zA-Z]//g; s/\x1b\[[?]*[0-9]*\;[0-9]*[a-zA-Z=]//g; s/\x1b\[[?]*[0-9]*\;[0-9]*\;[0-9]*[a-zA-Z=]//g; s/\x1b\\([a-zA-Z]//g; s/\x1b=//g" nload_log_3_3_4.txt
 
-data_path = "/home/mininet/nload.txt"
+data_path = "/users/myzhou/nload.txt"
 f = open(data_path, "r")
 for line in f:
     print(line.split(" "))
