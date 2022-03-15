@@ -35,7 +35,7 @@ for raw_line in lines:
         cnt += 1
 # fh.kill()
 
-# fh2 = subprocess.Popen("tail -100 /run/user/20001/data/measurement_log/iftop/iftop_log_%s.txt"%(str(server_id)), stdout=subprocess.PIPE, shell=True, start_new_session=True)
+# fh2 = subprocess.Popen("tail -100 /proj/quic-PG0/data/measurement_log/iftop/iftop_log_%s.txt"%(str(server_id)), stdout=subprocess.PIPE, shell=True, start_new_session=True)
 # lines2 = reversed(fh2.stdout.readlines())
 for line in lines2:
     # line = raw_line.decode('ascii')

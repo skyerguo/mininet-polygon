@@ -29,7 +29,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -yqq unzip
 [ -e data ] && rm -r data
 cp -r ${data_path}/server_data/. ${HOME}/data
 cp -r ${data_path}/client_data/. ${HOME}/data
-cp -r /run/user/20001/data/websites ./
+cp -r /proj/quic-PG0/data/websites ./
 mkdir -p ~/experiment_results
 
 # envir

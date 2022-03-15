@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import json
 
-data_root_path ="/run/user/20001/data/"
+data_root_path ="/proj/quic-PG0/data/"
 
 result_root_path = data_root_path + "result-logs/"
 
@@ -120,6 +120,36 @@ for client_file in client_files:
         print(str(current_time) + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))
 
 
+if config_file['mode'] == "Polygon":
+    dispatcher_result_path = result_root_path + "dispatcher/" + str(start_time) + "/"
+    dispatcher_files = os.listdir(dispatcher_result_path)
+    dispatcher_files.sort()
+    
+    ## 计算每种sensitive的cross region比例
+    cross_region = {"cpu": 0, "latency": 0, "throughput": 0}
+    local_region = {"cpu": 0, "latency": 0, "throughput": 0}
+    for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个转发记录，判断完整转发才记录
+        if ("_2.txt") in dispatcher_file:
+            dispatcher_ip = "10.0.%s.5" % (dispatcher_file.split("_")[0])
+
+            forward_region = 0 # 0表示local, 1表示cross
+            sensitive_type = ""
+            with open(dispatcher_result_path + dispatcher_file, "r") as f:
+                for line in f:
+                    if "sensitive_type" in line:
+                        sensitive_type = line.split(":")[1].strip()
+                    if "!Forwarded to" in line:
+                        if "remote" in line:
+                            forward_region = 1
+                        else:
+                            forward_region = 0
+                        # print(dispatcher_file, forward_region)
+                        cross_region[sensitive_type] += forward_region
+                        local_region[sensitive_type] += 1-forward_region
+                        
+   
+
+
 # ## dispatcher data
 # dispatcher_result_path = result_root_path + "dispatcher/" + str(start_time) + "/"
 # dispatcher_files = os.listdir(dispatcher_result_path)
@@ -229,7 +259,13 @@ for client_file in client_files:
 
 #                 current_time = line.split(' ')[-1].strip()
 
-print("plt_bw_avg: ", np.mean(plt_total["bw"]) / 1000000, "\t数量: ", len(plt_total["bw"]), "\t成功率: ", str(len(plt_total["bw"]) / req_total_number["bw"] * 100) + "%")
+print(" === plt analysis result === ")
+print("plt_latency_avg: ", np.mean(plt_total["delay"]) / 1000000, "\t数量: ", len(plt_total["delay"]), "\t成功率: ", str(len(plt_total["delay"]) / req_total_number["delay"] * 100) + "%")
+print("plt_throughput_avg: ", np.mean(plt_total["bw"]) / 1000000, "\t数量: ", len(plt_total["bw"]), "\t成功率: ", str(len(plt_total["bw"]) / req_total_number["bw"] * 100) + "%")
 print("plt_cpu_avg: ", np.mean(plt_total["cpu"]) / 1000000, "\t数量: ", len(plt_total["cpu"]), "\t成功率: ", str(len(plt_total["cpu"]) / req_total_number["cpu"] * 100) + "%")
-print("plt_delay_avg: ", np.mean(plt_total["delay"]) / 1000000, "\t数量: ", len(plt_total["delay"]), "\t成功率: ", str(len(plt_total["delay"]) / req_total_number["delay"] * 100) + "%")
 print("mongo_duration: ", "平均值: ", np.mean(plt_total["mongo"]) / 1000000, "\t中位数: ", np.median(plt_total["mongo"]) / 1000000)
+
+if (config_file['mode'] == 'Polygon'):
+    print(" === cross_region analysis result === ")
+    for sensitive_type in ["latency", "throughput", "cpu"]:
+        print(sensitive_type, "\tcross_region_number: ", cross_region[sensitive_type], "\tcross_region_rate: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))

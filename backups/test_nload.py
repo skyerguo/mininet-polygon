@@ -1,6 +1,6 @@
 import re
 
-data_path ="/run/user/20001/data/measurement_log/2022-02-28_11:03:00/nload/nload_log_3_3_4.txt"
+data_path ="/proj/quic-PG0/data/measurement_log/2022-02-28_11:03:00/nload/nload_log_3_3_4.txt"
 f = open(data_path, "r")
 cnt = 0
 

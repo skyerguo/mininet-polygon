@@ -1,4 +1,4 @@
-root_path=/run/user/20001/data
+root_path=/proj/quic-PG0/data
 measurement_result_path=$root_path/measurement_log/
 
 while getopts ":i:r:a:" opt

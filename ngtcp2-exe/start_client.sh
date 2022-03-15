@@ -1,4 +1,4 @@
-root_path=/run/user/20001/data
+root_path=/proj/quic-PG0/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
@@ -47,11 +47,11 @@ done
 
 client_ip="10.0.${client_id}.1"
 
-type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "cpu") ## 5:3:1
+# type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "cpu") ## 5:3:1
+type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "video" "video" "video" "video" "cpu") ## 7:7:1
 type_list_normal=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1") ## 全是normal_1
 type_list_video=("video" "video" "video" "video" "video" "video" "video" "video" "video") ## 全是video
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu
-
 
 if [[ $mode == "DNS" ]]; then
     dns_ip=`python3 -c "import os
@@ -105,7 +105,7 @@ do
             echo "destination_port: " $port >> ${output_file}_tmp.txt
 
             unique_identifier=${client_ip}'_'${port}'_'${time_stamp}
-            rand_seed=$((${RANDOM=$port} % 9))
+            rand_seed=$((${RANDOM=$port} % ${#type_list[*]}))
             data_type=${type_list[$rand_seed]}
 
             if [[ $data_type == "normal_1" ]]; then
@@ -132,10 +132,10 @@ do
             current_time=$(date "+%Y-%m-%d_%H:%M:%S")
             echo "current_time: "$current_time >> ${output_file}_tmp.txt
 
-            echo "sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
-            sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+            echo "sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
+            sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
 
-            sleep 3
+            sleep 1
         done
     } &
 done

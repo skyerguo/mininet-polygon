@@ -1,5 +1,5 @@
-cat"/run/user/20001/data/measurement_log/2022-03-02_14:16:43/competitiveness/competitiveness.txt"
-bw_set=`sed -n '1,1p' /run/user/20001/data/measurement_log/2022-03-02_14:16:43/competitiveness/competitiveness.txt`
+cat"/proj/quic-PG0/data/measurement_log/2022-03-02_14:16:43/competitiveness/competitiveness.txt"
+bw_set=`sed -n '1,1p' /proj/quic-PG0/data/measurement_log/2022-03-02_14:16:43/competitiveness/competitiveness.txt`
 echo $bw_set
 dispatcher_bw=(`echo $bw_set`)
 echo ${dispatcher_bw[*]}

@@ -1,4 +1,4 @@
-root_path=/run/user/20001/data
+root_path=/proj/quic-PG0/data
 measurement_result_path=$root_path/measurement_log/
 
 while getopts ":i:s:t:a:r:m:" opt
@@ -44,7 +44,7 @@ start_time=$(date "+%Y%m%d%H%M%S")
 raw_bw_competitiveness=`sed -n "$(($server_id+1)),$(($server_id+1))p" ${measurement_result_path}competitiveness/competitiveness.txt` ## 从文件读取的，当前server_id对应行的流量竞争力
 bw_competitiveness=(`echo $raw_bw_competitiveness`) ## 流量竞争力，指每个dispatcher到server，一条传输流大概能占多少流量的能力。按照mininet设定的来做相对对比。
 
-output_file="${measurement_result_path}server/server_$server_id.log"
+output_file="${measurement_result_path}server/server_s$server_id.log"
 
 echo "dispatcher_ips: "${dispatcher_ips[*]} >> $output_file
 echo "dispatcher_bw: "${dispatcher_bw[*]} >> $output_file
@@ -68,16 +68,15 @@ do
     do
         new_file_name=${file_name//txt}"log"
         sudo bash /users/myzhou/mininet-polygon/bash-scripts/translate_nloads_file.sh -o $file_name -n $new_file_name
-        echo $file_name $new_file_name >> $output_file
     done
 
     for dispatcher_id in `seq 0 $((${#dispatcher_ips[*]} - 1))`
     do
         {
             ## 用来记录以server_id和dispatcher_id为关键字的记录文件，以避免多进程并行导致的log记录错乱问题
-            output_file_2="${measurement_result_path}server/server_${server_id}_${dispatcher_id}.log"
+            output_file_2="${measurement_result_path}server/server_s${server_id}_d${dispatcher_id}.log"
 
-            echo $(date "+%Y%m%d%H%M%S") >> $output_file_2
+            echo "current_time: "$(date "+%Y%m%d%H%M%S") >> $output_file_2
 
             ## 测量实时latency，并记录到redis中
             latency=`ping -i.2 -c5 ${dispatcher_ips[dispatcher_id]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
@@ -86,9 +85,10 @@ do
 
             ## 通过计算所有对应zone的nload，最近5秒的平均带宽
             sum_existing_bw_per_zone=0  
-            for file_name in `ls ${nload_path}*${dispatcher_id}_${server_id}.log`
+            for file_name in `ls ${nload_path}*cz${dispatcher_id}_s${server_id}.log`
             do
                 existing_bw_per_client=`tail -n 10 $file_name | grep "Avg:" | head -n 1 | awk '{print $4}'`
+                echo "existing_bw_per_client: "$existing_bw_per_client" file_name: "$file_name >> $output_file_2
                 sum_existing_bw_per_zone=`awk 'BEGIN{print "'${sum_existing_bw_per_zone}'" + "'$existing_bw_per_client'"}'`
             done
             echo "sum_existing_bw_per_zone: " $sum_existing_bw_per_zone >> $output_file_2
@@ -97,13 +97,18 @@ do
             ## 计算公式，总流量限制/(现有zone的所有流量+新的流量的竞争力*1)*新的流量的竞争力
             ## 流量竞争力，就用设定的流量来决定
             valid_ratio=0.12 ## 虽然用wondershaper设定了最大值，但是实际上每条流最多用到"限制*valid_ratio"这么多的流量
+
+            ## 用来检查throughput_value有没有算对的log。（已验证正确)
+            # echo "max_throughput: " $max_throughput >> $output_file_2
+            # echo "bw_competitiveness[$dispatcher_id]" ${bw_competitiveness[dispatcher_id]} >> $output_file_2
+
             throughput_value=`awk 'BEGIN{print "'$max_throughput'" * "'$valid_ratio'" / ("'${sum_existing_bw_per_zone}'" + "'${bw_competitiveness[dispatcher_id]}'") * "'${bw_competitiveness[dispatcher_id]}'"}'`
             echo "throughput_value: "$throughput_value >> $output_file_2
             redis-cli -h $redis_ip -a 'Hestia123456' set throughput_s${server_id}_d${dispatcher_id} ${throughput_value} > /dev/null
         } &
     done
     
-    echo $(date "+%Y%m%d%H%M%S") >> $output_file
+    echo "current_time: "$(date "+%Y%m%d%H%M%S") >> $output_file
     echo "cpu_idle: "$cpu_idle >> $output_file
     redis-cli -h $redis_ip -a 'Hestia123456' set cpu_s${server_id} ${cpu_idle} > /dev/null
 

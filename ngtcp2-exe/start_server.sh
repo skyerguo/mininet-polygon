@@ -1,4 +1,4 @@
-root_path=/run/user/20001/data
+root_path=/proj/quic-PG0/data
 server_result_path=$root_path/result-logs/server/
 respath=$root_path/result-logs/client/
 
@@ -42,12 +42,12 @@ for i in `seq $server_thread`
 do 
     {
         port=$(($start_port+$i))
-        # echo sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/server --interface=ens4 --unicast=${unicast} 0.0.0.0 $port /run/user/20001/data/server.key /run/user/20001/data/server.crt -q
-        # echo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/server --interface=server$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port /run/user/20001/data/server.key /run/user/20001/data/server.crt -q >> temp_server.txt
+        # echo sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/server --interface=ens4 --unicast=${unicast} 0.0.0.0 $port /proj/quic-PG0/data/server.key /proj/quic-PG0/data/server.crt -q
+        # echo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/server --interface=server$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port /proj/quic-PG0/data/server.key /proj/quic-PG0/data/server.crt -q >> temp_server.txt
         output_file=${server_result_path}${server_id}'_'$port
         echo "output_file: " $output_file >> ${output_file}_tmp.txt
 
-        echo "sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port --redis_interface=s$server_id-eth$redis_interface --respath=$respath /run/user/20001/data/server.key /run/user/20001/data/server.crt" >> ${output_file}_tmp.txt
-        sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port --redis_interface=s$server_id-eth$redis_interface --respath=$respath /run/user/20001/data/server.key /run/user/20001/data/server.crt -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+        echo "sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port --redis_interface=s$server_id-eth$redis_interface --respath=$respath /proj/quic-PG0/data/server.key /proj/quic-PG0/data/server.crt" >> ${output_file}_tmp.txt
+        sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/server --interface=s$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port --redis_interface=s$server_id-eth$redis_interface --respath=$respath /proj/quic-PG0/data/server.key /proj/quic-PG0/data/server.crt -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
     } &
 done

@@ -75,7 +75,7 @@ def init():
 
     # 每次重新启动mongodb，以防mininet网络变化
     os.system("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9")
-    os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/run/user/20001/data/mongo.log --logappend"%(virtual_machine_ip))
+    os.system("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/proj/quic-PG0/data/mongo.log --logappend"%(virtual_machine_ip))
 
 
 def clear_logs():

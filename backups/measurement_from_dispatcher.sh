@@ -11,8 +11,8 @@ iperf3 -s -p 5208 -D >/dev/null 2>&1
 iperf3 -s -p 5209 -D >/dev/null 2>&1
 
 hostname=`hostname`
-main_test_ip="`jq -r .EXTERNAL_IP /run/user/20001/data/server_settings.json`"
-main_hostname=`jq -r .HOSTNAME /run/user/20001/data/server_settings.json`
+main_test_ip="`jq -r .EXTERNAL_IP /proj/quic-PG0/data/server_settings.json`"
+main_hostname=`jq -r .HOSTNAME /proj/quic-PG0/data/server_settings.json`
 
 dispatcher_ips=(`python3 -c 'import json; import os; machines=json.load(open("/users/myzhou/machine.json")); print(" ".join([machines[x]["internal_ip1"] for x in machines if "dispatcher" in x]));'`)
 server_ips=(`python3 -c 'import json; import os; machines=json.load(open("/users/myzhou/machine.json")); print(" ".join([machines[x]["external_ip1"] for x in machines if "server" in x]));'`)
@@ -53,8 +53,8 @@ do
     fi
 
     rm /users/myzhou/speed_dispatcher_$server_num.txt
-    echo sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/client ${server_ip} 4433 -i -p video -o 1 -w $website --client_ip 123.123.123.123 --client_process 4433 --time_stamp $time_stamp -q
-    sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/client ${server_ip} 4433 -i -p video -o 1 -w $website --client_ip 123.123.123.123 --client_process 4433 --time_stamp $time_stamp -q 1>> /dev/null 2>> /users/myzhou/speed_dispatcher_$server_num.txt
+    echo sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client ${server_ip} 4433 -i -p video -o 1 -w $website --client_ip 123.123.123.123 --client_process 4433 --time_stamp $time_stamp -q
+    sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client ${server_ip} 4433 -i -p video -o 1 -w $website --client_ip 123.123.123.123 --client_process 4433 --time_stamp $time_stamp -q 1>> /dev/null 2>> /users/myzhou/speed_dispatcher_$server_num.txt
     # sudo 
     PLT_num=`sudo tac /users/myzhou/speed_dispatcher_$server_num.txt | grep -c "PLT"`
     time_spend=`sudo tac /users/myzhou/speed_dispatcher_$server_num.txt | grep -a "PLT" |head -n 1| awk '{print $2}'`
@@ -62,7 +62,7 @@ do
     do
         sleep 10
         rm /users/myzhou/speed_dispatcher_$server_num.txt
-        sudo LD_LIBRARY_PATH=/run/user/20001/data /run/user/20001/data/client ${server_ip} 4443 -i -p video -o 1 -w $website --client_ip 123.123.123.123 --client_process 4433 --time_stamp $time_stamp -q 1>> /dev/null 2>> /users/myzhou/speed_dispatcher_$server_num.txt
+        sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client ${server_ip} 4443 -i -p video -o 1 -w $website --client_ip 123.123.123.123 --client_process 4433 --time_stamp $time_stamp -q 1>> /dev/null 2>> /users/myzhou/speed_dispatcher_$server_num.txt
     done
     echo "time_spend: " $time_spend
 

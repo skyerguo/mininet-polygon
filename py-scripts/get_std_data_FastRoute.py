@@ -3,7 +3,7 @@ import os
 import subprocess
 import numpy as np
 
-data_root_path ="/run/user/20001/data/"
+data_root_path ="/proj/quic-PG0/data/"
 
 result_root_path = data_root_path + "result-logs/"
 
