@@ -10,5 +10,5 @@ a = [x for x in range(100000)]
 random.shuffle(a)
 
 for i in range(100000):
-    collection.insert({'index': i, 'value': a[i]})
+    collection.insert_one({'index': i, 'value': a[i]})
 # print(obj)

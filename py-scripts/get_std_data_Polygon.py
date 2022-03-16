@@ -55,6 +55,9 @@ client_result_path = result_root_path + "client/" + str(start_time) + "/"
 client_files = os.listdir(client_result_path)
 client_files.sort()
 
+earliest_request_time = 100000000000000
+latest_request_time = 0
+
 for client_file in client_files:
     if "_1.txt" in client_file:
         plt = 0
@@ -63,12 +66,11 @@ for client_file in client_files:
         mode = "Polygon"
         cpu_duration = 0
         plt_times = 0
-        # cpu_search_count = 0
-        # cpu_start_time = 0
-        # cpu_end_time = 0
         continue
     
     if "_2.txt" in client_file:
+        earliest_request_time = min(earliest_request_time, int(client_file.split('_')[-2]))
+        latest_request_time = max(latest_request_time, int(client_file.split('_')[-2]))
         with open(client_result_path + client_file, "r") as f:
             for line in f:
                 if "PLT:" in line:
@@ -258,6 +260,9 @@ if config_file['mode'] == "Polygon":
 #                     print(" ", file=f_out)
 
 #                 current_time = line.split(' ')[-1].strip()
+
+# print(latest_request_time, earliest_request_time)
+print("实际请求总时长:\t", (latest_request_time - earliest_request_time) / 1000, "秒")
 
 print(" === plt analysis result === ")
 print("plt_latency_avg: ", np.mean(plt_total["delay"]) / 1000000, "\t数量: ", len(plt_total["delay"]), "\t成功率: ", str(len(plt_total["delay"]) / req_total_number["delay"] * 100) + "%")

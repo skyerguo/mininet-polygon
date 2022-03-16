@@ -24,5 +24,7 @@ do
     server_ip="10.0."$server_id".3"
     output_file=$measurement_result_path"dispatcher_"$dispatcher_id"_server_"$server_id
 
+    echo sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $server_ip 4432 -i -p video -o 1 -w downloadinginit --client_ip "10.0."$dispatcher_id".5" --client_process 4433 --time_stamp 123456789 -q >> ${output_file}_1.txt
+
     sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $server_ip 4432 -i -p video -o 1 -w downloadinginit --client_ip "10.0."$dispatcher_id".5" --client_process 4433 --time_stamp 123456789 -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
 done

@@ -110,15 +110,11 @@ do
 
             if [[ $data_type == "normal_1" ]]; then
                 website="google.com"
-                # sensitive_type="delay"
-
             elif [[ $data_type == "video" ]]; then
-                website="downloadingcross"
-                # sensitive_type="bw"
-
+                # website="downloadingcross"
+                website="downloading" ## 5M的文件
             elif [[ $data_type == "cpu" ]]; then 
                 website="cpu"
-                # sensitive_type="cpu"
             fi
             
             echo "data_type: " $data_type >> ${output_file}_tmp.txt
