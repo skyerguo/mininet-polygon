@@ -128,10 +128,10 @@ do
             current_time=$(date "+%Y-%m-%d_%H:%M:%S")
             echo "current_time: "$current_time >> ${output_file}_tmp.txt
 
-            echo "sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp" >> ${output_file}_tmp.txt
+            echo "nohup sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q" >> ${output_file}_tmp.txt
             sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
 
-            sleep 1
+            # sleep 1
         done
     } &
 done
