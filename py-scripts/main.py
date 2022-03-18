@@ -227,17 +227,17 @@ def myNetwork(net):
     ## 对具体的网卡指定对应的ip
     for client_id in range(CLIENT_NUMBER):
         client[client_id].cmd('ifconfig c%s-eth%s 0'%(str(client_id), str(SERVER_NUMBER+1))) # 一个client只连一个dispatcher
-        client[client_id].cmd('ifconfig c%s-eth%s %s.%s/24'%(str(client_id), str(SERVER_NUMBER+1), str(switch_gw_pre3[2]), str(50+client_id)))
+        client[client_id].cmd('ifconfig c%s-eth%s %s.%s/24'%(str(client_id), str(SERVER_NUMBER+1), str(switch_gw_pre3[2]), str(100+client_id)))
     
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmd('ifconfig s%s-eth%s 0'%(str(server_id), str(1)))
-        server[server_id].cmd('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3[1]), str(100+server_id)))
+        server[server_id].cmd('ifconfig s%s-eth%s %s.%s/24'%(str(server_id), str(1), str(switch_gw_pre3[1]), str(150+server_id)))
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for interface_id in range(SERVER_NUMBER): # 给dispatcher所有端口都绑定，保证每个端口都能转发，否则只能转发给server0
             dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 10.0.%s.5'%(str(dispatcher_id), str(interface_id), str(dispatcher_id)))
         dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s 0'%(str(dispatcher_id), str(SERVER_NUMBER+1))) ## server个数加上和1个和client相连的sw。
-        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER+1),  str(switch_gw_pre3[0]), str(150+dispatcher_id)))
+        dispatcher[dispatcher_id].cmd('ifconfig d%s-eth%s %s.%s/24'%(str(dispatcher_id),str(SERVER_NUMBER+1),  str(switch_gw_pre3[0]), str(200+dispatcher_id)))
     
     ## client,server,dispatcher发出
     for client_id in range(CLIENT_NUMBER):
