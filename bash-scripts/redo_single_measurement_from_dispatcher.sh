@@ -25,6 +25,8 @@ output_file=$measurement_result_path"dispatcher_"$dispatcher_id"_server_"$server
 
 rm ${output_file}_1.txt ${output_file}_2.txt
 
-echo sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $server_ip 4432 -i -p video -o 1 -w downloadinginit --client_ip "10.0."$dispatcher_id".5" --client_process 4433 --time_stamp 123456789 -q >> ${output_file}_1.txt
+time_stamp=$(($(date +%s%N)/1000000))
 
-sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $server_ip 4432 -i -p video -o 1 -w downloadinginit --client_ip "10.0."$dispatcher_id".5" --client_process 4433 --time_stamp 123456789 -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+echo sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $server_ip 4432 -i -p video -o 1 -w downloadinginit --client_ip "10.0."$dispatcher_id".5" --client_process 4433 --time_stamp $time_stamp -q >> ${output_file}_1.txt
+
+sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $server_ip 4432 -i -p video -o 1 -w downloadinginit --client_ip "10.0."$dispatcher_id".5" --client_process 4433 --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt

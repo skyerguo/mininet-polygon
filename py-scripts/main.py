@@ -363,18 +363,21 @@ def measure_start(net):
                     plt = plt + float(line.split(": ")[1].split(" ")[0])
                     cnt += 1
 
+            f_in.close()
+
             while cnt != 2: # 初始测量出错了
                 print("ERROR measurement! 重启dispatcher%s到server%s的初始传输测量"%(str(dispatcher_id), str(server_id)))
                 dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/redo_single_measurement_from_dispatcher.sh -i %s -s %s -a %s" %(str(dispatcher_id), str(server_id), str(start_time))) ## 重新测量dispathcer到server的空载竞争力
-
+                f_in = open("/proj/quic-PG0/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
                 plt = 0
                 cnt = 0
                 for line in f_in:
                     if "PLT" in line:
                         plt = plt + float(line.split(": ")[1].split(" ")[0])
                         cnt += 1
+                f_in.close()
 
-            f_in.close()
+           
             actual_speed[server_id][dispatcher_id] = file_size / (plt / 1000000) ## 单位，Kbit/s
             max_speed = max(max_speed, file_size / (plt / 1000000))
     # ## 计算ngtcp2实际传输的相对竞争力，现在以实际值计算，暂时不使用
@@ -478,9 +481,9 @@ if __name__ == '__main__':
     time.sleep(30)
     setLogLevel( 'info' )
       
-    # ## 测量
-    # print("measure_start! ")
-    # measure_start(net)
+    ## 测量
+    print("measure_start! ")
+    measure_start(net)
 
     # ## 跑实验
     # run(net)
