@@ -74,7 +74,7 @@ def init():
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
-    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 3 # 前SN个，对应C-S，后DN个，对应C-D。最后3个用来连外网。
+    SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 3 + int(CLIENT_NUMBER/40) # 前SN个，对应C-S，后DN个，对应C-D。最后几个用来连外网（注意，因为一个switch连超过50个hosts会导致ifconfig出问题找不到。我们配置时，每个switch最多连40个hosts，所以需要根据hosts数量动态调整）。
 
     print('SWITCH_NUMBER = ',SWITCH_NUMBER)
 
@@ -195,18 +195,19 @@ def myNetwork(net):
     for switch_id in range(SWITCH_NUMBER):
         switch[switch_id].cmd('sysctl -w net.ipv4.ip_forward=1')
     
-    ## 将最后三个switch和网卡eno21相连，并获取网关地址
+    ## 将最后三个switch和网卡eno2相连，并获取网关地址
 
-    os.system("sudo ovs-vsctl add-port sw%s eno2"%str(SWITCH_NUMBER - 1))
-    os.system("sudo ifconfig sw%s 10.0.%s.15/24" %(str(SWITCH_NUMBER - 1), str(100)))
+    for i in range(3):
+        # ret = subprocess.Popen("sudo ovs-vsctl add-port sw%s eno2 && sudo ifconfig sw%s 10.0.%s.15/24"%(str(SWITCH_NUMBER-1-i), str(SWITCH_NUMBER-1-i ), str(100+i)), shell=True,stdout=subprocess.PIPE)
+        print("sudo ifconfig sw%s 10.0.%s.15/24"%(str(SWITCH_NUMBER-1-i ), str(100+i)))
+        ret = subprocess.Popen("sudo ifconfig sw%s 10.0.%s.15/24"%(str(SWITCH_NUMBER-1-i ), str(100+i)), shell=True,stdout=subprocess.PIPE)
+        data=ret.communicate() #如果启用此相会阻塞主程序
 
-    os.system("sudo ovs-vsctl add-port sw%s eno2"%str(SWITCH_NUMBER - 2))
-    os.system("sudo ifconfig sw%s 10.0.%s.15/24" %(str(SWITCH_NUMBER - 2), str(101)))
-    
-    os.system("sudo ovs-vsctl add-port sw%s eno2"%str(SWITCH_NUMBER - 3))
-    os.system("sudo ifconfig sw%s 10.0.%s.15/24" %(str(SWITCH_NUMBER - 3), str(102)))
+        ret.wait() #等待子程序运行完毕
 
     print( '*** Post configure switches and hosts\n')
+
+    time.sleep(5)
     
     switch_gw = [0 for _ in range(3)]
     switch_gw_pre3 = [0 for _ in range(3)]
@@ -344,7 +345,7 @@ def measure_start(net):
 
     ## 测量竞争力
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/init_measurement_from_dispatcher.sh -i %s -n %s -a %s" %(str(dispatcher_id), str(SERVER_NUMBER), str(start_time))) ### 这里不能用&，否则会导致测量值不准
+        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/init_measurement_from_dispatcher.sh -i %s -n %s -a %s" %(str(dispatcher_id), str(SERVER_NUMBER), str(start_time))) ## 这里不能用&，否则会导致测量值不准
 
     ## 将竞争力结果写入一个文件，方便后续使用 
     file_size = os.path.getsize("/proj/quic-PG0/data/websites/video/downloadinginit/www.downloadinginit/cross.mp4")
@@ -361,9 +362,18 @@ def measure_start(net):
                 if "PLT" in line:
                     plt = plt + float(line.split(": ")[1].split(" ")[0])
                     cnt += 1
-            if cnt != 2: # 初识测量出错了
-                print("ERROR measurement!")
-                exit(0)
+
+            while cnt != 2: # 初始测量出错了
+                print("ERROR measurement! 重启dispatcher%s到server%s的初始传输测量"%(str(dispatcher_id), str(server_id)))
+                dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/redo_single_measurement_from_dispatcher.sh -i %s -s %s -a %s" %(str(dispatcher_id), str(server_id), str(start_time))) ## 重新测量dispathcer到server的空载竞争力
+
+                plt = 0
+                cnt = 0
+                for line in f_in:
+                    if "PLT" in line:
+                        plt = plt + float(line.split(": ")[1].split(" ")[0])
+                        cnt += 1
+
             f_in.close()
             actual_speed[server_id][dispatcher_id] = file_size / (plt / 1000000) ## 单位，Kbit/s
             max_speed = max(max_speed, file_size / (plt / 1000000))
@@ -468,13 +478,13 @@ if __name__ == '__main__':
     time.sleep(30)
     setLogLevel( 'info' )
       
-    ## 测量
-    print("measure_start! ")
-    measure_start(net)
+    # ## 测量
+    # print("measure_start! ")
+    # measure_start(net)
 
-    ## 跑实验
-    run(net)
-    save_config()
+    # ## 跑实验
+    # run(net)
+    # save_config()
 
     CLI(net)
     net.stop()
