@@ -149,7 +149,33 @@ def myNetwork(net):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None)) 
     
     print( '*** Add remote controller\n')
+    # ## 测试开始
+    # s1 = net.addSwitch('s1')
+    # test_host = []
+    # for test_id in range(60):
+    #     test_host.append(net.addHost('t%s'%str(test_id)))
+    
+    # net.get('s1').start([])
+    
+    # s1.cmd('sysctl -w net.ipv4.ip_forward=1')
 
+    # print("sudo ifconfig s1 10.0.100.15/24")
+    # ret = subprocess.Popen("sudo ifconfig s1 10.0.100.15/24", shell=True,stdout=subprocess.PIPE)
+    # data=ret.communicate() #如果启用此相会阻塞主程序
+    # ret.wait() #等待子程序运行完毕
+
+    # ret = subprocess.Popen("ifconfig s1 | grep inet | awk '{print $2}' | cut -f 2 -d ':'",shell=True,stdout=subprocess.PIPE)
+    # data=ret.communicate() #如果启用此相会阻塞主程序
+    # ret.wait() #等待子程序运行完毕
+    # switch_gw = data[0].decode("utf-8").strip('\n')
+    # print("switch_gw: ", switch_gw)
+
+    # for test_id in range(60):
+    #     # print(test_host[test_id], s1)
+    #     net.addLink(test_host[test_id], s1)
+
+    # return
+    # ## 测试结束
 
     print( '*** Add links\n')
     
@@ -481,9 +507,9 @@ if __name__ == '__main__':
     time.sleep(30)
     setLogLevel( 'info' )
       
-    ## 测量
-    print("measure_start! ")
-    measure_start(net)
+    # ## 测量
+    # print("measure_start! ")
+    # measure_start(net)
 
     # ## 跑实验
     # run(net)
