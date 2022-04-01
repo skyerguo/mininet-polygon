@@ -2,14 +2,11 @@ root_path=/proj/quic-PG0/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
-while getopts ":i:s:p:t:y:r:a:m:z:d:" opt
+while getopts ":i:p:t:y:r:a:m:z:d:" opt
 do
     case $opt in
         i)
             client_id=$OPTARG
-        ;;
-        s)
-            dispatcher_number=$OPTARG
         ;;
         p)
             init_port=$OPTARG
@@ -79,11 +76,8 @@ do
         for round in `seq 2000`
         do
             time_stamp=$(($(date +%s%N)/1000000))
-            start_port=$init_port ## 定死
-            
-            port=$(($start_port+$i))
+            port=$(($init_port+$i))
             output_file=${client_result_path}${client_id}'_'$port'_'$time_stamp
-
             echo "output_file: " $output_file >> ${output_file}_tmp.txt
             # echo "current_time: "$time_stamp >> ${output_file}_tmp.txt
 

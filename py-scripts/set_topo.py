@@ -7,8 +7,8 @@ import copy
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
 CLIENT_NUMBER = 60
 DISPATCHER_NUMBER = 10 # 最多10个
-SERVER_NUMBER = 30
-THREAD_NUMBER = 5 # 假设所有线程都是5（5个端口并行）
+SERVER_NUMBER = 20
+THREAD_NUMBER = 20 # 假设CLIENT的线程数是5（5个端口并行）
 
 csv_file_path = '../data-prepare/measure.csv'
 f_in = open(csv_file_path, 'r')
@@ -108,8 +108,8 @@ result['client_number'] = CLIENT_NUMBER
 result['server_number'] = SERVER_NUMBER
 result['dispatcher_number'] = DISPATCHER_NUMBER
 result['client_thread'] = THREAD_NUMBER
-result['server_thread'] = THREAD_NUMBER
-result['dispatcher_thread'] = THREAD_NUMBER
+# result['server_thread'] = THREAD_NUMBER
+# result['dispatcher_thread'] = THREAD_NUMBER
 result['cpu'] = {}
 result['cpu']['client'] = .6
 result['cpu']['server'] = .3

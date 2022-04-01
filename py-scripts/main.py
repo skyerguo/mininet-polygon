@@ -78,9 +78,11 @@ def init():
 
     print('SWITCH_NUMBER = ',SWITCH_NUMBER)
 
-    SERVER_THREAD = SELECT_TOPO['server_thread']
-    DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
     CLIENT_THREAD = SELECT_TOPO['client_thread']
+    DISPATCHER_THREAD = CLIENT_NUMBER * CLIENT_THREAD
+    SERVER_THREAD = CLIENT_NUMBER * CLIENT_THREAD
+    # SERVER_THREAD = SELECT_TOPO['server_thread']
+    # DISPATCHER_THREAD = SELECT_TOPO['dispatcher_thread']
 
     CLIENT_ZONE = SELECT_TOPO['client_zone']
     DISPATCHER_ZONE = SELECT_TOPO['dispatcher_zone']
@@ -311,9 +313,13 @@ def myNetwork(net):
     for switch_id in range(SERVER_NUMBER):
         for eth_id in range(1, CLIENT_NUMBER + DISPATCHER_NUMBER + 2): # 和所有client+dispatcher相连，并连向指定server
             switch[switch_id].attach('sw%s-eth%s'%(str(switch_id), str(eth_id)))
+        print("switch %s attach done"%(str(switch_id)))
+        print("now_time: ", time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))
     for switch_id in range(SERVER_NUMBER, SERVER_NUMBER + DISPATCHER_NUMBER):
         for eth_id in range(1, client_number_per_dispatcher[switch_id - SERVER_NUMBER] + 2): # 和部分client相连，并连向指定server
             switch[switch_id].attach('sw%s-eth%s'%(str(switch_id), str(eth_id)))
+        print("switch %s attach done"%(str(switch_id)))
+        print("now_time: ", time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))
     for eth_id in range(1, CLIENT_NUMBER + 1): ## 和所有client相连，用来帮助client连外网
         switch[SWITCH_NUMBER - 3].attach('sw%s-eth%s'%(str(SWITCH_NUMBER - 3), str(eth_id)))
     for eth_id in range(1, SERVER_NUMBER + 1): ## 和所有server相连，用来帮助server连外网
@@ -490,16 +496,14 @@ def run(net):
 
     import random
     
-    now_port = START_PORT
     for server_id in range(SERVER_NUMBER):
         server_ip = "10.0.%s.3" %(str(server_id))
-        server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s -n %s"%(str(server_id), server_ip, str(now_port), str(SERVER_THREAD), str(start_time), mode, str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
+        server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s -n %s"%(str(server_id), server_ip, str(START_PORT), str(SERVER_THREAD), str(start_time), mode, str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
     
     # if mode == "Polygon":
-    now_port = START_PORT
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(now_port), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+1), DISPATCHER_ZONE[dispatcher_id]))
+        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(START_PORT), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+1), DISPATCHER_ZONE[dispatcher_id]))
     
     print("sleep " + str(60 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 5 * SERVER_NUMBER)
@@ -509,8 +513,10 @@ def run(net):
     print("actual_start_time: ", actual_start_time)
     print("start_clients!")
 
+    now_port = START_PORT
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -s %s -p %s -t %s -y %s -r %s -a %s -m %s -z %s -d %s"%(str(client_id), str(DISPATCHER_NUMBER), str(START_PORT), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]]))))
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -y %s -r %s -a %s -m %s -z %s -d %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]]))))
+        now_port += CLIENT_THREAD
         time.sleep(3)
 
     
@@ -551,9 +557,9 @@ if __name__ == '__main__':
     print("measure_start! ")
     measure_start(net)
 
-    # ## 跑实验
-    # run(net)
-    # save_config()
+    ## 跑实验
+    run(net)
+    save_config()
 
     CLI(net)
     net.stop()
