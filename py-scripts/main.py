@@ -475,6 +475,7 @@ def measure_start(net):
     ## 在client端启动nload    
     for client_id in range(CLIENT_NUMBER): 
         client[client_id].cmdPrint("bash ../bash-scripts/init_measurement_from_client.sh -i %s -a %s -z %s -n %s"%(str(client_id), str(start_time), str(CLIENT_ZONE[client_id]), str(SERVER_NUMBER)))
+        time.sleep(1)
     time.sleep(10)
     
     for server_id in range(SERVER_NUMBER):

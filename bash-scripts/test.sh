@@ -1,11 +1,15 @@
-cat"/proj/quic-PG0/data/measurement_log/2022-03-02_14:16:43/competitiveness/competitiveness.txt"
-bw_set=`sed -n '1,1p' /proj/quic-PG0/data/measurement_log/2022-03-02_14:16:43/competitiveness/competitiveness.txt`
-echo $bw_set
-dispatcher_bw=(`echo $bw_set`)
-echo ${dispatcher_bw[*]}
-
-for i in `seq 0 $((${#dispatcher_bw[*]} - 1))`
+for i in `seq 0 5`
 do
-    echo ${dispatcher_bw[i]}
-    # bw_competitiveness[i]=`awk 'BEGIN{print "'${dispatcher_bw[i]}'" / "'$max_dispatcher_bw'"}'`
+    ## nload记录文件为nload_log_ca_czb_sc，根据client的interface，记录的是client_a到server_c的实时流量，按照cz_b，也就是dispatcher_b聚类。
+    ## 每3000毫秒记录一次，全部数据每100秒刷新一次以防文件过长，按照kBit/s记录结果
+
+    ## 刷新间隔，稍微错开一点，防止nload同时跑起来
+    refresh_interval=`awk 'BEGIN{print "3000" + ("50" * "'$i'")}'`
+    echo "refresh_interval: " $refresh_interval
+    echo sudo nload -a 100 -u k -t $refresh_interval -m devices c${client_id}-eth$i 
+    
+    # 错峰运行nload，防止I/O爆炸
+    temp_time=$((${RANDOM=$i} % 1000)) 
+    temp_time=`awk 'BEGIN{print "'$temp_time'" / "1000"}'`
+    sleep $temp_time
 done

@@ -9,4 +9,5 @@
 # ps -ef | grep "sleep" | grep -v grep | awk '{print $3}' | xargs sudo kill -9 > /dev/null 2>&1
 # ps -ef | grep "sleep" | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1
 
-ps -ef | grep "dns.py" | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1
+ps -ef | grep "dns.py" | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null
+ps -ef | grep "nload" | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null
