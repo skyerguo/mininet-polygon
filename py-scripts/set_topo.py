@@ -5,10 +5,10 @@ import json
 import copy
 
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
-CLIENT_NUMBER = 5
+CLIENT_NUMBER = 60
 DISPATCHER_NUMBER = 10 # 最多10个
-SERVER_NUMBER = 15
-THREAD_NUMBER = 15 # 每个CLIENT的线程数
+SERVER_NUMBER = 20
+THREAD_NUMBER = 10 # 每个CLIENT的线程数，请算一下4433+CLIENT_NUMBER*THREAD_NUMBER，是否会超过6379造成redis故障，是的话考虑换初始4433端口
 
 csv_file_path = '../data-prepare/measure.csv'
 f_in = open(csv_file_path, 'r')
@@ -111,9 +111,9 @@ result['client_thread'] = THREAD_NUMBER
 # result['server_thread'] = THREAD_NUMBER
 # result['dispatcher_thread'] = THREAD_NUMBER
 result['cpu'] = {}
-result['cpu']['client'] = .6
-result['cpu']['server'] = .3
-result['cpu']['dispatcher'] = .1
+result['cpu']['client'] = .4
+result['cpu']['server'] = .4
+result['cpu']['dispatcher'] = .2
 
 result['client_zone'] = []
 result['server_zone'] = []

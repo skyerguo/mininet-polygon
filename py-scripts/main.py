@@ -8,7 +8,6 @@ from mininet.node import IVSSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
-from topo import *
 import copy
 import json
 import time
@@ -466,6 +465,9 @@ def measure_start(net):
             f_out.write(str(actual_speed[server_id][dispatcher_id]) + ' ')
         f_out.write('\n')
     f_out.close()
+
+    ## 删除测量带来的server进程，以免影响后续的实验结果
+    os.system("ps -ef | grep '/data/server' | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1")
     
     ## 设置latency的表格
     for server_id in range(SERVER_NUMBER):
@@ -475,7 +477,6 @@ def measure_start(net):
     ## 在client端启动nload    
     for client_id in range(CLIENT_NUMBER): 
         client[client_id].cmdPrint("bash ../bash-scripts/init_measurement_from_client.sh -i %s -a %s -z %s -n %s"%(str(client_id), str(start_time), str(CLIENT_ZONE[client_id]), str(SERVER_NUMBER)))
-        time.sleep(1)
     time.sleep(10)
     
     for server_id in range(SERVER_NUMBER):
@@ -488,9 +489,6 @@ def measure_start(net):
     time.sleep(10)
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
-
-    ## 删除测量带来的server进程，以免影响后续的实验结果
-    os.system("ps -ef | grep '/data/server' | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1")
 
 
 def run(net):
@@ -516,7 +514,7 @@ def run(net):
 
     now_port = START_PORT
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -y %s -r %s -a %s -m %s -z %s -d %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]]))))
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]]))))
         now_port += CLIENT_THREAD
         time.sleep(3)
 

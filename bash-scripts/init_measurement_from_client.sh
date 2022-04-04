@@ -32,8 +32,8 @@ do
     # echo "refresh_interval: " $refresh_interval
     sudo nload -a 100 -u k -t $refresh_interval -m devices c${client_id}-eth$i > ${measurement_result_path}nload/nload_log_c${client_id}_cz${client_zone}_s${i}.txt &
     
-    # 错峰运行nload，防止I/O爆炸
-    temp_time=$((${RANDOM=$i} % 1000)) 
-    temp_time=`awk 'BEGIN{print "'$temp_time'" / "1000"}'`
-    sleep $temp_time
+    # # 错峰运行nload，防止I/O爆炸
+    # temp_time=$((${RANDOM=$i} % 1000)) 
+    # temp_time=`awk 'BEGIN{print "'$temp_time'" / "1000"}'`
+    # sleep $temp_time
 done

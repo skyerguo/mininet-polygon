@@ -51,75 +51,83 @@ if 'mode' in config_file:
     print("mode: ", config_file['mode'])
 
 ## client data
-client_result_path = result_root_path + "client/" + str(start_time) + "/"
-client_files = os.listdir(client_result_path)
-client_files.sort()
-
 earliest_request_time = 100000000000000
 latest_request_time = 0
 
-for client_file in client_files:
-    if "_1.txt" in client_file:
-        plt = 0
-        sensitive_type = ""
-        current_time = 0
-        mode = "Polygon"
-        cpu_duration = 0
-        plt_times = 0
-        continue
-    
-    if "_2.txt" in client_file:
-        earliest_request_time = min(earliest_request_time, int(client_file.split('_')[-2]))
-        latest_request_time = max(latest_request_time, int(client_file.split('_')[-2]))
-        with open(client_result_path + client_file, "r") as f:
-            for line in f:
-                if "PLT:" in line:
-                    plt = int(line.split(" ")[1].strip())
-                    plt_times += 1
-                if "time_duration:" in line:
-                    # print(client_file, line, float(line.split(" ")[-1].strip()) * 1000000)
-                    cpu_duration = int(float(line.split(" ")[-1].strip()) * 1000000)
+for client_id in range(config_file['client_number']):
+    client_result_path = result_root_path + "client/" + str(start_time) + "/" + str(client_id) + "/"
+    client_files = os.listdir(client_result_path)
+    client_files.sort()
 
-    if "_tmp.txt" in client_file:
-        client_ip = "10.0.%s.1" % (client_file.split("_")[0])
-        client_port = client_file.split("_")[1]
-
-        with open(client_result_path + client_file, "r") as f:
-            for line in f:
-                if "data_type" in line:
-                    if "normal_1" in line:
-                        sensitive_type = "delay"
-                    elif "cpu" in line:
-                        sensitive_type = "cpu"
-                    elif "video" in line:
-                        sensitive_type = "bw"
-                    else:
-                        sensitive_type = "error"
-                if ("current_time") in line:
-                    current_time = line.split(" ")[-1].strip()
-                if ("mode") in line:
-                    mode = line.split(" ")[-1].strip()
-
-        os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/"))
-
-        req_total_number[sensitive_type] += 1
-
-        if plt == 0: # 应该有plt，但是没有查到
+    for client_file in client_files:
+        if "_1.txt" in client_file:
+            plt = 0
+            sensitive_type = ""
+            current_time = 0
+            mode = "Polygon"
+            cpu_duration = 0
+            plt_times = 0
             continue
-        # if sensitive_type == "cpu":
-        #     print(plt, plt_times, cpu_duration)
-        if plt_times != 2: # bw和delay应该都是两个plt
-            continue
-        if sensitive_type == "cpu" and (cpu_duration == 0): # 应该是cpu，但是没查到cpu
-            continue
-
-        plt = plt + cpu_duration
         
-        plt_total[sensitive_type].append(float(plt))
-        if sensitive_type == "cpu":
-            plt_total["mongo"].append(float(cpu_duration))
+        if "_2.txt" in client_file:
+            earliest_request_time = min(earliest_request_time, int(client_file.split('_')[-2]))
+            latest_request_time = max(latest_request_time, int(client_file.split('_')[-2]))
+            with open(client_result_path + client_file, "r") as f:
+                for line in f:
+                    if "PLT:" in line:
+                        plt = int(line.split(" ")[1].strip())
+                        plt_times += 1
+                    if "time_duration:" in line:
+                        # print(client_file, line, float(line.split(" ")[-1].strip()) * 1000000)
+                        cpu_duration = int(float(line.split(" ")[-1].strip()) * 1000000)
 
-        print(str(current_time) + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))
+        if "_tmp.txt" in client_file:
+            client_ip = "10.0.%s.1" % (client_file.split("_")[0])
+            client_port = client_file.split("_")[1]
+
+            with open(client_result_path + client_file, "r") as f:
+                for line in f:
+                    if "data_type" in line:
+                        if "normal_1" in line:
+                            sensitive_type = "delay"
+                        elif "cpu" in line:
+                            sensitive_type = "cpu"
+                        elif "video" in line:
+                            sensitive_type = "bw"
+                        else:
+                            sensitive_type = "error"
+                    if ("current_time") in line:
+                        current_time = line.split(" ")[-1].strip()
+                    if ("mode") in line:
+                        mode = line.split(" ")[-1].strip()
+
+            os.system("mkdir -p %s" %(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/"))
+
+            req_total_number[sensitive_type] += 1
+
+            if plt == 0: # 应该有plt，但是没有查到
+                continue
+            print(plt, plt_times)
+            # if sensitive_type == "cpu":
+            #     print(plt, plt_times, cpu_duration)
+            #     print(client_file)
+            if plt_times != 2: # bw和delay应该都是两个plt
+                continue
+            if sensitive_type == "cpu" and (cpu_duration == 0): # 应该是cpu，但是没查到cpu
+                continue
+
+            plt = plt + cpu_duration
+            
+            plt_total[sensitive_type].append(float(plt))
+            if sensitive_type == "cpu":
+                plt_total["mongo"].append(float(cpu_duration))
+
+            print(str(current_time) + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))
+    
+    # print("plt_latency_avg: ", np.mean(plt_total["delay"]) / 1000000, "\t数量: ", len(plt_total["delay"]), "\t成功率: ", str(len(plt_total["delay"]) / req_total_number["delay"] * 100) + "%")
+    # print("plt_throughput_avg: ", np.mean(plt_total["bw"]) / 1000000, "\t数量: ", len(plt_total["bw"]), "\t成功率: ", str(len(plt_total["bw"]) / req_total_number["bw"] * 100) + "%")
+    # print("plt_cpu_avg: ", np.mean(plt_total["cpu"]) / 1000000, "\t数量: ", len(plt_total["cpu"]), "\t成功率: ", str(len(plt_total["cpu"]) / req_total_number["cpu"] * 100) + "%")
+
 
 
 if config_file['mode'] == "Polygon":
@@ -148,7 +156,7 @@ if config_file['mode'] == "Polygon":
                         # print(dispatcher_file, forward_region)
                         cross_region[sensitive_type] += forward_region
                         local_region[sensitive_type] += 1-forward_region
-                        
+                            
    
 
 

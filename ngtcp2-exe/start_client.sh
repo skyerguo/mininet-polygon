@@ -2,7 +2,7 @@ root_path=/proj/quic-PG0/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
-while getopts ":i:p:t:y:r:a:m:z:d:" opt
+while getopts ":i:p:t:r:a:m:z:d:" opt
 do
     case $opt in
         i)
@@ -14,14 +14,11 @@ do
         t)
             client_thread=$OPTARG
         ;;
-        y)
-            dispatcher_thread=$OPTARG
-        ;;
         r)
             redis_ip=$OPTARG
         ;;
         a)
-            client_result_path=${client_result_path}$OPTARG'/'
+            client_result_path=${client_result_path}$OPTARG'/'$client_id'/'
             # saved_result_path=${saved_result_path}$OPTARG'/'
             mkdir -p $client_result_path
         ;;
