@@ -5,7 +5,7 @@ import json
 import copy
 
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
-CLIENT_NUMBER = 3
+CLIENT_NUMBER = 60
 DISPATCHER_NUMBER = 6 # 最多10个
 SERVER_NUMBER = 15
 THREAD_NUMBER = 10 # 每个CLIENT的线程数，请算一下4433+CLIENT_NUMBER*THREAD_NUMBER，是否会超过6379造成redis故障，是的话考虑换初始4433端口

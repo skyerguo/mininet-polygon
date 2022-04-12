@@ -114,7 +114,7 @@ def init():
     data=ret.communicate() #如果启用此相会阻塞主程序
     ret.wait() #等待子程序运行完毕
 
-    os.system("ulimit -u 1030603") # 设置nproc即用户可以使用的进程数量
+    # os.system("ulimit -u 1030603") # 设置nproc即用户可以使用的进程数量
 
 
 def clear_logs():
