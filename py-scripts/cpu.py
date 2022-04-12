@@ -4,7 +4,7 @@ import time
 
 # print("cpu.py")
 
-client = pymongo.MongoClient('198.22.255.12', 27117)
+client = pymongo.MongoClient('198.22.255.13', 27117)
 db = client['shuffle_index']
 db_size = 100000
 collection = db['shuffle_%s'%(db_size)]
@@ -22,7 +22,7 @@ st = time.time()
 
 cnt = 0
 for i in range(n):
-    collection.find_one({"value": random.randint(0, db_size)}, {"status":0,"_id":0})
+    print(collection.find_one({"value": random.randint(0, db_size)}, {"status":0,"_id":0}))
     cnt += 1
 
 if cnt == n:

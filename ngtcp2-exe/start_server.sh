@@ -18,7 +18,7 @@ do
             server_thread=$OPTARG
         ;;
         a)
-            server_result_path=${server_result_path}$OPTARG'/'
+            server_result_path=${server_result_path}$OPTARG'/'$server_id'/'
             respath=${respath}$OPTARG'/'
             mkdir -p $server_result_path
         ;;
@@ -35,6 +35,8 @@ do
     esac
 done
 
+ulimit -SHu 1030603 # 设置nproc即用户可以使用的进程数量
+ulimit -a
 # sudo tcpdump udp -i s0-eth0 -w ${server_result_path}"tcpdump.cap" &
 
 

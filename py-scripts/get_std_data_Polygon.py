@@ -3,6 +3,7 @@ import subprocess
 import numpy as np
 import sys
 import json
+import time
 
 data_root_path ="/proj/quic-PG0/data/"
 
@@ -50,6 +51,8 @@ print("dispatcher_number: ", config_file['dispatcher_number'])
 if 'mode' in config_file:
     print("mode: ", config_file['mode'])
 
+cnt_process_limit = 0
+
 ## client data
 earliest_request_time = 100000000000000
 latest_request_time = 0
@@ -74,6 +77,8 @@ for client_id in range(config_file['client_number']):
             latest_request_time = max(latest_request_time, int(client_file.split('_')[-2]))
             with open(client_result_path + client_file, "r") as f:
                 for line in f:
+                    if "Resource temporarily unavailable" in line:
+                        cnt_process_limit += 1
                     if "PLT:" in line:
                         plt = int(line.split(" ")[1].strip())
                         plt_times += 1
@@ -107,7 +112,7 @@ for client_id in range(config_file['client_number']):
 
             if plt == 0: # 应该有plt，但是没有查到
                 continue
-            print(plt, plt_times)
+            # print(plt, plt_times)
             # if sensitive_type == "cpu":
             #     print(plt, plt_times, cpu_duration)
             #     print(client_file)
@@ -131,31 +136,33 @@ for client_id in range(config_file['client_number']):
 
 
 if config_file['mode'] == "Polygon":
-    dispatcher_result_path = result_root_path + "dispatcher/" + str(start_time) + "/"
-    dispatcher_files = os.listdir(dispatcher_result_path)
-    dispatcher_files.sort()
-    
     ## 计算每种sensitive的cross region比例
     cross_region = {"cpu": 0, "latency": 0, "throughput": 0}
     local_region = {"cpu": 0, "latency": 0, "throughput": 0}
-    for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个转发记录，判断完整转发才记录
-        if ("_2.txt") in dispatcher_file:
-            dispatcher_ip = "10.0.%s.5" % (dispatcher_file.split("_")[0])
 
-            forward_region = 0 # 0表示local, 1表示cross
-            sensitive_type = ""
-            with open(dispatcher_result_path + dispatcher_file, "r") as f:
-                for line in f:
-                    if "sensitive_type" in line:
-                        sensitive_type = line.split(":")[1].strip()
-                    if "!Forwarded to" in line:
-                        if "remote" in line:
-                            forward_region = 1
-                        else:
-                            forward_region = 0
-                        # print(dispatcher_file, forward_region)
-                        cross_region[sensitive_type] += forward_region
-                        local_region[sensitive_type] += 1-forward_region
+    for dispatcher_id in range(config_file['dispatcher_number']):
+        dispatcher_result_path = result_root_path + "dispatcher/" + str(start_time) + "/" + str(dispatcher_id) + "/"
+        dispatcher_files = os.listdir(dispatcher_result_path)
+
+        for dispatcher_file in dispatcher_files: # 因为一个文件里面会有多个转发记录，判断完整转发才记录
+            if ("_2.txt") in dispatcher_file:
+                dispatcher_ip = "10.0.%s.5" % (dispatcher_file.split("_")[0])
+
+                forward_region = 0 # 0表示local, 1表示cross
+                sensitive_type = ""
+                with open(dispatcher_result_path + dispatcher_file, "r") as f:
+                    for line in f:
+                        if "sensitive_type" in line:
+                            sensitive_type = line.split(":")[1].strip()
+                        if "!Forwarded to" in line:
+                            if "remote" in line:
+                                forward_region = 1
+                            else:
+                                forward_region = 0
+                            # print(dispatcher_file, forward_region)
+                            # print(sensitive_type)
+                            cross_region[sensitive_type] += forward_region
+                            local_region[sensitive_type] += 1-forward_region
                             
    
 
@@ -269,7 +276,13 @@ if config_file['mode'] == "Polygon":
 
 #                 current_time = line.split(' ')[-1].strip()
 
+
 # print(latest_request_time, earliest_request_time)
+timeArray = time.strptime(start_time, "%Y-%m-%d_%H:%M:%S")
+# print(earliest_request_time)
+# print(start_time)
+# print(time.mktime(timeArray))
+print("实验初始化时长:\t", earliest_request_time / 1000 - time.mktime(timeArray), "秒")
 print("实际请求总时长:\t", (latest_request_time - earliest_request_time) / 1000, "秒")
 
 print(" === plt analysis result === ")
@@ -282,3 +295,5 @@ if (config_file['mode'] == 'Polygon'):
     print(" === cross_region analysis result === ")
     for sensitive_type in ["latency", "throughput", "cpu"]:
         print(sensitive_type, "\tcross_region_number: ", cross_region[sensitive_type], "\tcross_region_rate: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))
+
+print("Resource temporarily unavailable number: ", cnt_process_limit)

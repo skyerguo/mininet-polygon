@@ -1,7 +1,7 @@
 root_path=/proj/quic-PG0/data
 dispatcher_result_path=$root_path/result-logs/dispatcher/
 
-while getopts ":i:d:s:p:t:r:a:m:n:z:" opt
+while getopts ":i:s:p:t:r:a:m:n:z:" opt
 do
     case $opt in
         i)
@@ -10,9 +10,6 @@ do
         s)
             server_number=$OPTARG
         ;;
-        d)
-            dispatcher_ip=$OPTARG
-        ;;
         p)
             start_port=$OPTARG
         ;;
@@ -20,7 +17,7 @@ do
             dispatcher_thread=$OPTARG
         ;;
         a)
-            dispatcher_result_path=${dispatcher_result_path}$OPTARG'/'
+            dispatcher_result_path=${dispatcher_result_path}$OPTARG'/'$dispatcher_id'/'
             mkdir -p $dispatcher_result_path
         ;;
         r)
@@ -42,9 +39,7 @@ do
     esac
 done
 
-# sudo chown -R mininet:mininet ${dispatcher_result_path}
-# echo sudo tcpdump udp -i d0-eth0 -w ${dispatcher_result_path}"tcpdump.cap"
-# sudo tcpdump udp -i d0-eth0 -w ${dispatcher_result_path}"tcpdump.cap" &
+ulimit -SHu 1030603 # 设置nproc即用户可以使用的进程数量
 
 for i in `seq $dispatcher_thread`
 do 

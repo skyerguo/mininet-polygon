@@ -5,9 +5,9 @@ import json
 import copy
 
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
-CLIENT_NUMBER = 60
-DISPATCHER_NUMBER = 10 # 最多10个
-SERVER_NUMBER = 20
+CLIENT_NUMBER = 3
+DISPATCHER_NUMBER = 6 # 最多10个
+SERVER_NUMBER = 15
 THREAD_NUMBER = 10 # 每个CLIENT的线程数，请算一下4433+CLIENT_NUMBER*THREAD_NUMBER，是否会超过6379造成redis故障，是的话考虑换初始4433端口
 
 csv_file_path = '../data-prepare/measure.csv'
@@ -15,26 +15,32 @@ f_in = open(csv_file_path, 'r')
 csv_reader = csv.reader(f_in)
 
 area_all = ['asia-east1','asia-east2','asia-northeast1','asia-northeast2','asia-northeast3','asia-south1','asia-south2','asia-southeast2','australia-southeast1','australia-southeast2','europe-central2','europe-north1','europe-west1','europe-west2','europe-west3','europe-west4','europe-west6','northamerica-northeast1','northamerica-northeast2','southamerica-east1','southamerica-west1','us-east1','us-east4','us-west1','us-west2','us-west3','us-west4']
-
 zone_ignore = ['asia-southeast1', 'us-central1']
 
-zone_dispatcher = ['asia-east1', 'asia-northeast2', 'asia-south2', 'australia-southeast1', 'europe-north1', 'europe-west3', 'northamerica-northeast1', 'southamerica-west1', 'us-east4', 'us-west2']
+# zone_dispatcher = ['asia-east1', 'asia-northeast2', 'asia-south2', 'australia-southeast1', 'europe-north1', 'europe-west3', 'northamerica-northeastx1', 'southamerica-west1', 'us-east4', 'us-west2']
+# client2dispatcher = [0 for _ in range(len(area_all))]
+# client2dispatcher[0] = client2dispatcher[1] = 0
+# client2dispatcher[2] = client2dispatcher[3] =  client2dispatcher[4] = 1
+# client2dispatcher[5] = client2dispatcher[6] =  client2dispatcher[7] = 2
+# client2dispatcher[8] = client2dispatcher[9] = 3
+# client2dispatcher[10] = client2dispatcher[11] = 4
+# client2dispatcher[12] = client2dispatcher[13] = client2dispatcher[14] = client2dispatcher[15] =  client2dispatcher[16] =  5
+# client2dispatcher[17] = client2dispatcher[18] = 6
+# client2dispatcher[19] = client2dispatcher[20] = 7
+# client2dispatcher[21] = client2dispatcher[22] = 8
+# client2dispatcher[23] = client2dispatcher[24] = client2dispatcher[25] = client2dispatcher[26] = 9
 
+zone_dispatcher = ['asia-southeast2', 'australia-southeast1', 'europe-west3', 'northamerica-northeast1', 'southamerica-west1', 'us-west2']
 zone_dispatcher = zone_dispatcher[:DISPATCHER_NUMBER]
-
 client2dispatcher = [0 for _ in range(len(area_all))]
-client2dispatcher[0] = client2dispatcher[1] = 0
-client2dispatcher[2] = client2dispatcher[3] =  client2dispatcher[4] = 1
-client2dispatcher[5] = client2dispatcher[6] =  client2dispatcher[7] = 2
-client2dispatcher[8] = client2dispatcher[9] = 3
-client2dispatcher[10] = client2dispatcher[11] = 4
-client2dispatcher[12] = client2dispatcher[13] = client2dispatcher[14] = client2dispatcher[15] =  client2dispatcher[16] =  5
-client2dispatcher[17] = client2dispatcher[18] = 6
-client2dispatcher[19] = client2dispatcher[20] = 7
-client2dispatcher[21] = client2dispatcher[22] = 8
-client2dispatcher[23] = client2dispatcher[24] = client2dispatcher[25] = client2dispatcher[26] = 9
+client2dispatcher[0] = client2dispatcher[1] = client2dispatcher[2] = client2dispatcher[3] =  client2dispatcher[4] = client2dispatcher[5] = client2dispatcher[6] =  client2dispatcher[7] = 0
+client2dispatcher[8] = client2dispatcher[9] = 1
+client2dispatcher[10] = client2dispatcher[11] = client2dispatcher[12] = client2dispatcher[13] = client2dispatcher[14] = client2dispatcher[15] =  client2dispatcher[16] =  2
+client2dispatcher[17] = client2dispatcher[18] = 3
+client2dispatcher[19] = client2dispatcher[20] = 4
+client2dispatcher[21] = client2dispatcher[22] = client2dispatcher[23] = client2dispatcher[24] = client2dispatcher[25] = client2dispatcher[26] = 5
 
-client_zone = []
+client_zone = copy.deepcopy(zone_dispatcher)
 dispatcher_zone = copy.deepcopy(zone_dispatcher)
 server_zone = copy.deepcopy(zone_dispatcher)
 
@@ -89,7 +95,7 @@ for line in lines:
 # print(latency_topo)
 # print(bandwidth_topo[0])
 
-for i in range(CLIENT_NUMBER):
+for i in range(DISPATCHER_NUMBER, CLIENT_NUMBER):
     temp = random.choice(area_all)
     while (client2dispatcher[zone_map[temp]] >= DISPATCHER_NUMBER):
         temp = random.choice(area_all)

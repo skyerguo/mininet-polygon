@@ -30,7 +30,7 @@ CLIENT_THREAD = 1
 DISPATCHER_THREAD = 1
 SERVER_THREAD = 1
 
-START_PORT = 4433
+START_PORT = 14433
 MAX_THROUGHPUT = 5 * 1024 ## wondershaper设置的最大带宽
 
 switch = []
@@ -48,7 +48,7 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "198.22.255.12"
+DNS_IP = "198.22.255.13"
 
 zone2server_ids = []
 
@@ -113,6 +113,8 @@ def init():
                         sudo /usr/bin/redis-server /etc/redis/redis.conf"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)
     data=ret.communicate() #如果启用此相会阻塞主程序
     ret.wait() #等待子程序运行完毕
+
+    os.system("ulimit -u 1030603") # 设置nproc即用户可以使用的进程数量
 
 
 def clear_logs():
@@ -387,8 +389,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '198.22.255.12',
-                'exter': '198.22.255.12'
+                'inter': '198.22.255.13',
+                'exter': '198.22.255.13'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
@@ -447,6 +449,7 @@ def measure_start(net):
                         plt = plt + float(line.split(": ")[1].split(" ")[0])
                         cnt += 1
                 f_in.close()
+                time.sleep(5)
 
            
             actual_speed[server_id][dispatcher_id] = file_size / (plt / 1000000) ## 单位，Kbit/s
@@ -498,14 +501,20 @@ def run(net):
     for server_id in range(SERVER_NUMBER):
         server_ip = "10.0.%s.3" %(str(server_id))
         server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s -n %s"%(str(server_id), server_ip, str(START_PORT), str(SERVER_THREAD), str(start_time), mode, str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
+        time.sleep(1)
     
     # if mode == "Polygon":
     for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher_ip = "10.0.%s.5" %(str(dispatcher_id))
-        dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -d %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), dispatcher_ip, str(SERVER_NUMBER), str(START_PORT), str(DISPATCHER_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+1), DISPATCHER_ZONE[dispatcher_id]))
+        now_port = START_PORT
+        for client_id in range(CLIENT_NUMBER): 
+            if CLIENT_ZONE[client_id] == dispatcher_id: ## 只在需要的端口开dispatcher
+                dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), str(SERVER_NUMBER), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+1), DISPATCHER_ZONE[dispatcher_id]))
+                time.sleep(1)
+            now_port += CLIENT_THREAD
+        time.sleep(10)
     
-    print("sleep " + str(60 + 5 * SERVER_NUMBER) + " seconds to wait servers and dispatchers start!")
-    time.sleep(60 + 5 * SERVER_NUMBER)
+    print("sleep " + str(60 + 5 * (SERVER_NUMBER + DISPATCHER_NUMBER)) + " seconds to wait servers and dispatchers start!")
+    time.sleep(60 + 5 * (SERVER_NUMBER + DISPATCHER_NUMBER))
     
     global actual_start_time
     actual_start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())

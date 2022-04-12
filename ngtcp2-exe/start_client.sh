@@ -19,12 +19,10 @@ do
         ;;
         a)
             client_result_path=${client_result_path}$OPTARG'/'$client_id'/'
-            # saved_result_path=${saved_result_path}$OPTARG'/'
             mkdir -p $client_result_path
         ;;
         m)
             mode=$OPTARG
-            # saved_result_path=${saved_result_path}$mode'/'
         ;;
         z)
             client_zone=$OPTARG # 通过client_zone，用参数传入需要转发给的dispatcher
@@ -38,6 +36,8 @@ do
         ;;
     esac
 done
+
+ulimit -SHu 1030603 # 设置nproc即用户可以使用的进程数量
 
 client_ip="10.0.${client_id}.1"
 
@@ -66,6 +66,14 @@ fi
 ## 选择某一类的type_list
 type_list=(${type_list_all[*]})
 # type_list=(${type_list_cpu[*]})
+ulimit -a
+ps -eLf | wc -l
+echo "process now number:"
+ps --no-headers auxwwwm | cut -f1 -d' ' | sort | uniq -c | sort -n # 查看线程数
+echo "system file limitation"
+sysctl fs.file-nr # 查看系统file数限制
+echo "file now use"
+lsof -u myzhou 2>/dev/null | wc -l # 查看file使用
 
 for i in `seq $client_thread`
 do
@@ -109,7 +117,7 @@ do
             fi
             
             echo "data_type: " $data_type >> ${output_file}_tmp.txt
-            echo "website: " $website >> ${output_file}_tmp.txt
+            echo "website: " $website >> ${output_file}_tmp.txt``
 
             # 错峰运行client，防止I/O爆炸
             temp_time=$((${RANDOM=$port} % 2000)) 
@@ -120,7 +128,7 @@ do
             current_time=$(date "+%Y-%m-%d_%H:%M:%S")
             echo "current_time: "$current_time >> ${output_file}_tmp.txt
 
-            echo "nohup sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q" >> ${output_file}_tmp.txt
+            echo "sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q" >> ${output_file}_tmp.txt
             sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
 
         done
