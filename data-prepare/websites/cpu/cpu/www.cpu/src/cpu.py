@@ -2,11 +2,11 @@ import pymongo
 import random
 import time
 
-print("cpu.py")
+# print("cpu.py")
 
-client = pymongo.MongoClient('198.22.255.13', 27117)
+client = pymongo.MongoClient('198.22.255.14', 27117)
 db = client['shuffle_index']
-collection = db['shuffle_100w']
+collection = db['shuffle_100000']
 
 def get_ms(ct):
     # ct = time.time()
@@ -24,12 +24,10 @@ st = time.time()
 
 cnt = 0
 for i in range(n):
-    # print(collection.find({"value": random.randint(0, 100000)}))
-    for item in collection.find({"value": random.randint(0, 1000000)}):
+    for item in collection.find({"value": random.randint(0, 100000)}):
         cnt += 1
         # print(str(i + 1) + '/' + str(n))
         # ori_time = get_ms()
-        # print(item)
 
 # print("done")·
 

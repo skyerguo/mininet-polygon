@@ -37,7 +37,7 @@ do
     esac
 done
 
-ulimit -SHu 1030603 # 设置nproc即用户可以使用的进程数量
+# ulimit -SHu 330603 # 设置nproc即用户可以使用的进程数量
 
 client_ip="10.0.${client_id}.1"
 
@@ -66,14 +66,14 @@ fi
 ## 选择某一类的type_list
 type_list=(${type_list_all[*]})
 # type_list=(${type_list_cpu[*]})
-ulimit -a
-ps -eLf | wc -l
-echo "process now number:"
-ps --no-headers auxwwwm | cut -f1 -d' ' | sort | uniq -c | sort -n # 查看线程数
-echo "system file limitation"
-sysctl fs.file-nr # 查看系统file数限制
-echo "file now use"
-lsof -u myzhou 2>/dev/null | wc -l # 查看file使用
+# ulimit -a
+# ps -eLf | wc -l
+# echo "process now number:"
+# ps --no-headers auxwwwm | cut -f1 -d' ' | sort | uniq -c | sort -n # 查看线程数
+# echo "system file limitation"
+# sysctl fs.file-nr # 查看系统file数限制
+# echo "file now use"
+# lsof -u myzhou 2>/dev/null | wc -l # 查看file使用
 
 for i in `seq $client_thread`
 do

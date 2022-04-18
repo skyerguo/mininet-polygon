@@ -48,7 +48,7 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "198.22.255.13"
+DNS_IP = "198.22.255.14"
 
 zone2server_ids = []
 
@@ -108,11 +108,16 @@ def init():
     DNS_IP = virtual_machine_ip
 
     # 每次重新启动mongodb和redis，以防mininet网络变化
-    ret = subprocess.Popen("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9 && \
-                        sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/proj/quic-PG0/data/mongo.log --logappend && \
-                        sudo /usr/bin/redis-server /etc/redis/redis.conf"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)
+    ret = subprocess.Popen("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9",shell=True,stdout=subprocess.PIPE)
+                        
     data=ret.communicate() #如果启用此相会阻塞主程序
     ret.wait() #等待子程序运行完毕
+
+    ret = subprocess.Popen("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/proj/quic-PG0/data/mongo.log --logappend && sudo /usr/bin/redis-server /etc/redis/redis.conf"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)
+                        
+    data=ret.communicate() #如果启用此相会阻塞主程序
+    ret.wait() #等待子程序运行完毕
+   
 
     # os.system("ulimit -u 1030603") # 设置nproc即用户可以使用的进程数量
 
@@ -304,11 +309,6 @@ def myNetwork(net):
     print( '*** Starting switches\n')
 
     # 需要加attach操作，来对switch绑定所有的eth。eth的下标从1开始
-    # for switch_id in range(SWITCH_NUMBER):
-    #     print('attach switch: ', switch_id)
-    #     for i in range(1, 70):
-    #         switch[switch_id].attach('sw%s-eth%s'%(str(switch_id), str(i)))
-
     print("client_number_per_dispatcher: ", client_number_per_dispatcher)
 
     for switch_id in range(SERVER_NUMBER):
@@ -389,8 +389,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '198.22.255.13',
-                'exter': '198.22.255.13'
+                'inter': '198.22.255.14',
+                'exter': '198.22.255.14'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
@@ -501,7 +501,7 @@ def run(net):
     for server_id in range(SERVER_NUMBER):
         server_ip = "10.0.%s.3" %(str(server_id))
         server[server_id].cmdPrint("bash ../ngtcp2-exe/start_server.sh -i %s -s %s -p %s -t %s -a %s -m %s -n %s"%(str(server_id), server_ip, str(START_PORT), str(SERVER_THREAD), str(start_time), mode, str(CLIENT_NUMBER + DISPATCHER_NUMBER)))
-        time.sleep(1)
+        time.sleep(SERVER_THREAD / 80) # 必须要有较长sleep，不然太多进程同时产生，直接GG
     
     # if mode == "Polygon":
     for dispatcher_id in range(DISPATCHER_NUMBER):
@@ -511,7 +511,7 @@ def run(net):
                 dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), str(SERVER_NUMBER), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+1), DISPATCHER_ZONE[dispatcher_id]))
                 time.sleep(1)
             now_port += CLIENT_THREAD
-        time.sleep(10)
+        time.sleep(5)
     
     print("sleep " + str(60 + 5 * (SERVER_NUMBER + DISPATCHER_NUMBER)) + " seconds to wait servers and dispatchers start!")
     time.sleep(60 + 5 * (SERVER_NUMBER + DISPATCHER_NUMBER))

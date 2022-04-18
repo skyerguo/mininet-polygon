@@ -3,12 +3,12 @@ import random
 
 client = pymongo.MongoClient('localhost', 27117)
 db = client['shuffle_index']
-collection = db['shuffle_100000']
+collection = db['shuffle_1000000']
 
 obj = {}
-a = [x for x in range(100000)]
+a = [x for x in range(1000000)]
 random.shuffle(a)
 
-for i in range(100000):
+for i in range(1000000):
     collection.insert_one({'index': i, 'value': a[i]})
 # print(obj)

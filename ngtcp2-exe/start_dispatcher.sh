@@ -39,7 +39,11 @@ do
     esac
 done
 
-ulimit -SHu 1030603 # 设置nproc即用户可以使用的进程数量
+# ulimit -SHu 330603 # 设置nproc即用户可以使用的进程数量
+# ulimit -a
+# pstree -p | wc -l
+# ps -eLf | grep myzhou | wc -l
+# sudo ps -eLf | grep root | wc -l
 
 for i in `seq $dispatcher_thread`
 do 

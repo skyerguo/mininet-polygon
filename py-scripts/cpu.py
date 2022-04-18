@@ -4,7 +4,7 @@ import time
 
 # print("cpu.py")
 
-client = pymongo.MongoClient('198.22.255.13', 27117)
+client = pymongo.MongoClient('198.22.255.14', 27117)
 db = client['shuffle_index']
 db_size = 100000
 collection = db['shuffle_%s'%(db_size)]

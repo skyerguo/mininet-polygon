@@ -35,17 +35,22 @@ do
     esac
 done
 
-ulimit -SHu 1030603 # 设置nproc即用户可以使用的进程数量
-ulimit -a
+# ulimit -SHu 330603 # 设置nproc即用户可以使用的进程数量
+# ulimit -a
+# pstree -p | wc -l
+# ps -eLf | grep myzhou | wc -l
+sudo ps -eLf | grep root | wc -l
+# free -m
 # sudo tcpdump udp -i s0-eth0 -w ${server_result_path}"tcpdump.cap" &
 
 
 for i in `seq $server_thread`
 do 
     {
+        # temp_time=$((${RANDOM=$i} % 1000)) 
+        # temp_time=`awk 'BEGIN{print "'$temp_time'" / "1000"}'`
+        # sleep $temp_time
         port=$(($start_port+$i))
-        # echo sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/server --interface=ens4 --unicast=${unicast} 0.0.0.0 $port /proj/quic-PG0/data/server.key /proj/quic-PG0/data/server.crt -q
-        # echo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/server --interface=server$server_id-eth0 --unicast=$server_ip 0.0.0.0 $port /proj/quic-PG0/data/server.key /proj/quic-PG0/data/server.crt -q >> temp_server.txt
         output_file=${server_result_path}${server_id}'_'$port
         echo "output_file: " $output_file >> ${output_file}_tmp.txt
 
