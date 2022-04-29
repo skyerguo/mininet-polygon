@@ -2,7 +2,7 @@ root_path=/proj/quic-PG0/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
-while getopts ":i:p:t:r:a:m:z:d:" opt
+while getopts ":i:p:t:r:a:m:z:d:o:" opt
 do
     case $opt in
         i)
@@ -30,6 +30,10 @@ do
         d)
             des_server_id=$OPTARG # 随机选择的，同一个zone的server_id
         ;;
+        o)
+            outer_later=$OPTARG # 对当前的所在的zone，随机选择的一个outer_layer的server
+            outer_later=$(($outer_later+1)) # 因为server0.example.com用来表示本机的IP，所以编号都要+1
+        ;;
         ?)
             echo "未知参数"
             exit 1
@@ -47,21 +51,18 @@ type_list_normal=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal
 type_list_video=("video" "video" "video" "video" "video" "video" "video" "video" "video") ## 全是video
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu
 
-if [[ $mode == "DNS" ]]; then
-    dns_ip=`python3 -c "import os
-    import configparser
-    config = configparser.ConfigParser()
-    config.read('/users/myzhou/mininet-polygon/FastRoute-files/ip.conf')
-    dns_ip = config.get('DNS', 'inter')
-    print(dns_ip)"`
+if [[ $mode == "FastRoute" ]]; then
+    dns_ip=`python3 -c "import os;import configparser;config = configparser.ConfigParser();config.read('/users/myzhou/mininet-polygon/FastRoute-files/ip.conf');dns_ip = config.get('DNS', 'inter');print(dns_ip)"`
     echo "dns_ip: " $dns_ip
+    server_domain='server'$outer_later'.example.com'
+    echo "server_domain: " $server_domain
 fi
 
-if [[ $client_id < 3 ]]; then ## 修改的话，需要对应修改LoadMonitory.py
-    server_domain='server1.example.com'
-else
-    server_domain='server2.example.com'
-fi
+# if [[ $client_id < 3 ]]; then ## 修改的话，需要对应修改LoadMonitory.py
+#     server_domain='server1.example.com'
+# else
+#     server_domain='server2.example.com'
+# fi
 
 ## 选择某一类的type_list
 type_list=(${type_list_all[*]})
@@ -88,8 +89,8 @@ do
 
             if [[ $mode == "Polygon" ]]; then
                 destination_ip="10.0."$client_zone".5"
-            elif [[ $mode == "DNS" ]]; then
-                destination_ip="10.0."$client_zone".3"
+            # elif [[ $mode == "DNS" ]]; then
+                # destination_ip="10.0."$client_zone".3"
             elif [[ $mode == "Anycast" ]]; then
                 destination_ip="10.0."$des_server_id".3"
             elif [[ $mode == "FastRoute" ]]; then

@@ -69,9 +69,10 @@ if __name__ == "__main__":
     server_items = config.items("server")
     server_ips = []
     for item in server_items:
-        if item[0] == 's0' or item[0] == 's3':
-            print(item[0], item[1])
-            server_ips.append(item[1])
+        # if item[0] == 's0' or item[0] == 's3':
+        #     print(item[0], item[1])
+        # if item[0] in ['s0','s1','s4','s5','s8','s10','s11','s12']:
+        server_ips.append(item[1])
     client_ips = config.get("client", "ips").split(',')
     print("DNS server's IP", dns_ip)
     print("Server's IP", server_ips)

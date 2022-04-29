@@ -66,6 +66,8 @@ cnt_process_limit = 0
 earliest_request_time = 100000000000000
 latest_request_time = 0
 
+client_port_hashtable = {}
+
 for client_id in range(config_file['client_number']):
     client_result_path = result_root_path + "client/" + str(start_time) + "/" + str(client_id) + "/"
     client_files = os.listdir(client_result_path)
@@ -103,6 +105,14 @@ for client_id in range(config_file['client_number']):
         if "_tmp.txt" in client_file:
             client_ip = "10.0.%s.1" % (client_file.split("_")[0])
             client_port = client_file.split("_")[1]
+            
+            # hash_key = client_file.split("_")[0] + client_port
+            # if hash_key not in client_port_hashtable: ## 去掉每个client+port的第一个请求，考虑热启动，提高成功率
+            #     client_port_hashtable[hash_key] = 1
+            #     continue
+            # elif client_port_hashtable[hash_key] == 1: ## 去掉每个client+port的第二个请求，考虑热启动，提高成功率
+            #     client_port_hashtable[hash_key] = 2
+            #     continue
 
             with open(client_result_path + client_file, "r") as f:
                 for line in f:
@@ -131,7 +141,9 @@ for client_id in range(config_file['client_number']):
             # if sensitive_type == "cpu":
             #     print(plt, plt_times, cpu_duration)
             #     print(client_file)
-            if plt_times != 2: # throughput和latency应该都是两个plt
+            # if plt_times != 2 and sensitive_type != "cpu": # throughput和latency应该都是两个plt
+            #     continue
+            if plt_times != 2: # 所有应该都是两个plt
                 continue
             if sensitive_type == "cpu" and (cpu_duration == 0): # 应该是cpu，但是没查到cpu
                 continue
@@ -303,20 +315,18 @@ print("实验初始化时长:\t", earliest_request_time / 1000 - time.mktime(tim
 print("实际请求总时长:\t", (latest_request_time - earliest_request_time) / 1000, "秒")
 
 print(" === plt analysis result === ")
-print("plt_latency_avg: ", np.mean(plt_total["latency"]) / 1000000, "\t数量: ", len(plt_total["latency"]), "\t成功率: ", str(round(len(plt_total["latency"]) / req_total_number["latency"] * 100, 1)) + "%")
-print("plt_throughput_avg: ", np.mean(plt_total["throughput"]) / 1000000, "\t数量: ", len(plt_total["throughput"]), "\t成功率: ", str(round(len(plt_total["throughput"]) / req_total_number["throughput"] * 100, 1)) + "%")
-print("plt_cpu_avg: ", np.mean(plt_total["cpu"]) / 1000000, "\t数量: ", len(plt_total["cpu"]), "\t成功率: ", str(round(len(plt_total["cpu"]) / req_total_number["cpu"] * 100, 1)) + "%")
+print("plt_latency_avg: ", np.mean(plt_total["latency"]) / 1000000, "\t成功数量: ", len(plt_total["latency"]), "\t成功率: ", str(round(len(plt_total["latency"]) / req_total_number["latency"] * 100, 1)) + "%")
+print("plt_throughput_avg: ", np.mean(plt_total["throughput"]) / 1000000, "\t成功数量: ", len(plt_total["throughput"]), "\t成功率: ", str(round(len(plt_total["throughput"]) / req_total_number["throughput"] * 100, 1)) + "%")
+print("plt_cpu_avg: ", np.mean(plt_total["cpu"]) / 1000000, "\t成功数量: ", len(plt_total["cpu"]), "\t成功率: ", str(round(len(plt_total["cpu"]) / req_total_number["cpu"] * 100, 1)) + "%")
 print("mongo_duration: ", "平均值: ", np.mean(plt_total["mongo"]) / 1000000, "\t中位数: ", np.median(plt_total["mongo"]) / 1000000)
 
 if (config_file['mode'] == 'Polygon'):
-    # print(" === cross_region analysis result === ")
     print(" === Polygon === ")
     for sensitive_type in ["latency", "throughput", "cpu"]:
-        print(sensitive_type, "\tcross_region_number: ", cross_region[sensitive_type], "\tcross_region_rate: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))
-        print(sensitive_type, "\t绑定dispatcher成功率" + str(round(bind_dispatcher_success_number[sensitive_type] / req_total_number[sensitive_type] * 100, 1)) + "%")
+        print(sensitive_type, "\t跨地区数量: ", cross_region[sensitive_type], "\t跨地区成功率: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))
+        # print(sensitive_type, "\t绑定dispatcher成功率" + str(round(bind_dispatcher_success_number[sensitive_type] / req_total_number[sensitive_type] * 100, 1)) + "%")
 
-print("Resource temporarily unavailable number: ", cnt_process_limit)
-
-print(" === success_rate_per_client === ")
-for client_id in range(config_file['client_number']):
-    print(client_id, str(round(np.sum(success_rate_per_client[client_id]) / len(success_rate_per_client[client_id]) * 100, 1)) + "%")
+# print("Resource temporarily unavailable number: ", cnt_process_limit)
+# print(" === success_rate_per_client === ")
+# for client_id in range(config_file['client_number']):
+#     print(client_id, str(round(np.sum(success_rate_per_client[client_id]) / len(success_rate_per_client[client_id]) * 100, 1)) + "%")

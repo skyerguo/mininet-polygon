@@ -38,9 +38,11 @@ client = []
 dispatcher = []
 server = []
 
-CLIENT_ZONE= []
+CLIENT_ZONE = []
 DISPATCHER_ZONE = []
 SERVER_ZONE = []
+DNS_LINKS = []
+DNS_OUTERS = []
 bw = {}
 delay = {}
 cpu = {}
@@ -52,7 +54,7 @@ DNS_IP = "198.22.255.14"
 
 zone2server_ids = []
 
-modes = ["Polygon", "DNS", "Anycast", "FastRoute"]
+modes = ["Polygon", "Anycast", "FastRoute"]
 if len(sys.argv) < 2:
     mode = modes[0]
     print("未输入方案，默认选择Polygon")
@@ -70,6 +72,7 @@ def init():
     global bw, delay, cpu
     global CLIENT_ZONE, DISPATCHER_ZONE, SERVER_ZONE
     global zone2server_ids
+    global DNS_LINKS, DNS_OUTERS
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
@@ -90,6 +93,9 @@ def init():
     bw = SELECT_TOPO['bw']
     delay = SELECT_TOPO['delay']
     cpu = SELECT_TOPO['cpu']
+
+    DNS_LINKS = SELECT_TOPO['dns_links']
+    DNS_OUTERS = SELECT_TOPO['dns_outers']
 
     zone2server_ids = [[] for _ in range(len(DISPATCHER_ZONE))]
 
@@ -159,7 +165,7 @@ def myNetwork(net):
     ## 将最后三个switch和网卡eno2相连，并获取网关地址
     for i in range(3):
         # ret = subprocess.Popen("sudo ovs-vsctl add-port sw%s eno2 && sudo ifconfig sw%s 10.0.%s.15/24"%(str(SWITCH_NUMBER-1-i), str(SWITCH_NUMBER-1-i ), str(100+i)), shell=True,stdout=subprocess.PIPE)
-        print("sudo ifconfig sw%s 10.0.%s.15/24"%(str(SWITCH_NUMBER-1-i ), str(100+i)))
+        print("sudo ifconfig sw%s 10.0.%s.15/24"%(str(SWITCH_NUMBER-1-i), str(100+i)))
         ret = subprocess.Popen("sudo ifconfig sw%s 10.0.%s.15/24"%(str(SWITCH_NUMBER-1-i ), str(100+i)), shell=True,stdout=subprocess.PIPE)
         data=ret.communicate() #如果启用此相会阻塞主程序
         ret.wait() #等待子程序运行完毕
@@ -398,10 +404,8 @@ def myNetwork(net):
     for server_id in range(SERVER_NUMBER):
         config['server']['s%s'%str(server_id)] = '10.0.%s.3'%str(server_id)
     config['layer'] = {}
-    config['layer']['s0'] = 's2'
-    config['layer']['s3'] = 's4'
-    config['layer']['s2'] = 's1'
-    config['layer']['s4'] = 's1'
+    for dns_link in DNS_LINKS:
+        config['layer']['s%s'%str(dns_link[0])] = 's%s'%(dns_link[1])
     with open('../FastRoute-files/ip.conf','w') as cfg:
         config.write(cfg)
 
@@ -489,9 +493,9 @@ def measure_start(net):
         server[server_id].cmdPrint("cd ../py-scripts && bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s -m %s &"%(str(server_id), str(temp_bw).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time), str(MAX_THROUGHPUT)))
     
     # 这一块用来周期性记录redis实验数据的，暂时先不启动，会带来一定的overhead
-    time.sleep(10)
-    for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
+    # time.sleep(10)
+    # for dispatcher_id in range(DISPATCHER_NUMBER):
+    #     dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/measurement_record.sh -i %s -r %s -a %s &"%(str(dispatcher_id), str(virtual_machine_ip), str(start_time)))
 
 
 def run(net):
@@ -523,7 +527,7 @@ def run(net):
 
     now_port = START_PORT
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]]))))
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]]))))
         now_port += CLIENT_THREAD
         time.sleep(3)
 

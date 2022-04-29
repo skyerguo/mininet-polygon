@@ -83,12 +83,12 @@ do
             echo "latency: "$latency >> $output_file_2
             redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${server_id}_d${dispatcher_id} $latency > /dev/null
 
-            ## 通过计算所有对应zone的nload，最近5秒的平均带宽
+            ## 通过计算所有对应zone的nload，最近15秒(根据nload -a x决定的x秒)的平均带宽
             sum_existing_bw_per_zone=0  
             for file_name in `ls ${nload_path}*cz${dispatcher_id}_s${server_id}.log`
             do
-                existing_bw_per_client=`tail -n 10 $file_name | grep "Avg:" | head -n 1 | awk '{print $4}'`
-                echo "existing_bw_per_client: "$existing_bw_per_client" file_name: "$file_name >> $output_file_2
+                existing_bw_per_client=`tail -n 10 $file_name | grep "Avg:" | head -n 1 | awk '{print $2}'` ## 因为从client记的，所以解析入流量
+                echo "existing_bw_per_client: "$existing_bw_per_client >> $output_file_2
                 sum_existing_bw_per_zone=`awk 'BEGIN{print "'${sum_existing_bw_per_zone}'" + "'$existing_bw_per_client'"}'`
             done
             echo "sum_existing_bw_per_zone: " $sum_existing_bw_per_zone >> $output_file_2
