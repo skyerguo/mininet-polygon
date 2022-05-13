@@ -17,7 +17,7 @@ import sys
 import configparser
 
 # SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_large)
-SELECT_TOPO = json.load(open('../json-files/new_topo.json', 'r'))
+SELECT_TOPO = json.load(open('../json-files/topo.json', 'r'))
 
 actual_start_time = 0
 
@@ -50,7 +50,7 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "198.22.255.14"
+DNS_IP = "198.22.255.11"
 
 zone2server_ids = []
 
@@ -395,8 +395,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '198.22.255.14',
-                'exter': '198.22.255.14'
+                'inter': '198.22.255.11',
+                'exter': '198.22.255.11'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
@@ -417,6 +417,7 @@ def measure_start(net):
     ## 对所有server设置wondershaper，并启动ngtcp2，为了发第一次包测量实际竞争力做准备
     for server_id in range(SERVER_NUMBER):
         server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -m %s -a %s &" %(str(server_id), str(MAX_THROUGHPUT), str(start_time)))
+        # os.system("bash ")
         if mode == "FastRoute": ## 开启FastRoute的cpu监控和转移规则
             server[server_id].cmdPrint("cd ../FastRoute-files && sudo python3 LoadMonitor.py %s &"%(str(server_id)))
 
@@ -487,6 +488,7 @@ def measure_start(net):
     time.sleep(10)
     
     for server_id in range(SERVER_NUMBER):
+        ## 从cgroup记录cpu的结果，因为权限问题，我们只能全局记录到文件，再由节点去访问到。
         temp_bw = []
         for dispatcher_id in range(DISPATCHER_NUMBER):
             temp_bw.append(bw['dispatcher_server'][dispatcher_id][server_id])
@@ -538,7 +540,7 @@ def save_config():
     os.system("cp /proj/quic-PG0/data/websites/cpu/cpu/www.cpu/src/cpu.py %s"%config_result_path)
 
     # SELECT_TOPO
-    topo_file = open(config_result_path + 'topo.json','w',encoding='utf-8')
+    topo_file = open(config_result_path + 'topo.json', 'w', encoding='utf-8')
     SELECT_TOPO['mode'] = mode
     json.dump(SELECT_TOPO, topo_file)
     topo_file.close()
@@ -565,13 +567,13 @@ if __name__ == '__main__':
     time.sleep(30)
     setLogLevel( 'info' )
       
-    ## 测量
-    print("measure_start! ")
-    measure_start(net)
+    # ## 测量
+    # print("measure_start! ")
+    # measure_start(net)
 
-    ## 跑实验
-    run(net)
-    save_config()
+    # ## 跑实验
+    # run(net)
+    # save_config()
 
     CLI(net)
     net.stop()

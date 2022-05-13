@@ -45,8 +45,8 @@ done
 
 client_ip="10.0.${client_id}.1"
 
-# type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "cpu") ## 5:3:1
-type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "video" "video" "video" "video" "cpu") ## 7:7:1
+type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "video" "cpu") ## 4:4:1，和gcloud保持一致
+# type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "video" "video" "video" "video" "cpu") ## 7:7:1
 type_list_normal=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1") ## 全是normal_1
 type_list_video=("video" "video" "video" "video" "video" "video" "video" "video" "video") ## 全是video
 type_list_cpu=("cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu" "cpu") ## 全是cpu

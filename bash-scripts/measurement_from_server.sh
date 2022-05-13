@@ -53,16 +53,16 @@ echo "bw_competitiveness: "${bw_competitiveness[*]} >> $output_file
 server_pid=`ps aux | grep mininet:s${server_id} | grep -v grep | head -n 1 | awk '{print $2}'`
 echo "server_pid: " $server_pid >> $output_file
 
-echo "start_time: " $(date "+%Y-%m-%d-%H-%M-%S") "${measurement_result_path}server/cpu_$server_id.log"
-top -p $server_pid -b -d 0.1 | grep -a '%Cpu' >> "${measurement_result_path}server/cpu_$server_id.log" & 
+# echo "start_time: " $(date "+%Y-%m-%d-%H-%M-%S") "${measurement_result_path}server/cpu_$server_id.log"
+# top -p $server_pid -b -d 0.1 | grep -a '%Cpu' >> "${measurement_result_path}server/cpu_$server_id.log" & ## 不再使用top记录cpu
 
 nload_path=$measurement_result_path"nload/"
 
 while true
 do
-    cpu_idle_temp=`tail -2 ${measurement_result_path}server/cpu_$server_id.log | head -n 1 |awk -F',' '{print $4}'`
-    cpu_idle=`echo $cpu_idle_temp | tr -cd "[0-9][.]"`
-
+    # cpu_idle_temp=`tail -2 ${measurement_result_path}server/cpu_$server_id.log | head -n 1 |awk -F',' '{print $4}'`
+    # cpu_idle=`echo $cpu_idle_temp | tr -cd "[0-9][.]"` ## 不再使用top记录cpu
+    
     ## 把文件从不可读的ANSI，通过sed替换编码改为可以用cat操作的常规编码
     for file_name in `ls ${nload_path}*$server_id.txt`
     do
@@ -83,12 +83,13 @@ do
             echo "latency: "$latency >> $output_file_2
             redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${server_id}_d${dispatcher_id} $latency > /dev/null
 
-            ## 通过计算所有对应zone的nload，最近15秒(根据nload -a x决定的x秒)的平均带宽
+            ## 通过计算所有对应zone的nload，当前的平均带宽
             sum_existing_bw_per_zone=0  
             for file_name in `ls ${nload_path}*cz${dispatcher_id}_s${server_id}.log`
             do
-                existing_bw_per_client=`tail -n 10 $file_name | grep "Avg:" | head -n 1 | awk '{print $2}'` ## 因为从client记的，所以解析入流量
-                echo "existing_bw_per_client: "$existing_bw_per_client >> $output_file_2
+                existing_bw_per_client=`tail -n 10 $file_name | grep "Curr:" | head -n 1 | awk '{print $2}'` ## 因为从client记的，所以解析入流量
+                # existing_bw_per_client=`tail -n 10 $file_name | grep "Avg:" | head -n 1 | awk '{print $2}'` ## 因为从client记的，所以解析入流量
+                echo "existing_bw_per_client: $existing_bw_per_client file_name: $file_name" >> $output_file_2
                 sum_existing_bw_per_zone=`awk 'BEGIN{print "'${sum_existing_bw_per_zone}'" + "'$existing_bw_per_client'"}'`
             done
             echo "sum_existing_bw_per_zone: " $sum_existing_bw_per_zone >> $output_file_2
@@ -109,8 +110,11 @@ do
     done
     
     echo "current_time: "$(date "+%Y%m%d%H%M%S") >> $output_file
+
+    echo "bash /users/myzhou/mininet-polygon/bash-scripts/realtime_cpu.sh -n $server_id -t idle -i 1" >> $output_file 
+    cpu_idle=`bash /users/myzhou/mininet-polygon/bash-scripts/realtime_cpu.sh -n $server_id -m s -t idle -i 1` ## 变量中不能出现sx，会解析成ip地址。大坑！
     echo "cpu_idle: "$cpu_idle >> $output_file
     redis-cli -h $redis_ip -a 'Hestia123456' set cpu_s${server_id} ${cpu_idle} > /dev/null
 
-    sleep 15
+    sleep 1.5
 done

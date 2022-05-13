@@ -68,6 +68,8 @@ latest_request_time = 0
 
 client_port_hashtable = {}
 
+plt_throughput_per_zone = [[] for _ in range(config_file['dispatcher_number'])]
+
 for client_id in range(config_file['client_number']):
     client_result_path = result_root_path + "client/" + str(start_time) + "/" + str(client_id) + "/"
     client_files = os.listdir(client_result_path)
@@ -97,7 +99,6 @@ for client_id in range(config_file['client_number']):
                         plt = int(line.split(" ")[1].strip())
                         plt_times += 1
                     if "time_duration:" in line:
-                        # print(client_file, line, float(line.split(" ")[-1].strip()) * 1000000)
                         cpu_duration = int(float(line.split(" ")[-1].strip()) * 1000000)
                     if "bind fd2_" in line:
                         bind_dispatcher_success_flag = 1
@@ -156,6 +157,9 @@ for client_id in range(config_file['client_number']):
             if sensitive_type == "cpu":
                 plt_total["mongo"].append(float(cpu_duration))
 
+            if sensitive_type == "throughput":
+                plt_throughput_per_zone[config_file['client_zone'][client_id]].append(float(plt))
+
             print(str(current_time) + " " + sensitive_type + " " + str(plt), file=open(saved_results_root_path + mode + "/" + str(client_ip) + "_jct/" + str(client_ip) + "_" + str(client_port) + ".txt", "a"))
     
     # print("plt_latency_avg: ", np.mean(plt_total["latency"]) / 1000000, "\t数量: ", len(plt_total["latency"]), "\t成功率: ", str(len(plt_total["latency"]) / req_total_number["latency"] * 100) + "%")
@@ -168,6 +172,7 @@ if config_file['mode'] == "Polygon":
     ## 计算每种sensitive的cross region比例
     cross_region = {"cpu": 0, "latency": 0, "throughput": 0}
     local_region = {"cpu": 0, "latency": 0, "throughput": 0}
+    throughput_cross_to = [0 for _ in range(config_file['dispatcher_number'])]
 
     for dispatcher_id in range(config_file['dispatcher_number']):
         dispatcher_result_path = result_root_path + "dispatcher/" + str(start_time) + "/" + str(dispatcher_id) + "/"
@@ -181,17 +186,24 @@ if config_file['mode'] == "Polygon":
                 sensitive_type = ""
                 with open(dispatcher_result_path + dispatcher_file, "r") as f:
                     for line in f:
+                        if "local_best_value" in line:
+                            local_best_value = float(line.split(":")[1].strip())
                         if "sensitive_type" in line:
                             sensitive_type = line.split(":")[1].strip()
                         if "!Forwarded to" in line:
                             if "remote" in line:
                                 forward_region = 1
+                                forward_best_value = float(line.split(" ")[-1].strip())
+                                if sensitive_type == "throughput":
+                                    print(sensitive_type, local_best_value, forward_best_value)
                             else:
                                 forward_region = 0
                             # print(dispatcher_file, forward_region)
                             # print(sensitive_type)
                             cross_region[sensitive_type] += forward_region
                             local_region[sensitive_type] += 1-forward_region
+                            if sensitive_type == 'throughput':
+                                throughput_cross_to[int(dispatcher_file.split("_")[0])] += forward_region
                             
    
 
@@ -325,6 +337,11 @@ if (config_file['mode'] == 'Polygon'):
     for sensitive_type in ["latency", "throughput", "cpu"]:
         print(sensitive_type, "\t跨地区数量: ", cross_region[sensitive_type], "\t跨地区成功率: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))
         # print(sensitive_type, "\t绑定dispatcher成功率" + str(round(bind_dispatcher_success_number[sensitive_type] / req_total_number[sensitive_type] * 100, 1)) + "%")
+    for dispatcher_id in range(config_file['dispatcher_number']):
+        print('第', str(dispatcher_id), '个zone的请求转发个数: \t', throughput_cross_to[dispatcher_id])
+
+for dispatcher_id in range(config_file['dispatcher_number']):
+    print('第', str(dispatcher_id), '个zone的throughput请求plt: \t', np.mean(plt_throughput_per_zone[dispatcher_id]) / 1000000, "\t成功数量: ", len(plt_throughput_per_zone[dispatcher_id]))
 
 # print("Resource temporarily unavailable number: ", cnt_process_limit)
 # print(" === success_rate_per_client === ")

@@ -5,9 +5,9 @@ import json
 import copy
 
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
-CLIENT_NUMBER = 105
-DISPATCHER_NUMBER = 6 # 最多10个
-SERVER_NUMBER = 15
+CLIENT_NUMBER = 3
+DISPATCHER_NUMBER = 3 # 最多10个
+SERVER_NUMBER = 3
 THREAD_NUMBER = 5 # 每个CLIENT的线程数，请算一下14433+CLIENT_NUMBER*THREAD_NUMBER，是否可能造成冲突**
 
 csv_file_path = '../data-prepare/measure.csv'
@@ -98,7 +98,8 @@ for line in csv_reader:
 latency_topo = [[0 for _ in range(zone_number)] for _ in range(zone_number)]
 bandwidth_topo = [[0 for _ in range(zone_number)] for _ in range(zone_number)]
 
-# print("max bandwidth: ", max_bw)
+print("max bandwidth: ", max_bw)
+# exit(0)
 # print("zone_number:", zone_number)
 
 for line in lines:
@@ -146,9 +147,12 @@ result['client_thread'] = THREAD_NUMBER
 # result['server_thread'] = THREAD_NUMBER
 # result['dispatcher_thread'] = THREAD_NUMBER
 result['cpu'] = {}
-result['cpu']['client'] = .2 * CLIENT_NUMBER
-result['cpu']['server'] = .2 * SERVER_NUMBER
-result['cpu']['dispatcher'] = .2 * DISPATCHER_NUMBER
+# result['cpu']['client'] = .2 * CLIENT_NUMBER
+# result['cpu']['server'] = .2 * SERVER_NUMBER
+# result['cpu']['dispatcher'] = .2 * DISPATCHER_NUMBER
+result['cpu']['client'] = .4
+result['cpu']['server'] = .3
+result['cpu']['dispatcher'] = .3
 result['dns_links'] = dns_links
 result['dns_outers'] = dns_outers
 
@@ -180,8 +184,8 @@ result['bw']['client_dispatcher'] = [[] for _ in range(CLIENT_NUMBER)]
 result['delay']['client_dispatcher'] = [[] for _ in range(CLIENT_NUMBER)]
 for client_id in range(CLIENT_NUMBER):
     client_pos = zone_map[client_zone[client_id]]
-    for dispathcer_id in range(DISPATCHER_NUMBER):
-        dispatcher_pos = zone_map[dispatcher_zone[dispathcer_id]]
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        dispatcher_pos = zone_map[dispatcher_zone[dispatcher_id]]
         result['bw']['client_dispatcher'][client_id].append(bandwidth_topo[client_pos][dispatcher_pos])
         result['delay']['client_dispatcher'][client_id].append(latency_topo[client_pos][dispatcher_pos])
 
@@ -194,7 +198,7 @@ for dispatcher_id in range(DISPATCHER_NUMBER):
         result['bw']['dispatcher_server'][dispatcher_id].append(bandwidth_topo[dispatcher_pos][server_pos])
         result['delay']['dispatcher_server'][dispatcher_id].append(latency_topo[dispatcher_pos][server_pos])
     
-json_file = '../json-files/new_topo.json'
+json_file = '../json-files/topo.json'
 f_out = open(json_file, 'w')
 json.dump(result, f_out, indent=1)
 f_out.close()
