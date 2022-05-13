@@ -488,7 +488,7 @@ def measure_start(net):
     time.sleep(10)
     
     for server_id in range(SERVER_NUMBER):
-        ## 从cgroup记录cpu的结果，因为权限问题，我们只能全局记录到文件，再由节点去访问到。
+        os.system("bash ../bash-scripts/record_cpu.sh -n %s -m s -t idle -i 1 -a %s &"%(str(server_id), str(start_time))) ## 从cgroup记录cpu的结果，因为权限问题，我们只能全局记录到文件，再由节点去访问到。
         temp_bw = []
         for dispatcher_id in range(DISPATCHER_NUMBER):
             temp_bw.append(bw['dispatcher_server'][dispatcher_id][server_id])
@@ -567,9 +567,9 @@ if __name__ == '__main__':
     time.sleep(30)
     setLogLevel( 'info' )
       
-    # ## 测量
-    # print("measure_start! ")
-    # measure_start(net)
+    ## 测量
+    print("measure_start! ")
+    measure_start(net)
 
     # ## 跑实验
     # run(net)

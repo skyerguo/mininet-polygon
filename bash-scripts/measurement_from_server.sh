@@ -111,8 +111,8 @@ do
     
     echo "current_time: "$(date "+%Y%m%d%H%M%S") >> $output_file
 
-    echo "bash /users/myzhou/mininet-polygon/bash-scripts/realtime_cpu.sh -n $server_id -t idle -i 1" >> $output_file 
-    cpu_idle=`bash /users/myzhou/mininet-polygon/bash-scripts/realtime_cpu.sh -n $server_id -m s -t idle -i 1` ## 变量中不能出现sx，会解析成ip地址。大坑！
+    # cpu_idle=`bash /users/myzhou/mininet-polygon/bash-scripts/realtime_cpu.sh -n $server_id -m s -t idle -i 1` ## 变量中不能出现sx，会解析成ip地址。大坑！
+    cpu_idle=`tail -4 ${measurement_result_path}server/s${server_id}_cpu.log | grep "cpu_idle_ratio" | tail -1 | awk '{print $2}'`
     echo "cpu_idle: "$cpu_idle >> $output_file
     redis-cli -h $redis_ip -a 'Hestia123456' set cpu_s${server_id} ${cpu_idle} > /dev/null
 
