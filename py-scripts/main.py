@@ -571,9 +571,9 @@ if __name__ == '__main__':
     print("measure_start! ")
     measure_start(net)
 
-    # ## 跑实验
-    # run(net)
-    # save_config()
+    ## 跑实验
+    run(net)
+    save_config()
 
     CLI(net)
     net.stop()

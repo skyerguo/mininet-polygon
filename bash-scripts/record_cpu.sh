@@ -35,8 +35,8 @@ root_path='/sys/fs/cgroup/cpuacct/'${machine_type}${machine_name}
 while true; do 
     echo "current_time: "$(date "+%Y%m%d%H%M%S") >> $output_file
 
-    if [ ! -f $root_path ]; then ## 路径不存在，即当mininet被关闭后自动结束该进程
-        echo "Path not exists"
+    if [ ! -e $root_path ]; then ## 路径不存在，即当mininet被关闭后自动结束该进程
+        echo "Path $root_path not exists"
         break
     fi
 
