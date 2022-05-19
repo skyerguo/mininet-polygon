@@ -114,12 +114,7 @@ def init():
     DNS_IP = virtual_machine_ip
 
     # 每次重新启动mongodb和redis，以防mininet网络变化
-    ret = subprocess.Popen("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs sudo kill -9",shell=True,stdout=subprocess.PIPE)
-                        
-    data=ret.communicate() #如果启用此相会阻塞主程序
-    ret.wait() #等待子程序运行完毕
-
-    ret = subprocess.Popen("sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/proj/quic-PG0/data/mongo.log --logappend && sudo /usr/bin/redis-server /etc/redis/redis.conf"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)
+    ret = subprocess.Popen("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs --no-run-if-empty sudo kill -9 && sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/proj/quic-PG0/data/mongo.log --logappend && sudo /usr/bin/redis-server /etc/redis/redis.conf"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)
                         
     data=ret.communicate() #如果启用此相会阻塞主程序
     ret.wait() #等待子程序运行完毕
@@ -413,6 +408,12 @@ def myNetwork(net):
 
 def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
+    
+    # ## 测试代码开始``
+    # for server_id in range(SERVER_NUMBER):
+    #     os.system("bash ../bash-scripts/record_cpu.sh -n %s -m s -t idle -i 1 -a %s &"%(str(server_id), str(start_time))) ## 从cgroup记录cpu的结果，因为权限问题，我们只能全局记录到文件，再由节点去访问到。
+    # return
+    # ## 测试代码结束
 
     ## 对所有server设置wondershaper，并启动ngtcp2，为了发第一次包测量实际竞争力做准备
     for server_id in range(SERVER_NUMBER):
@@ -475,7 +476,7 @@ def measure_start(net):
     f_out.close()
 
     ## 删除测量带来的server进程，以免影响后续的实验结果
-    os.system("ps -ef | grep '/data/server' | grep -v grep | awk '{print $2}' | xargs sudo kill -9 > /dev/null 2>&1")
+    os.system("ps -ef | grep '/data/server' | grep -v grep | awk '{print $2}' | xargs --no-run-if-empty sudo kill -9 > /dev/null 2>&1")
     
     ## 设置latency的表格
     for server_id in range(SERVER_NUMBER):

@@ -70,6 +70,8 @@ client_port_hashtable = {}
 
 plt_throughput_per_zone = [[] for _ in range(config_file['dispatcher_number'])]
 
+server_cpu_per_second = [{} for _ in range(config_file['server_number'])]
+
 for client_id in range(config_file['client_number']):
     client_result_path = result_root_path + "client/" + str(start_time) + "/" + str(client_id) + "/"
     client_files = os.listdir(client_result_path)
@@ -83,9 +85,13 @@ for client_id in range(config_file['client_number']):
             current_time = 0
             mode = "Polygon"
             cpu_duration = 0
+            min_st = -1
+            max_en = 0
             plt_times = 0
+            cnt_mongo = 0
             bind_dispatcher_success_flag = 0
             success_rate_per_client[client_id].append(0)
+            remote_server_id = -1
             continue
         
         if "_2.txt" in client_file:
@@ -98,10 +104,42 @@ for client_id in range(config_file['client_number']):
                     if "PLT:" in line:
                         plt = int(line.split(" ")[1].strip())
                         plt_times += 1
-                    if "time_duration:" in line:
-                        cpu_duration = int(float(line.split(" ")[-1].strip()) * 1000000)
+                    if "bind fd_" in line:
+                        remote_server_id = int(line.split(".")[2].strip())
                     if "bind fd2_" in line:
+                        remote_server_id = int(line.split(".")[2].strip())
                         bind_dispatcher_success_flag = 1
+        
+        if "_3.txt" in client_file:
+            with open(client_result_path + client_file, "r") as f:
+                for line in f:
+                    # if "st:" in line:
+                    #     curr_st = float(line.split(" ")[-1].strip())
+
+                    # if "en:" in line:
+                    #     cnt_mongo += 1
+                    #     curr_en = float(line.split(" ")[-1].strip())
+                    #     cpu_duration += int((curr_en - curr_st) * 1000000)
+                    if "st:" in line:
+                        curr_st = float(line.split(" ")[-1].strip())
+                        if min_st == -1:
+                            min_st = curr_st
+                        else:
+                            min_st = min(min_st, curr_st)
+                    if "en:" in line:
+                        cnt_mongo += 1
+                        curr_en = float(line.split(" ")[-1].strip())
+                        max_en = max(max_en, curr_en)
+                    
+                        for time_stamp in range(int(curr_st), int(curr_en) + 1):
+                            if time_stamp in  server_cpu_per_second[remote_server_id].keys():
+                                server_cpu_per_second[remote_server_id][time_stamp] += 1
+                            else:
+                                server_cpu_per_second[remote_server_id][time_stamp] = 1
+
+                        if cnt_mongo == 100:
+                            cpu_duration = int((max_en - min_st) * 1000000)
+                    
 
         if "_tmp.txt" in client_file:
             client_ip = "10.0.%s.1" % (client_file.split("_")[0])
@@ -146,8 +184,12 @@ for client_id in range(config_file['client_number']):
             #     continue
             if plt_times != 2: # 所有应该都是两个plt
                 continue
-            if sensitive_type == "cpu" and (cpu_duration == 0): # 应该是cpu，但是没查到cpu
+            if sensitive_type == "cpu" and cnt_mongo != 100:
+                print("未完成的cpu请求完成度", cnt_mongo, "/100")
+            if sensitive_type == "cpu" and (cpu_duration == 0 or cnt_mongo != 100): # 应该是cpu，但是没查到cpu，或者查询次数不对（这里数字要和dispathcer.cc中的对应）
                 continue
+            # if cpu_duration > 100 * 1000000:
+            #     print("zone: ", config_file['client_zone'][client_id], "cpu_duration: ", cpu_duration / 1000000)
 
             plt = plt + cpu_duration
 
@@ -194,10 +236,12 @@ if config_file['mode'] == "Polygon":
                             if "remote" in line:
                                 forward_region = 1
                                 forward_best_value = float(line.split(" ")[-1].strip())
-                                if sensitive_type == "throughput":
-                                    print(sensitive_type, local_best_value, forward_best_value)
+                                # if sensitive_type == "throughput":
+                                    # print(sensitive_type, local_best_value, forward_best_value)
                             else:
                                 forward_region = 0
+                                # if sensitive_type == "cpu":
+                                #     print(sensitive_type, local_best_value)
                             # print(dispatcher_file, forward_region)
                             # print(sensitive_type)
                             cross_region[sensitive_type] += forward_region
@@ -347,3 +391,11 @@ for dispatcher_id in range(config_file['dispatcher_number']):
 # print(" === success_rate_per_client === ")
 # for client_id in range(config_file['client_number']):
 #     print(client_id, str(round(np.sum(success_rate_per_client[client_id]) / len(success_rate_per_client[client_id]) * 100, 1)) + "%")
+
+print(" === 每个server的CPU请求数量 === ")
+for server_id in range(config_file['server_number']):
+    request_count = []
+    for time_stamp in server_cpu_per_second[server_id]:
+        request_count.append(server_cpu_per_second[server_id][time_stamp])
+    print("server: ", server_id, "avg_cpu_request_per_second: ", np.mean(request_count))
+    # print(server_cpu_per_second[server_id])
