@@ -182,10 +182,10 @@ for client_id in range(config_file['client_number']):
             #     print(client_file)
             # if plt_times != 2 and sensitive_type != "cpu": # throughput和latency应该都是两个plt
             #     continue
+            # if sensitive_type == "cpu" and cnt_mongo != 100:
+            #     print("未完成的cpu请求完成度", cnt_mongo, "/100")
             if plt_times != 2: # 所有应该都是两个plt
                 continue
-            if sensitive_type == "cpu" and cnt_mongo != 100:
-                print("未完成的cpu请求完成度", cnt_mongo, "/100")
             if sensitive_type == "cpu" and (cpu_duration == 0 or cnt_mongo != 100): # 应该是cpu，但是没查到cpu，或者查询次数不对（这里数字要和dispathcer.cc中的对应）
                 continue
             # if cpu_duration > 100 * 1000000:
@@ -379,7 +379,7 @@ print("mongo_duration: ", "平均值: ", np.mean(plt_total["mongo"]) / 1000000, 
 if (config_file['mode'] == 'Polygon'):
     print(" === Polygon === ")
     for sensitive_type in ["latency", "throughput", "cpu"]:
-        print(sensitive_type, "\t跨地区数量: ", cross_region[sensitive_type], "\t跨地区成功率: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))
+        print(sensitive_type, "\t跨地区数量: ", cross_region[sensitive_type], "\t跨地区率: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))
         # print(sensitive_type, "\t绑定dispatcher成功率" + str(round(bind_dispatcher_success_number[sensitive_type] / req_total_number[sensitive_type] * 100, 1)) + "%")
     for dispatcher_id in range(config_file['dispatcher_number']):
         print('第', str(dispatcher_id), '个zone的请求转发个数: \t', throughput_cross_to[dispatcher_id])
@@ -391,6 +391,10 @@ for dispatcher_id in range(config_file['dispatcher_number']):
 # print(" === success_rate_per_client === ")
 # for client_id in range(config_file['client_number']):
 #     print(client_id, str(round(np.sum(success_rate_per_client[client_id]) / len(success_rate_per_client[client_id]) * 100, 1)) + "%")
+
+print(" === 不同类型的请求数量 === ")
+for sensitive_type in ["latency", "throughput", "cpu"]:
+    print(sensitive_type, ": ", req_total_number[sensitive_type])
 
 print(" === 每个server的CPU请求数量 === ")
 for server_id in range(config_file['server_number']):
