@@ -99,11 +99,16 @@ for client_id in range(config_file['client_number']):
             latest_request_time = max(latest_request_time, int(client_file.split('_')[-2]))
             with open(client_result_path + client_file, "r") as f:
                 for line in f:
+                    if "memory" in line:
+                        print("!!!!!!", line)
                     if "Resource temporarily unavailable" in line:
                         cnt_process_limit += 1
                     if "PLT:" in line:
-                        plt = int(line.split(" ")[1].strip())
-                        plt_times += 1
+                        try:
+                            plt = int(line.split(" ")[1].strip())
+                            plt_times += 1
+                        except:
+                            pass
                     if "bind fd_" in line:
                         remote_server_id = int(line.split(".")[2].strip())
                     if "bind fd2_" in line:

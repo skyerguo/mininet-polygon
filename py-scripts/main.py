@@ -50,7 +50,7 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "198.22.255.11"
+DNS_IP = "198.22.255.12"
 
 zone2server_ids = []
 
@@ -114,8 +114,15 @@ def init():
     DNS_IP = virtual_machine_ip
 
     # 每次重新启动mongodb和redis，以防mininet网络变化
-    ret = subprocess.Popen("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs --no-run-if-empty sudo kill -9 && sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/proj/quic-PG0/data/mongo.log --logappend && sudo /usr/bin/redis-server /etc/redis/redis.conf"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)
-                        
+    ret = subprocess.Popen("ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}' | sudo xargs --no-run-if-empty kill -9",shell=True,stdout=subprocess.PIPE)     
+    data=ret.communicate() #如果启用此相会阻塞主程序
+    ret.wait() #等待子程序运行完毕
+
+    ret = subprocess.Popen("sleep 3 && sudo mongod --fork --dbpath /var/lib/mongodb/ --bind_ip 127.0.0.1,%s --port 27117 --logpath=/proj/quic-PG0/data/mongo.log --logappend"%(virtual_machine_ip),shell=True,stdout=subprocess.PIPE)                   
+    data=ret.communicate() #如果启用此相会阻塞主程序
+    ret.wait() #等待子程序运行完毕
+
+    ret = subprocess.Popen("sudo /usr/bin/redis-server /etc/redis/redis.conf",shell=True,stdout=subprocess.PIPE)                  
     data=ret.communicate() #如果启用此相会阻塞主程序
     ret.wait() #等待子程序运行完毕
    
@@ -390,8 +397,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '198.22.255.11',
-                'exter': '198.22.255.11'
+                'inter': '198.22.255.12',
+                'exter': '198.22.255.12'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','

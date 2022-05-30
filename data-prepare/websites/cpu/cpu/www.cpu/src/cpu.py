@@ -4,7 +4,7 @@ import time
 
 # print("cpu.py")
 
-client = pymongo.MongoClient('198.22.255.11', 27117)
+client = pymongo.MongoClient('198.22.255.12', 27117)
 db = client['shuffle_index']
 collection = db['shuffle_100000']
 
