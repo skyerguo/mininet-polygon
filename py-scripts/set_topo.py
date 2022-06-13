@@ -5,10 +5,10 @@ import json
 import copy
 
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
-CLIENT_NUMBER = 100
-DISPATCHER_NUMBER = 5 # 最多10个
-SERVER_NUMBER = 15
-THREAD_NUMBER = 5 # 每个CLIENT的线程数，请算一下14433+CLIENT_NUMBER*THREAD_NUMBER，是否可能造成冲突**
+CLIENT_NUMBER = 5
+DISPATCHER_NUMBER = 1 # 最多10个
+SERVER_NUMBER = 1
+THREAD_NUMBER = 9 # 每个CLIENT的线程数，请算一下14433+CLIENT_NUMBER*THREAD_NUMBER，是否可能造成冲突
 
 csv_file_path = '../data-prepare/measure.csv'
 f_in = open(csv_file_path, 'r')

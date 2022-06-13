@@ -72,6 +72,8 @@ plt_throughput_per_zone = [[] for _ in range(config_file['dispatcher_number'])]
 
 server_cpu_per_second = [{} for _ in range(config_file['server_number'])]
 
+latest_client_start_time = {}
+
 for client_id in range(config_file['client_number']):
     client_result_path = result_root_path + "client/" + str(start_time) + "/" + str(client_id) + "/"
     client_files = os.listdir(client_result_path)
@@ -95,6 +97,7 @@ for client_id in range(config_file['client_number']):
             continue
         
         if "_2.txt" in client_file:
+            client_start_time = int(client_file.split('_')[-2])
             earliest_request_time = min(earliest_request_time, int(client_file.split('_')[-2]))
             latest_request_time = max(latest_request_time, int(client_file.split('_')[-2]))
             with open(client_result_path + client_file, "r") as f:
@@ -142,13 +145,18 @@ for client_id in range(config_file['client_number']):
                             else:
                                 server_cpu_per_second[remote_server_id][time_stamp] = 1
 
-                        if cnt_mongo == 100:
-                            cpu_duration = int((max_en - min_st) * 1000000)
+                        # if cnt_mongo == 100:
+                        cpu_duration = int((max_en - min_st) * 1000000)
                     
 
         if "_tmp.txt" in client_file:
             client_ip = "10.0.%s.1" % (client_file.split("_")[0])
             client_port = client_file.split("_")[1]
+
+            if str(client_id)+client_port in latest_client_start_time:
+                latest_client_start_time[str(client_id)+client_port] = max(latest_client_start_time[str(client_id)+client_port], client_start_time)
+            else:
+                latest_client_start_time[str(client_id)+client_port] = client_start_time
             
             # hash_key = client_file.split("_")[0] + client_port
             # if hash_key not in client_port_hashtable: ## 去掉每个client+port的第一个请求，考虑热启动，提高成功率
@@ -183,7 +191,7 @@ for client_id in range(config_file['client_number']):
                 continue
             # print(plt, plt_times)
             # if sensitive_type == "cpu":
-            #     print(plt, plt_times, cpu_duration)
+            #     print(plt, plt_times, cpu_duration, cnt_mongo)
             #     print(client_file)
             # if plt_times != 2 and sensitive_type != "cpu": # throughput和latency应该都是两个plt
             #     continue
@@ -408,3 +416,11 @@ for server_id in range(config_file['server_number']):
         request_count.append(server_cpu_per_second[server_id][time_stamp])
     print("server: ", server_id, "avg_cpu_request_per_second: ", np.mean(request_count))
     # print(server_cpu_per_second[server_id])
+
+# print(11111)
+# for client_id in range(config_file['client_number']):
+#     for port_id in range(14434 + config_file['client_thread'] * client_id, 14434 + config_file['client_thread'] * (client_id+1)):
+#         if str(client_id)+str(port_id) in latest_client_start_time:
+#             print(client_id, port_id, latest_client_start_time[str(client_id)+str(port_id)])
+#         else:
+#             print(client_id, port_id, -1)
