@@ -15,19 +15,22 @@ server_files.sort(reverse=True)
 
 if len(sys.argv) < 2:
     file_order = 0
+    file_output_path = ''
     print("未输入文件次序，默认选择最新的")
 else:
     try:
         file_order = int(sys.argv[1])
         print("选择第%s新的文件"%(str(file_order)))
+        file_output_path = sys.argv[2]
     except:
         file_order = 0
+        file_output_path = ''
         print("参数错误，不为int类型，默认选择最新的")
 
-ret = subprocess.Popen("sudo mn -c", shell=True, stdout=subprocess.PIPE)
-data=ret.communicate() #如果启用此相会阻塞主程序
+# ret = subprocess.Popen("sudo mn -c", shell=True, stdout=subprocess.PIPE)
+# data=ret.communicate() #如果启用此相会阻塞主程序
 
-ret.wait() #等待子程序运行完毕
+# ret.wait() #等待子程序运行完毕
 
 start_time = server_files[file_order]
 # start_time = "2021-12-02_17:49:32"
@@ -389,38 +392,46 @@ print("plt_throughput_avg: ", np.mean(plt_total["throughput"]) / 1000000, "\t成
 print("plt_cpu_avg: ", np.mean(plt_total["cpu"]) / 1000000, "\t成功数量: ", len(plt_total["cpu"]), "\t成功率: ", str(round(len(plt_total["cpu"]) / req_total_number["cpu"] * 100, 1)) + "%")
 print("mongo_duration: ", "平均值: ", np.mean(plt_total["mongo"]) / 1000000, "\t中位数: ", np.median(plt_total["mongo"]) / 1000000)
 
-if (config_file['mode'] == 'Polygon'):
-    print(" === Polygon === ")
-    for sensitive_type in ["latency", "throughput", "cpu"]:
-        print(sensitive_type, "\t跨地区数量: ", cross_region[sensitive_type], "\t跨地区率: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))
-        # print(sensitive_type, "\t绑定dispatcher成功率" + str(round(bind_dispatcher_success_number[sensitive_type] / req_total_number[sensitive_type] * 100, 1)) + "%")
-    for dispatcher_id in range(config_file['dispatcher_number']):
-        print('第', str(dispatcher_id), '个zone的请求转发个数: \t', throughput_cross_to[dispatcher_id])
+if file_output_path != '':
+    with open(file_output_path, "w") as f:
+        print("mode: ", config_file['mode'], file=f)
+        print("plt_latency_avg: ", np.mean(plt_total["latency"]) / 1000000, "\t成功数量: ", len(plt_total["latency"]), "\t成功率: ", str(round(len(plt_total["latency"]) / req_total_number["latency"] * 100, 1)) + "%", file=f)
+        print("plt_throughput_avg: ", np.mean(plt_total["throughput"]) / 1000000, "\t成功数量: ", len(plt_total["throughput"]), "\t成功率: ", str(round(len(plt_total["throughput"]) / req_total_number["throughput"] * 100, 1)) + "%", file=f)
+        print("plt_cpu_avg: ", np.mean(plt_total["cpu"]) / 1000000, "\t成功数量: ", len(plt_total["cpu"]), "\t成功率: ", str(round(len(plt_total["cpu"]) / req_total_number["cpu"] * 100, 1)) + "%", file=f)
 
-for dispatcher_id in range(config_file['dispatcher_number']):
-    print('第', str(dispatcher_id), '个zone的throughput请求plt: \t', np.mean(plt_throughput_per_zone[dispatcher_id]) / 1000000, "\t成功数量: ", len(plt_throughput_per_zone[dispatcher_id]))
 
-# print("Resource temporarily unavailable number: ", cnt_process_limit)
-# print(" === success_rate_per_client === ")
-# for client_id in range(config_file['client_number']):
-#     print(client_id, str(round(np.sum(success_rate_per_client[client_id]) / len(success_rate_per_client[client_id]) * 100, 1)) + "%")
+# if (config_file['mode'] == 'Polygon'):
+#     print(" === Polygon === ")
+#     for sensitive_type in ["latency", "throughput", "cpu"]:
+#         print(sensitive_type, "\t跨地区数量: ", cross_region[sensitive_type], "\t跨地区率: ", cross_region[sensitive_type] / (cross_region[sensitive_type] + local_region[sensitive_type]))
+#         # print(sensitive_type, "\t绑定dispatcher成功率" + str(round(bind_dispatcher_success_number[sensitive_type] / req_total_number[sensitive_type] * 100, 1)) + "%")
+#     for dispatcher_id in range(config_file['dispatcher_number']):
+#         print('第', str(dispatcher_id), '个zone的请求转发个数: \t', throughput_cross_to[dispatcher_id])
 
-print(" === 不同类型的请求数量 === ")
-for sensitive_type in ["latency", "throughput", "cpu"]:
-    print(sensitive_type, ": ", req_total_number[sensitive_type])
+# for dispatcher_id in range(config_file['dispatcher_number']):
+#     print('第', str(dispatcher_id), '个zone的throughput请求plt: \t', np.mean(plt_throughput_per_zone[dispatcher_id]) / 1000000, "\t成功数量: ", len(plt_throughput_per_zone[dispatcher_id]))
 
-print(" === 每个server的CPU请求数量 === ")
-for server_id in range(config_file['server_number']):
-    request_count = []
-    for time_stamp in server_cpu_per_second[server_id]:
-        request_count.append(server_cpu_per_second[server_id][time_stamp])
-    print("server: ", server_id, "avg_cpu_request_per_second: ", np.mean(request_count))
-    # print(server_cpu_per_second[server_id])
+# # print("Resource temporarily unavailable number: ", cnt_process_limit)
+# # print(" === success_rate_per_client === ")
+# # for client_id in range(config_file['client_number']):
+# #     print(client_id, str(round(np.sum(success_rate_per_client[client_id]) / len(success_rate_per_client[client_id]) * 100, 1)) + "%")
 
-# print(11111)
-# for client_id in range(config_file['client_number']):
-#     for port_id in range(14434 + config_file['client_thread'] * client_id, 14434 + config_file['client_thread'] * (client_id+1)):
-#         if str(client_id)+str(port_id) in latest_client_start_time:
-#             print(client_id, port_id, latest_client_start_time[str(client_id)+str(port_id)])
-#         else:
-#             print(client_id, port_id, -1)
+# print(" === 不同类型的请求数量 === ")
+# for sensitive_type in ["latency", "throughput", "cpu"]:
+#     print(sensitive_type, ": ", req_total_number[sensitive_type])
+
+# print(" === 每个server的CPU请求数量 === ")
+# for server_id in range(config_file['server_number']):
+#     request_count = []
+#     for time_stamp in server_cpu_per_second[server_id]:
+#         request_count.append(server_cpu_per_second[server_id][time_stamp])
+#     print("server: ", server_id, "avg_cpu_request_per_second: ", np.mean(request_count))
+#     # print(server_cpu_per_second[server_id])
+
+# # print(11111)
+# # for client_id in range(config_file['client_number']):
+# #     for port_id in range(14434 + config_file['client_thread'] * client_id, 14434 + config_file['client_thread'] * (client_id+1)):
+# #         if str(client_id)+str(port_id) in latest_client_start_time:
+# #             print(client_id, port_id, latest_client_start_time[str(client_id)+str(port_id)])
+# #         else:
+# #             print(client_id, port_id, -1)

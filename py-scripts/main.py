@@ -50,7 +50,7 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "198.22.255.12"
+DNS_IP = "198.22.255.15"
 
 zone2server_ids = []
 
@@ -397,8 +397,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '198.22.255.12',
-                'exter': '198.22.255.12'
+                'inter': '198.22.255.15',
+                'exter': '198.22.255.15'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','

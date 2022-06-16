@@ -3,7 +3,7 @@ import random
 
 client = pymongo.MongoClient('localhost', 27117)
 db = client['shuffle_index']
-db_size = 100000
+db_size = 1000000
 collection = db['shuffle_%s'%(db_size)]
 
 obj = {}
