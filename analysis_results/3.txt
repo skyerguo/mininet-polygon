@@ -1,4 +1,8 @@
 mode:  FastRoute
+client_number:  105
+client_thread:  4
+server_number:  15
+dispatcher_number:  6
 plt_latency_avg:  4.159646387974684 	成功数量:  1580 	成功率:  90.7%
 plt_throughput_avg:  69.16496575223881 	成功数量:  1340 	成功率:  75.4%
 plt_cpu_avg:  24.3980539697733 	成功数量:  397 	成功率:  85.4%

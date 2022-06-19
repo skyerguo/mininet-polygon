@@ -18,14 +18,12 @@ if len(sys.argv) < 2:
     file_output_path = ''
     print("未输入文件次序，默认选择最新的")
 else:
+    file_order = int(sys.argv[1])
+    print("选择第%s新的文件"%(str(file_order)))
     try:
-        file_order = int(sys.argv[1])
-        print("选择第%s新的文件"%(str(file_order)))
         file_output_path = sys.argv[2]
     except:
-        file_order = 0
         file_output_path = ''
-        print("参数错误，不为int类型，默认选择最新的")
 
 # ret = subprocess.Popen("sudo mn -c", shell=True, stdout=subprocess.PIPE)
 # data=ret.communicate() #如果启用此相会阻塞主程序
@@ -148,8 +146,8 @@ for client_id in range(config_file['client_number']):
                             else:
                                 server_cpu_per_second[remote_server_id][time_stamp] = 1
 
-                        # if cnt_mongo == 100:
-                        cpu_duration = int((max_en - min_st) * 1000000)
+                        if cnt_mongo == 100:
+                            cpu_duration = int((max_en - min_st) * 1000000)
                     
 
         if "_tmp.txt" in client_file:
@@ -395,6 +393,12 @@ print("mongo_duration: ", "平均值: ", np.mean(plt_total["mongo"]) / 1000000, 
 if file_output_path != '':
     with open(file_output_path, "w") as f:
         print("mode: ", config_file['mode'], file=f)
+
+        print("client_number: ", config_file['client_number'], file=f)
+        print("client_thread: ", config_file['client_thread'], file=f)
+        print("server_number: ", config_file['server_number'], file=f)
+        print("dispatcher_number: ", config_file['dispatcher_number'], file=f)
+
         print("plt_latency_avg: ", np.mean(plt_total["latency"]) / 1000000, "\t成功数量: ", len(plt_total["latency"]), "\t成功率: ", str(round(len(plt_total["latency"]) / req_total_number["latency"] * 100, 1)) + "%", file=f)
         print("plt_throughput_avg: ", np.mean(plt_total["throughput"]) / 1000000, "\t成功数量: ", len(plt_total["throughput"]), "\t成功率: ", str(round(len(plt_total["throughput"]) / req_total_number["throughput"] * 100, 1)) + "%", file=f)
         print("plt_cpu_avg: ", np.mean(plt_total["cpu"]) / 1000000, "\t成功数量: ", len(plt_total["cpu"]), "\t成功率: ", str(round(len(plt_total["cpu"]) / req_total_number["cpu"] * 100, 1)) + "%", file=f)

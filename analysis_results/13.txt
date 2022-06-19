@@ -1,4 +1,8 @@
 mode:  Anycast
+client_number:  105
+client_thread:  1
+server_number:  15
+dispatcher_number:  6
 plt_latency_avg:  1.5483612515225336 	成功数量:  1642 	成功率:  100.0%
 plt_throughput_avg:  28.31660940609453 	成功数量:  1608 	成功率:  98.3%
 plt_cpu_avg:  8.665659007518796 	成功数量:  399 	成功率:  97.1%

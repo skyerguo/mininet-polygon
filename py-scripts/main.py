@@ -537,7 +537,7 @@ def run(net):
 
     now_port = START_PORT
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]]))))
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]]))))
         now_port += CLIENT_THREAD
         time.sleep(3)
 

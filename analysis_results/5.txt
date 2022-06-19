@@ -1,4 +1,8 @@
 mode:  Polygon
+client_number:  105
+client_thread:  4
+server_number:  15
+dispatcher_number:  6
 plt_latency_avg:  3.2497036875631955 	成功数量:  1978 	成功率:  85.3%
 plt_throughput_avg:  57.58316113600892 	成功数量:  1794 	成功率:  76.7%
 plt_cpu_avg:  54.50912208192091 	成功数量:  354 	成功率:  61.5%
