@@ -54,6 +54,8 @@ DNS_IP = "198.22.255.11"
 
 zone2server_ids = []
 
+client2latency_min_server = []
+
 modes = ["Polygon", "Anycast", "FastRoute"]
 if len(sys.argv) < 2:
     mode = modes[0]
@@ -73,6 +75,7 @@ def init():
     global CLIENT_ZONE, DISPATCHER_ZONE, SERVER_ZONE
     global zone2server_ids
     global DNS_LINKS, DNS_OUTERS
+    global client2latency_min_server
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
@@ -125,7 +128,19 @@ def init():
     ret = subprocess.Popen("sudo /usr/bin/redis-server /etc/redis/redis.conf",shell=True,stdout=subprocess.PIPE)                  
     data=ret.communicate() #如果启用此相会阻塞主程序
     ret.wait() #等待子程序运行完毕
-   
+    
+    client2latency_min_server = [0 for _ in range(CLIENT_NUMBER)]
+    for client_id in range(CLIENT_NUMBER):
+        curr_min_latency = 1000
+        curr_min_latency_server = -1
+        for server_id in range(SERVER_NUMBER):
+            # print(client_id, server_id)
+            if float(delay['client_server'][client_id][server_id]) < curr_min_latency:
+                curr_min_latency = float(delay['client_server'][client_id][server_id])
+                curr_min_latency_server = server_id
+        # print(client_id, curr_min_latency, curr_min_latency_server)
+        client2latency_min_server[client_id] = curr_min_latency_server
+
 
     # os.system("ulimit -u 1030603") # 设置nproc即用户可以使用的进程数量
 
@@ -537,7 +552,8 @@ def run(net):
 
     now_port = START_PORT
     for client_id in range(CLIENT_NUMBER):
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]]))))
+        # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 给Anycast随机同一个zone里的server
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 给Anycast随机同一个latency最小的server
         now_port += CLIENT_THREAD
         time.sleep(3)
 

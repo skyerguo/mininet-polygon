@@ -67,8 +67,7 @@ type_list=(${type_list_all[*]})
 for i in `seq $client_thread`
 do
     {
-        trace_random_shift=$((${RANDOM=$init_port} % 2000)) 
-        trace_start_line=`awk 'BEGIN{print "'$trace_line'" * "'$i'" * "0.1" + "'$trace_random_shift'"}'`
+        trace_start_line=`awk 'BEGIN{print "'$trace_line'" * "'$i'" * "0.1" + "'$trace_random_shift'" + "'$client_id'"}'`
         trace_start_line=`printf "%.0f\n" $trace_start_line` # 取整
         trace_start_second=`cat $trace_filename | sed -n "$trace_start_line,${trace_start_line}p" | awk -F, '{print $1}'` 
         current_second=$(($(date +%s%N)/1000000000))
@@ -132,11 +131,11 @@ do
             echo "data_type: " $data_type >> ${output_file}_tmp.txt
             echo "website: " $website >> ${output_file}_tmp.txt``
 
-            # 错峰运行client，防止I/O爆炸
-            temp_time=$((${RANDOM=$port} % 2000)) 
-            temp_time=`awk 'BEGIN{print "'$temp_time'" / "2000"}'`
-            echo "sleep_time: " $temp_time >> ${output_file}_tmp.txt
-            sleep $temp_time
+            # # 错峰运行client，防止I/O爆炸
+            # temp_time=$((${RANDOM=$port} % 2000)) 
+            # temp_time=`awk 'BEGIN{print "'$temp_time'" / "2000"}'`
+            # echo "sleep_time: " $temp_time >> ${output_file}_tmp.txt
+            # sleep $temp_time
 
             current_time=$(date "+%Y-%m-%d_%H:%M:%S")
             echo "current_time: "$current_time >> ${output_file}_tmp.txt
