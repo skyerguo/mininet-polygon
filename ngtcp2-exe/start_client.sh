@@ -140,7 +140,7 @@ do
 
             if [[ $plt_times != 2 ]] ## 失败的请求
             then
-                sleep 45  
+                sleep 10  
             fi 
         done
     } &
