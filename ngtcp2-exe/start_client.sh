@@ -46,6 +46,7 @@ done
 client_ip="10.0.${client_id}.1"
 
 type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "video" "cpu") ## 4:4:1，和gcloud保持一致
+type_list_all=("normal_1" "video") ## 1:1随机 
 # type_list_all=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "video" "video" "video" "video" "video" "video" "video" "cpu") ## 7:7:1
 type_list_normal=("normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1" "normal_1") ## 全是normal_1
 type_list_video=("video" "video" "video" "video" "video" "video" "video" "video" "video") ## 全是video
@@ -118,7 +119,7 @@ do
             fi
             
             echo "data_type: " $data_type >> ${output_file}_tmp.txt
-            echo "website: " $website >> ${output_file}_tmp.txt``
+            echo "website: " $website >> ${output_file}_tmp.txt
 
             # 错峰运行client，防止I/O爆炸
             temp_time=$((${RANDOM=$port} % 2000)) 
@@ -130,9 +131,17 @@ do
             echo "current_time: "$current_time >> ${output_file}_tmp.txt
 
             echo "sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q" >> ${output_file}_tmp.txt
-            sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt || true
+            sudo LD_LIBRARY_PATH=/proj/quic-PG0/data /proj/quic-PG0/data/client $destination_ip $port -i -p $data_type -o 1 -w $website --client_ip $client_ip --client_process $port --time_stamp $time_stamp -q 1>> ${output_file}_1.txt 2>> ${output_file}_2.txt
+
+            sleep 2
             
-            # sleep 30
+            plt_times=`grep "PLT:" ${output_file}_2.txt | wc -l` ## plt出现的次数
+            echo "plt_times: " $plt_times >> ${output_file}_2.txt
+
+            if [[ $plt_times != 2 ]] ## 失败的请求
+            then
+                sleep 45  
+            fi 
         done
     } &
 done

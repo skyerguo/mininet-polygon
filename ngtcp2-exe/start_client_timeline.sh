@@ -2,7 +2,7 @@ root_path=/proj/quic-PG0/data
 client_result_path=$root_path/result-logs/client/
 # saved_result_path=$root_path/saved_results/
 
-while getopts ":i:p:t:r:a:m:z:d:o:" opt
+while getopts ":i:p:t:r:a:m:z:d:o:c:" opt
 do
     case $opt in
         i)
@@ -34,6 +34,9 @@ do
         o)
             outer_later=$OPTARG # 对当前的所在的zone，随机选择的一个outer_layer的server
             outer_later=$(($outer_later+1)) # 因为server0.example.com用来表示本机的IP，所以编号都要+1
+        ;;
+        c) ## 使用cpu
+            trace_filename='/proj/quic-PG0/data/trace_collection/cpu_trace.csv'
         ;;
         ?)
             echo "未知参数"
@@ -67,7 +70,7 @@ type_list=(${type_list_all[*]})
 for i in `seq $client_thread`
 do
     {
-        trace_start_line=`awk 'BEGIN{print "'$trace_line'" * "'$i'" * "0.1" + "'$trace_random_shift'" + "'$client_id'"}'`
+        trace_start_line=`awk 'BEGIN{print "'$trace_line'" * "'$i'" * "0.1" + "'$client_id'"}'`
         trace_start_line=`printf "%.0f\n" $trace_start_line` # 取整
         trace_start_second=`cat $trace_filename | sed -n "$trace_start_line,${trace_start_line}p" | awk -F, '{print $1}'` 
         current_second=$(($(date +%s%N)/1000000000))
