@@ -177,7 +177,8 @@ for client_id in range(config_file['client_number']):
                         elif "video" in line:
                             sensitive_type = "throughput"
                         else:
-                            sensitive_type = "error"
+                            # print(client_result_path + client_file)
+                            sensitive_type = "cpu"
                     if ("current_time") in line:
                         current_time = line.split(" ")[-1].strip()
                     if ("mode") in line:

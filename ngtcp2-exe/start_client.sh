@@ -138,10 +138,10 @@ do
             plt_times=`grep "PLT:" ${output_file}_2.txt | wc -l` ## plt出现的次数
             echo "plt_times: " $plt_times >> ${output_file}_2.txt
 
-            if [[ $plt_times != 2 ]] ## 失败的请求
-            then
-                sleep 10  
-            fi 
+            # if [[ $plt_times != 2 ]] ## 失败的请求
+            # then
+            #     sleep 1
+            # fi 
         done
     } &
 done
