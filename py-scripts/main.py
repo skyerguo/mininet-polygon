@@ -444,58 +444,58 @@ def measure_start(net):
         if mode == "FastRoute": ## 开启FastRoute的cpu监控和转移规则
             server[server_id].cmdPrint("cd ../FastRoute-files && sudo python3 LoadMonitor.py %s &"%(str(server_id)))
 
-    ## 测量竞争力
-    for dispatcher_id in range(DISPATCHER_NUMBER):
-        dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/init_measurement_from_dispatcher.sh -i %s -n %s -a %s" %(str(dispatcher_id), str(SERVER_NUMBER), str(start_time))) ## 这里不能用&，否则会导致测量值不准
+    # ## 测量竞争力
+    # for dispatcher_id in range(DISPATCHER_NUMBER):
+    #     dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/init_measurement_from_dispatcher.sh -i %s -n %s -a %s" %(str(dispatcher_id), str(SERVER_NUMBER), str(start_time))) ## 这里不能用&，否则会导致测量值不准
 
-    ## 将竞争力结果写入一个文件，方便后续使用 
-    file_size = os.path.getsize("/proj/quic-PG0/data/websites/video/downloadinginit/www.downloadinginit/cross.mp4")
-    file_size = file_size * 8 / 1024 ## 从Byte转换为Kbit的单位
-    ## 计算ngtcp2实际传输的速度
-    actual_speed = [[0 for _ in range(DISPATCHER_NUMBER)] for _ in range(SERVER_NUMBER)]
-    max_speed = 0
-    for server_id in range(SERVER_NUMBER):
-        for dispatcher_id in range(DISPATCHER_NUMBER):
-            f_in = open("/proj/quic-PG0/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
-            plt = 0
-            cnt = 0
-            for line in f_in:
-                if "PLT" in line:
-                    plt = plt + float(line.split(": ")[1].split(" ")[0])
-                    cnt += 1
-
-            f_in.close()
-
-            while cnt != 2: # 初始测量出错了
-                print("ERROR measurement! 重启dispatcher%s到server%s的初始传输测量"%(str(dispatcher_id), str(server_id)))
-                dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/redo_single_measurement_from_dispatcher.sh -i %s -s %s -a %s" %(str(dispatcher_id), str(server_id), str(start_time))) ## 重新测量dispathcer到server的空载竞争力
-                f_in = open("/proj/quic-PG0/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
-                plt = 0
-                cnt = 0
-                for line in f_in:
-                    if "PLT" in line:
-                        plt = plt + float(line.split(": ")[1].split(" ")[0])
-                        cnt += 1
-                f_in.close()
-                time.sleep(5)
-
-           
-            actual_speed[server_id][dispatcher_id] = file_size / (plt / 1000000) ## 单位，Kbit/s
-            max_speed = max(max_speed, file_size / (plt / 1000000))
-    # ## 计算ngtcp2实际传输的相对竞争力，现在以实际值计算，暂时不使用
-    # relative_competitiveness = [[0 for _ in range(DISPATCHER_NUMBER)] for _ in range(SERVER_NUMBER)]
+    # ## 将竞争力结果写入一个文件，方便后续使用 
+    # file_size = os.path.getsize("/proj/quic-PG0/data/websites/video/downloadinginit/www.downloadinginit/cross.mp4")
+    # file_size = file_size * 8 / 1024 ## 从Byte转换为Kbit的单位
+    # ## 计算ngtcp2实际传输的速度
+    # actual_speed = [[0 for _ in range(DISPATCHER_NUMBER)] for _ in range(SERVER_NUMBER)]
+    # max_speed = 0
     # for server_id in range(SERVER_NUMBER):
     #     for dispatcher_id in range(DISPATCHER_NUMBER):
-    #         relative_competitiveness[server_id][dispatcher_id] = actual_speed[server_id][dispatcher_id] / max_speed
+    #         f_in = open("/proj/quic-PG0/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
+    #         plt = 0
+    #         cnt = 0
+    #         for line in f_in:
+    #             if "PLT" in line:
+    #                 plt = plt + float(line.split(": ")[1].split(" ")[0])
+    #                 cnt += 1
 
-    ## 写入一个文件，方便后续读取
-    competitiveness_path ="/proj/quic-PG0/data/measurement_log/" + start_time + "/competitiveness/competitiveness.txt"
-    f_out = open(competitiveness_path, "w")
-    for server_id in range(SERVER_NUMBER):
-        for dispatcher_id in range(DISPATCHER_NUMBER):
-            f_out.write(str(actual_speed[server_id][dispatcher_id]) + ' ')
-        f_out.write('\n')
-    f_out.close()
+    #         f_in.close()
+
+    #         while cnt != 2: # 初始测量出错了
+    #             print("ERROR measurement! 重启dispatcher%s到server%s的初始传输测量"%(str(dispatcher_id), str(server_id)))
+    #             dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/redo_single_measurement_from_dispatcher.sh -i %s -s %s -a %s" %(str(dispatcher_id), str(server_id), str(start_time))) ## 重新测量dispathcer到server的空载竞争力
+    #             f_in = open("/proj/quic-PG0/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
+    #             plt = 0
+    #             cnt = 0
+    #             for line in f_in:
+    #                 if "PLT" in line:
+    #                     plt = plt + float(line.split(": ")[1].split(" ")[0])
+    #                     cnt += 1
+    #             f_in.close()
+    #             time.sleep(5)
+
+           
+    #         actual_speed[server_id][dispatcher_id] = file_size / (plt / 1000000) ## 单位，Kbit/s
+    #         max_speed = max(max_speed, file_size / (plt / 1000000))
+    # # ## 计算ngtcp2实际传输的相对竞争力，现在以实际值计算，暂时不使用
+    # # relative_competitiveness = [[0 for _ in range(DISPATCHER_NUMBER)] for _ in range(SERVER_NUMBER)]
+    # # for server_id in range(SERVER_NUMBER):
+    # #     for dispatcher_id in range(DISPATCHER_NUMBER):
+    # #         relative_competitiveness[server_id][dispatcher_id] = actual_speed[server_id][dispatcher_id] / max_speed
+
+    # ## 写入一个文件，方便后续读取
+    # competitiveness_path = "/proj/quic-PG0/data/measurement_log/" + start_time + "/competitiveness/competitiveness.txt"
+    # f_out = open(competitiveness_path, "w")
+    # for server_id in range(SERVER_NUMBER):
+    #     for dispatcher_id in range(DISPATCHER_NUMBER):
+    #         f_out.write(str(actual_speed[server_id][dispatcher_id]) + ' ')
+    #     f_out.write('\n')
+    # f_out.close()
 
     ## 删除测量带来的server进程，以免影响后续的实验结果
     os.system("ps -ef | grep '/data/server' | grep -v grep | awk '{print $2}' | xargs --no-run-if-empty sudo kill -9 > /dev/null 2>&1")
