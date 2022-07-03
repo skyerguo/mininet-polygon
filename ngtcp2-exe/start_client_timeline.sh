@@ -85,6 +85,7 @@ do
             relative_second=$(($current_second-$trace_start_second))
             current_line_second=`cat $trace_filename | sed -n "$current_line,${current_line}p" | awk -F, '{print $1}'` ## 注意单引号和双引号，前面必须是双引号，后面必须是单引号
             data_type=`cat $trace_filename | sed -n "$current_line,${current_line}p" | awk -F, '{print $2}'`
+            data_type="cpu"
 
             ## 测试开始
             # echo "current_line: " $current_line

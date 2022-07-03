@@ -41,7 +41,7 @@ dispatcher_bw=(`echo $bw_set | tr '+' ' '`)
 ## 以下所有流量相关的变量，单位均为Kbit/sec
 start_time=$(date "+%Y%m%d%H%M%S")
 
-raw_bw_competitiveness=`sed -n "$(($server_id+1)),$(($server_id+1))p" ${measurement_result_path}competitiveness/competitiveness.txt` ## 从文件读取的，当前server_id对应行的流量竞争力
+raw_bw_competitiveness=`sed -n "$(($server_id+1)),$(($server_id+1))p" /users/myzhou/mininet-polygon/data-prepare/competitiveness.txt` ## 从文件读取的，当前server_id对应行的流量竞争力
 bw_competitiveness=(`echo $raw_bw_competitiveness`) ## 流量竞争力，指每个dispatcher到server，一条传输流大概能占多少流量的能力。按照mininet设定的来做相对对比。
 
 output_file="${measurement_result_path}server/server_s$server_id.log"
