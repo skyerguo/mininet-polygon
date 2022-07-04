@@ -79,7 +79,7 @@ do
         # echo "trace_start_second: "$trace_start_second
 
         current_line=$trace_start_line
-        for round in `seq 2000` ## 每秒一次
+        for round in `seq 20000` ## 每秒一次
         do
             current_second=$(($(date +%s%N)/1000000000))
             relative_second=$(($current_second-$trace_start_second))
