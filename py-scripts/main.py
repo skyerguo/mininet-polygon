@@ -50,7 +50,7 @@ start_time = 0
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
-DNS_IP = "198.22.255.11"
+DNS_IP = "198.22.255.15"
 
 zone2server_ids = []
 
@@ -412,8 +412,8 @@ def myNetwork(net):
     config['client']['ips'] = ''
     config['server']={}
     config['DNS'] = {
-                'inter': '198.22.255.11',
-                'exter': '198.22.255.11'
+                'inter': '198.22.255.15',
+                'exter': '198.22.255.15'
             }
     for client_id in range(CLIENT_NUMBER):
         config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
@@ -557,9 +557,10 @@ def run(net):
         # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 给Anycast随机同一个latency最小的server
 
 
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s -c 1"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 使用cpu，按照trace执行cpu
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 没有cpu，顺序执行bw和latency，Anycast选最小
+        # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s -c 1"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 使用cpu，按照trace执行cpu
+        # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 没有cpu，顺序执行bw和latency，Anycast选最小
         # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 没有cpu，顺序执行bw和latency，Anycast随机
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 有cpu，4：4：1，Anycast选最小
 
         now_port += CLIENT_THREAD
         time.sleep(3)
