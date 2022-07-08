@@ -81,7 +81,7 @@ if __name__ == "__main__":
     server_id = int(sys.argv[1])
     # print(server_id)
 
-    threshold = 20 # 使用50%转发到下一层
+    threshold = 50 # 使用50%转发到下一层
     domain_id = server_id ## 一开始所有server都加到domain里，对应dns.py和start_client.sh
     # if server_id < 3: ## 修改的话，需要对应修改start_client.sh
     #     domain_id = 1
