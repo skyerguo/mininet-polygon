@@ -1,7 +1,7 @@
 root_path=/proj/quic-PG0/data
 measurement_result_path=$root_path/measurement_log/
 
-while getopts ":i:s:t:a:r:m:" opt
+while getopts ":i:s:t:a:r:m:f:" opt
 do
     case $opt in
         i)
@@ -24,6 +24,9 @@ do
         ;;
         m)
             max_throughput=$OPTARG
+        ;;
+        f)
+            fake_server_number=$OPTARG ## 虚假的server数量
         ;;
         ?)
             echo "未知参数"
@@ -82,6 +85,13 @@ do
             latency=`ping -i.2 -c5 ${dispatcher_ips[dispatcher_id]} | tail -1| awk '{print $4}' | cut -d '/' -f 2`
             echo "latency: "$latency >> $output_file_2
             redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${server_id}_d${dispatcher_id} $latency > /dev/null
+
+            echo "fake_server_number: "$fake_server_number
+            for i in `seq $fake_server_number`
+            do
+                temp_latency=$((${RANDOM=$date} % 100 - 100)) ## -1 ~ -100随机一个数
+                redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${i}_d${dispatcher_id} $temp_latency > /dev/null
+            done
 
             ## 通过计算所有对应zone的nload，当前的平均带宽
             sum_existing_bw_per_zone=0  

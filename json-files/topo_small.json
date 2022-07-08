@@ -1,6 +1,6 @@
 {
  "client_number": 3,
- "server_number": 3,
+ "server_number": 1,
  "dispatcher_number": 1,
  "client_thread": 5,
  "cpu": {
