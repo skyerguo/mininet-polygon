@@ -33,6 +33,8 @@ SERVER_THREAD = 1
 START_PORT = 14433
 MAX_THROUGHPUT = 5 * 1024 ## wondershaper设置的最大带宽
 
+FAKE_SERVER_NUMBER = 1000
+
 switch = []
 client = []
 dispatcher = []
@@ -439,7 +441,7 @@ def measure_start(net):
 
     ## 对所有server设置wondershaper，并启动ngtcp2，为了发第一次包测量实际竞争力做准备
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -m %s -a %s &" %(str(server_id), str(MAX_THROUGHPUT), str(start_time)))
+        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -m %s -a %s -f %s &" %(str(server_id), str(MAX_THROUGHPUT), str(start_time), str(FAKE_SERVER_NUMBER)))
         # os.system("bash ")
         if mode == "FastRoute": ## 开启FastRoute的cpu监控和转移规则
             server[server_id].cmdPrint("cd ../FastRoute-files && sudo python3 LoadMonitor.py %s &"%(str(server_id)))
