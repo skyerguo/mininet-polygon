@@ -5,10 +5,10 @@ import json
 import copy
 
 SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
-CLIENT_NUMBER = 5
-DISPATCHER_NUMBER = 1 # 最多10个
-SERVER_NUMBER = 1
-THREAD_NUMBER = 9 # 每个CLIENT的线程数，请算一下14433+CLIENT_NUMBER*THREAD_NUMBER，是否可能造成冲突
+CLIENT_NUMBER = 105
+DISPATCHER_NUMBER = 6 # 最多10个
+SERVER_NUMBER = 15
+THREAD_NUMBER = 5 # 每个CLIENT的线程数，请算一下14433+CLIENT_NUMBER*THREAD_NUMBER，是否可能造成冲突
 
 csv_file_path = '../data-prepare/measure.csv'
 f_in = open(csv_file_path, 'r')
@@ -34,7 +34,29 @@ zone_server = [
     ['southamerica-east1'],
     ['us-east1','us-east4','us-west3','us-west4'], 
 ]
+
 zone_ratio = [4, 1, 3, 2, 1, 4] # 保证相加 = SERVER_NUMBER
+
+## asia相关
+zone_dispatcher_asia = ['asia-east1','asia-northeast3','asia-south2','asia-southeast2','australia-southeast1','asia-northeast1']
+zone_server_asia = [
+    ['asia-east1','asia-northeast3','asia-south2','asia-southeast2','australia-southeast1','asia-east1','asia-northeast3','asia-south2','asia-southeast2','australia-southeast1','asia-east1','asia-northeast3','asia-south2','asia-southeast2','australia-southeast1']
+]
+zone_ratio_asia = [12, 3, 0, 0, 0, 0]
+
+## europe相关
+zone_dispatcher_europe = ['europe-central2','europe-north1','europe-west1','europe-west2','europe-west3','europe-west4']
+zone_server_europe = [
+    ['europe-central2','europe-north1','europe-west1','europe-west2','europe-west3','europe-west4','europe-west6','europe-central2','europe-north1','europe-west1','europe-west2','europe-west3','europe-west4','europe-west6','europe-central2']
+]
+zone_ratio_europe = [0, 0, 15, 0, 0, 0]
+
+## america相关
+zone_dispatcher_america = ['northamerica-northeast1','southamerica-east1','us-east1','us-east4','us-west3','us-west4']
+zone_server_america = [
+    ['northamerica-northeast1','northamerica-northeast2','southamerica-east1','southamerica-west1','us-east1','us-east4','us-west1','us-west2','us-west3','us-west4','us-east1','us-east4','us-west1','us-west2','us-west3']
+]
+zone_ratio_america = [0, 0, 0, 4, 2, 9]
 
 ## 4 1 3 2 1 4  server分布 Polygon+Anycast
 ## client按照server的zone分布来
@@ -53,7 +75,7 @@ zone_ratio = [4, 1, 3, 2, 1, 4] # 保证相加 = SERVER_NUMBER
 dns_links = [[0,2], [1,2], [2,3], [4,2], [5,6], [6,7], [8,9], [9,14], [10,13], [11,13], [12,13], [13,14]]
 dns_outers = [[0,1], [4], [5], [8], [10], [11,12]] 
 
-zone_dispatcher = zone_dispatcher[:DISPATCHER_NUMBER]
+zone_dispatcher = zone_dispatcher_america[:DISPATCHER_NUMBER] ## 这里修改regional
 client2dispatcher = [0 for _ in range(len(area_all))]
 client2dispatcher[0] = client2dispatcher[1] = client2dispatcher[2] = client2dispatcher[3] =  client2dispatcher[4] = client2dispatcher[5] = client2dispatcher[6] =  client2dispatcher[7] = 0
 client2dispatcher[8] = client2dispatcher[9] = 1
@@ -64,7 +86,10 @@ client2dispatcher[21] = client2dispatcher[22] = client2dispatcher[23] = client2d
 
 client_zone = []
 dispatcher_zone = copy.deepcopy(zone_dispatcher)
-server_zone = [y for x in zone_server for y in x]
+server_zone = [y for x in zone_server_america for y in x] ## 这里修改regional
+
+print("dispatcher_zone: ", dispatcher_zone)
+print("server_zone: ", server_zone)
 
 zone_number = 0
 zone_map = {}
@@ -121,8 +146,8 @@ for line in lines:
 ## 定义每个client的位置
 for i in range(0, CLIENT_NUMBER):
     temp_sum = 0
-    for j in range(len(zone_ratio)):
-        temp_sum += zone_ratio[j]
+    for j in range(len(zone_ratio_america)): ## 这里修改regional
+        temp_sum += zone_ratio_america[j] ## 这里修改regional
         if temp_sum > i%SERVER_NUMBER:
             temp = random.choice(area_zone[j])
 
