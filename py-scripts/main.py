@@ -76,7 +76,7 @@ def init():
     global zone2server_ids
     global DNS_LINKS, DNS_OUTERS
     global client2latency_min_server
-    SERVER_NUMBER = SELECT_TOPO['server_number']
+    SERVER_NUMBER = SELECT_TOPO['server_numbezr']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
     SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 3 # 前SN个，对应C-S，后DN个，对应C-D。最后三个用来连外网。
@@ -405,28 +405,28 @@ def myNetwork(net):
                                      'zone': str(CLIENT_ZONE[client_id])}
         json.dump(machines, f)
     
-    ## 输出到ip.conf
-    config = configparser.ConfigParser()
-    config['DNS']={}
-    config['client']={}
-    config['client']['ips'] = ''
-    config['server']={}
-    config['DNS'] = {
-                'inter': '198.22.255.15',
-                'exter': '198.22.255.15'
-            }
-    for client_id in range(CLIENT_NUMBER):
-        config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
-    config['client']['ips'] = config['client']['ips'][:-1]
-    for server_id in range(SERVER_NUMBER):
-        config['server']['s%s'%str(server_id)] = '10.0.%s.3'%str(server_id)
-    config['layer'] = {}
-    for dns_link in DNS_LINKS:
-        config['layer']['s%s'%str(dns_link[0])] = 's%s'%(dns_link[1])
-    with open('../FastRoute-files/ip.conf','w') as cfg:
-        config.write(cfg)
+    # ## 输出到ip.conf
+    # config = configparser.ConfigParser()
+    # config['DNS']={}
+    # config['client']={}
+    # config['client']['ips'] = ''
+    # config['server']={}
+    # config['DNS'] = {
+    #             'inter': '198.22.255.15',
+    #             'exter': '198.22.255.15'
+    #         }
+    # for client_id in range(CLIENT_NUMBER):
+    #     config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
+    # config['client']['ips'] = config['client']['ips'][:-1]
+    # for server_id in range(SERVER_NUMBER):
+    #     config['server']['s%s'%str(server_id)] = '10.0.%s.3'%str(server_id)
+    # config['layer'] = {}
+    # for dns_link in DNS_LINKS:
+    #     config['layer']['s%s'%str(dns_link[0])] = 's%s'%(dns_link[1])
+    # with open('../FastRoute-files/ip.conf','w') as cfg:
+    #     config.write(cfg)
 
-    os.system("cd ../FastRoute-files && nohup sudo python3 dns.py >/users/myzhou/a.txt 2>&1 &")
+    # os.system("cd ../FastRoute-files && nohup sudo python3 dns.py >/users/myzhou/a.txt 2>&1 &")
 
 def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
@@ -536,7 +536,7 @@ def run(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         now_port = START_PORT
         for client_id in range(CLIENT_NUMBER): 
-            if CLIENT_ZONE[client_id] == dispatcher_id: ## 只在需要的端口开dispatcher
+            if CLIENT_ZONE[client_id] == DISPATCHER_ZONE[dispatcher_id]: ## 只在需要的端口开dispatcher
                 dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), str(SERVER_NUMBER), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+1), DISPATCHER_ZONE[dispatcher_id]))
                 time.sleep(1)
             now_port += CLIENT_THREAD
