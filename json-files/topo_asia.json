@@ -4,9 +4,9 @@
  "dispatcher_number": 6,
  "client_thread": 5,
  "cpu": {
-  "client": 0.4,
-  "server": 0.3,
-  "dispatcher": 0.3
+  "client": 16.8,
+  "server": 2.5,
+  "dispatcher": 1.0
  },
  "dns_links": [
   [

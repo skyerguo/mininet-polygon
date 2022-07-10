@@ -76,7 +76,7 @@ def init():
     global zone2server_ids
     global DNS_LINKS, DNS_OUTERS
     global client2latency_min_server
-    SERVER_NUMBER = SELECT_TOPO['server_numbezr']
+    SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
     SWITCH_NUMBER = SERVER_NUMBER + DISPATCHER_NUMBER + 3 # 前SN个，对应C-S，后DN个，对应C-D。最后三个用来连外网。

@@ -143,26 +143,79 @@ for line in lines:
 # print(latency_topo)
 # print(bandwidth_topo[0])
 
-## 定义每个client的位置
-for i in range(0, CLIENT_NUMBER):
-    temp_sum = 0
-    for j in range(len(zone_ratio_america)): ## 这里修改regional
-        temp_sum += zone_ratio_america[j] ## 这里修改regional
-        if temp_sum > i%SERVER_NUMBER:
-            temp = random.choice(area_zone[j])
+## 获得level相关信息
+file_level = '../data-prepare/measure_leveled.csv'
+f_level = open(file_level, 'r')
+csv_reader_level = csv.reader(f_level)
 
-            while (client2dispatcher[zone_map[temp]] >= DISPATCHER_NUMBER):
-                temp = random.choice(area_zone[j])
-            client_zone.append(temp)
-            
+level_topo = [[0 for _ in range(zone_number)] for _ in range(zone_number)]
+
+temp_cnt = -1
+for line in csv_reader_level:
+    if temp_cnt == -1: ## 跳过第一行
+        temp_cnt = 1
+        continue
+
+    if (line[0][:-2] in zone_ignore) or (line[1][7:-2] in zone_ignore):
+        continue
+
+    src = zone_map[line[0][:-2]]
+    des = zone_map[line[1][7:-2]]
+
+    level_topo[src][des] = int(line[-1])
+    level_topo[des][src] = int(line[-1])
+
+## level_1
+zone_dispatcher_level1 = ['europe-west3', 'asia-northeast2', 'us-east4', 'us-west1', 'northamerica-northeast2', 'europe-west4']
+zone_server_level1 = [
+    ['europe-west3', 'asia-northeast2', 'us-east4', 'us-west1', 'northamerica-northeast2', 'europe-west4','europe-west3', 'asia-northeast2', 'us-east4', 'us-west1', 'northamerica-northeast2', 'europe-west4', 'asia-east2', 'europe-west1', 'asia-southeast2']
+]
+
+## level_2
+zone_dispatcher_level2 = ['europe-west3', 'asia-northeast2', 'us-east4', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1']
+zone_server_level2 = [
+    [
+    'europe-west3', 'asia-northeast2', 'us-east4', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1','europe-west3', 'asia-northeast2', 'us-east4', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1', 'australia-southeast1', 'europe-central2', 'asia-northeast3']
+]
+
+## level_3
+zone_dispatcher_level3 = ['asia-southeast2', 'europe-west6', 'asia-south2', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1']
+zone_server_level3 = [
+    ['asia-southeast2', 'europe-west6', 'asia-south2', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1','asia-southeast2', 'europe-west6', 'asia-south2', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1', 'southamerica-east1', 'australia-southeast2', 'asia-east2']
+]
+
+for i in range(0, CLIENT_NUMBER):
+    flag = 0
+    while True:
+        temp_client = random.choice(area_all)
+        for temp_dispatcher in zone_dispatcher_level3: ## 这里修改level
+            if level_topo[zone_map[temp_client]][zone_map[temp_dispatcher]] == 3: ## 这里修改level
+                flag = 1
+                break
+        ## 有DISPATCHER_NUMBER个dispatcher和它属于相同level，则退出
+        if flag == 1:
+            client_zone.append(temp_client)
             break
 
-# ## 定义每个server的位置
-# for i in range(DISPATCHER_NUMBER, SERVER_NUMBER):
-#     temp = random.choice(area_all)
-#     while (client2dispatcher[zone_map[temp]] >= DISPATCHER_NUMBER):
-#         temp = random.choice(area_all)
-#     server_zone.append(temp)
+zone_dispatcher = zone_dispatcher_level3[:DISPATCHER_NUMBER] ## 这里修改level
+dispatcher_zone = copy.deepcopy(zone_dispatcher)
+server_zone = [y for x in zone_server_level3 for y in x] ## 这里修改level
+
+
+## level相关信息结束。下一段当有level信息时，注释
+# ## 定义每个client的位置
+# for i in range(0, CLIENT_NUMBER):
+#     temp_sum = 0
+#     for j in range(len(zone_ratio_america)): ## 这里修改regional
+#         temp_sum += zone_ratio_america[j] ## 这里修改regional
+#         if temp_sum > i%SERVER_NUMBER:
+#             temp = random.choice(area_zone[j])
+
+#             while (client2dispatcher[zone_map[temp]] >= DISPATCHER_NUMBER):
+#                 temp = random.choice(area_zone[j])
+#             client_zone.append(temp)
+            
+#             break
 
 result = {}
 result['client_number'] = CLIENT_NUMBER
