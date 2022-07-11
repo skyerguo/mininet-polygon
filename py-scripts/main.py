@@ -15,6 +15,7 @@ import os
 import subprocess
 import sys
 import configparser
+import random
 
 # SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_large)
 SELECT_TOPO = json.load(open('../json-files/topo.json', 'r'))
@@ -47,12 +48,12 @@ bw = {}
 delay = {}
 cpu = {}
 start_time = 0
+SAME_ZONE_DISPATCHER = [] ## 同一个zone里的dispatcher_id
+CLIENT_TO_DISPATCHER = []
 
 virtual_machine_ip = "127.0.0.1"
 virtual_machine_subnet = "127.0.0.1"
 DNS_IP = "198.22.255.15"
-
-zone2server_ids = []
 
 client2latency_min_server = []
 
@@ -73,9 +74,10 @@ def init():
     global CLIENT_NUMBER, SERVER_NUMBER, DISPATCHER_NUMBER, SWITCH_NUMBER, SERVER_THREAD, CLIENT_THREAD, DISPATCHER_THREAD
     global bw, delay, cpu
     global CLIENT_ZONE, DISPATCHER_ZONE, SERVER_ZONE
-    global zone2server_ids
+    global SAME_ZONE_SERVER
     global DNS_LINKS, DNS_OUTERS
     global client2latency_min_server
+    global SAME_ZONE_DISPATCHER, CLIENT_TO_DISPATCHER
     SERVER_NUMBER = SELECT_TOPO['server_number']
     CLIENT_NUMBER = SELECT_TOPO['client_number']
     DISPATCHER_NUMBER = SELECT_TOPO['dispatcher_number']
@@ -99,8 +101,6 @@ def init():
 
     DNS_LINKS = SELECT_TOPO['dns_links']
     DNS_OUTERS = SELECT_TOPO['dns_outers']
-
-    zone2server_ids = [[] for _ in range(len(DISPATCHER_ZONE))]
 
     global start_time
     start_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
@@ -134,16 +134,18 @@ def init():
         curr_min_latency = 1000
         curr_min_latency_server = -1
         for server_id in range(SERVER_NUMBER):
-            # print(client_id, server_id)
             if float(delay['client_server'][client_id][server_id]) < curr_min_latency:
                 curr_min_latency = float(delay['client_server'][client_id][server_id])
                 curr_min_latency_server = server_id
-        # print(client_id, curr_min_latency, curr_min_latency_server)
         client2latency_min_server[client_id] = curr_min_latency_server
 
-
-    # os.system("ulimit -u 1030603") # 设置nproc即用户可以使用的进程数量
-
+    SAME_ZONE_SERVER = [[] for _ in range(len(DISPATCHER_ZONE))]
+    SAME_ZONE_DISPATCHER = [[] for _ in range(len(DISPATCHER_ZONE))]
+    for dispatcher_id in range(DISPATCHER_NUMBER):
+        SAME_ZONE_DISPATCHER[DISPATCHER_ZONE[dispatcher_id]].append(dispatcher_id)
+    # print(SAME_ZONE_DISPATCHER)
+    for client_id in range(CLIENT_NUMBER):
+        CLIENT_TO_DISPATCHER.append(random.choice(SAME_ZONE_DISPATCHER[CLIENT_ZONE[client_id]]))
 
 def clear_logs():
     ret = subprocess.Popen("sudo mn -c && sudo bash ../bash-scripts/kill_running.sh", shell=True, stdout=subprocess.PIPE)
@@ -268,7 +270,7 @@ def myNetwork(net):
     ## C-D
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
-            if DISPATCHER_ZONE[dispatcher_id] == CLIENT_ZONE[client_id]: ## 减少一些用不到的边
+            if dispatcher_id == CLIENT_TO_DISPATCHER[client_id]: ## 减少一些用不到的边
                 net.addLink(switch[SERVER_NUMBER + dispatcher_id], client[client_id], cls=TCLink, **{'bw':bw['client_dispatcher'][client_id][dispatcher_id]+1,'delay':str(int(delay['client_dispatcher'][client_id][dispatcher_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
         net.addLink(switch[SERVER_NUMBER + dispatcher_id], dispatcher[dispatcher_id], cls=None)
     
@@ -304,7 +306,7 @@ def myNetwork(net):
             client[client_id].cmd("route add -host 10.0.%s.3 dev c%s-eth%s" %(str(server_id), str(client_id), str(server_id)))
         cnt_dispatcher = 0
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            if DISPATCHER_ZONE[dispatcher_id] == CLIENT_ZONE[client_id]: ## 减少一些用不到的边
+            if dispatcher_id == CLIENT_TO_DISPATCHER[client_id]: ## 减少一些用不到的边
                 client[client_id].cmd("route add -host 10.0.%s.5 dev c%s-eth%s" %(str(dispatcher_id), str(client_id), str(SERVER_NUMBER + cnt_dispatcher)))
                 cnt_dispatcher += 1
                 client_number_per_dispatcher[dispatcher_id] += 1
@@ -321,7 +323,7 @@ def myNetwork(net):
 
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
-            if DISPATCHER_ZONE[dispatcher_id] == CLIENT_ZONE[client_id]: ## 减少一些用不到的边
+            if dispatcher_id == CLIENT_TO_DISPATCHER[client_id]: ## 减少一些用不到的边
                 dispatcher[dispatcher_id].cmd("route add -host 10.0.%s.1 dev d%s-eth%s" %(str(client_id), str(dispatcher_id), str(SERVER_NUMBER)))
         for server_id in range(SERVER_NUMBER):
             dispatcher[dispatcher_id].cmd("route add -host 10.0.%s.3 dev d%s-eth%s" %(str(server_id), str(dispatcher_id), str(server_id)))
@@ -374,7 +376,7 @@ def myNetwork(net):
                                      'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
                                      'mac1': temp_mac, 'mac2': temp_mac,
                                      'zone': str(SERVER_ZONE[server_id])}
-            zone2server_ids[SERVER_ZONE[server_id]].append(server_id)
+            SAME_ZONE_SERVER[SERVER_ZONE[server_id]].append(server_id)
         json.dump(machines, f)
     
     ## 输出到machine_dispatcher.json
@@ -468,7 +470,7 @@ def measure_start(net):
 
     #         while cnt != 2: # 初始测量出错了
     #             print("ERROR measurement! 重启dispatcher%s到server%s的初始传输测量"%(str(dispatcher_id), str(server_id)))
-    #             dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/redo_single_measurement_from_dispatcher.sh -i %s -s %s -a %s" %(str(dispatcher_id), str(server_id), str(start_time))) ## 重新测量dispathcer到server的空载竞争力
+    #             dispatcher[dispatcher_id].cmdPrint("bash ../bash-scripts/redo_single_measurement_from_dispatcher.sh -i %s -s %s -a %s" %(str(dispatcher_id), str(server_id), str(start_time))) ## 重新测量dispatcher到server的空载竞争力
     #             f_in = open("/proj/quic-PG0/data/measurement_log/" + start_time + "/competitiveness/" + "dispatcher_" + str(dispatcher_id) + ("_server_") + str(server_id) + "_2.txt", "r")
     #             plt = 0
     #             cnt = 0
@@ -507,7 +509,7 @@ def measure_start(net):
 
     ## 在client端启动nload    
     for client_id in range(CLIENT_NUMBER): 
-        client[client_id].cmdPrint("bash ../bash-scripts/init_measurement_from_client.sh -i %s -a %s -z %s -n %s"%(str(client_id), str(start_time), str(CLIENT_ZONE[client_id]), str(SERVER_NUMBER)))
+        client[client_id].cmdPrint("bash ../bash-scripts/init_measurement_from_client.sh -i %s -a %s -z %s -n %s"%(str(client_id), str(start_time), str(CLIENT_TO_DISPATCHER[client_id]), str(SERVER_NUMBER)))
     time.sleep(10)
     
     for server_id in range(SERVER_NUMBER):
@@ -536,7 +538,7 @@ def run(net):
     for dispatcher_id in range(DISPATCHER_NUMBER):
         now_port = START_PORT
         for client_id in range(CLIENT_NUMBER): 
-            if CLIENT_ZONE[client_id] == DISPATCHER_ZONE[dispatcher_id]: ## 只在需要的端口开dispatcher
+            if CLIENT_TO_DISPATCHER[client_id] == dispatcher_id: ## 只在需要的端口开dispatcher
                 dispatcher[dispatcher_id].cmdPrint("bash ../ngtcp2-exe/start_dispatcher.sh -i %s -s %s -p %s -t %s -r %s -a %s -m %s -n %s -z %s &"%(str(dispatcher_id), str(SERVER_NUMBER), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(SERVER_NUMBER+1), DISPATCHER_ZONE[dispatcher_id]))
                 time.sleep(1)
             now_port += CLIENT_THREAD
@@ -552,15 +554,15 @@ def run(net):
 
     now_port = START_PORT
     for client_id in range(CLIENT_NUMBER):
-        # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 给Anycast随机同一个zone里的server
+        # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(SAME_ZONE_SERVER[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 给Anycast随机同一个zone里的server
 
         # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 给Anycast随机同一个latency最小的server
 
 
         # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client_timeline.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s -c 1"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 使用cpu，按照trace执行cpu
         # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 没有cpu，顺序执行bw和latency，Anycast选最小
-        # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(zone2server_ids[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 没有cpu，顺序执行bw和latency，Anycast随机
-        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 有cpu，4：4：1，Anycast选最小
+        # client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_ZONE[client_id]), str(random.choice(SAME_ZONE_SERVER[CLIENT_ZONE[client_id]])), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 没有cpu，顺序执行bw和latency，Anycast随机
+        client[client_id].cmdPrint("bash ../ngtcp2-exe/start_client.sh -i %s -p %s -t %s -r %s -a %s -m %s -z %s -d %s -o %s"%(str(client_id), str(now_port), str(CLIENT_THREAD), str(virtual_machine_ip), str(start_time), mode, str(CLIENT_TO_DISPATCHER[client_id]), str(client2latency_min_server[client_id]), str(random.choice(DNS_OUTERS[CLIENT_ZONE[client_id]])))) ## 有cpu，4：4：1，Anycast选最小
 
         now_port += CLIENT_THREAD
         time.sleep(3)
@@ -584,6 +586,7 @@ if __name__ == '__main__':
     clear_logs()
 
     init()
+    exit()
 
     net = Mininet( topo=None,
                 build=False,
