@@ -145,7 +145,12 @@ def init():
         SAME_ZONE_DISPATCHER[DISPATCHER_ZONE[dispatcher_id]].append(dispatcher_id)
     # print(SAME_ZONE_DISPATCHER)
     for client_id in range(CLIENT_NUMBER):
-        CLIENT_TO_DISPATCHER.append(random.choice(SAME_ZONE_DISPATCHER[CLIENT_ZONE[client_id]]))
+        if len(SAME_ZONE_DISPATCHER[CLIENT_ZONE[client_id]]) > 0:
+            CLIENT_TO_DISPATCHER.append(random.choice(SAME_ZONE_DISPATCHER[CLIENT_ZONE[client_id]]))
+        else:
+            CLIENT_TO_DISPATCHER.append(random.choice(DISPATCHER_ZONE))
+    
+    print("CLIENT_TO_DISPATCHER: ", CLIENT_TO_DISPATCHER)
 
 def clear_logs():
     ret = subprocess.Popen("sudo mn -c && sudo bash ../bash-scripts/kill_running.sh", shell=True, stdout=subprocess.PIPE)
@@ -586,7 +591,6 @@ if __name__ == '__main__':
     clear_logs()
 
     init()
-    exit()
 
     net = Mininet( topo=None,
                 build=False,

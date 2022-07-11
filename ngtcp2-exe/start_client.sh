@@ -25,7 +25,7 @@ do
             mode=$OPTARG
         ;;
         z)
-            client_zone=$OPTARG # 通过client_zone，用参数传入需要转发给的dispatcher
+            dispatcher_id=$OPTARG # 传入需要转发给的dispatcher
         ;;
         d)
             des_server_id=$OPTARG # 随机选择的，同一个zone的server_id
@@ -59,12 +59,6 @@ if [[ $mode == "FastRoute" ]]; then
     echo "server_domain: " $server_domain
 fi
 
-# if [[ $client_id < 3 ]]; then ## 修改的话，需要对应修改LoadMonitory.py
-#     server_domain='server1.example.com'
-# else
-#     server_domain='server2.example.com'
-# fi
-
 ## 选择某一类的type_list
 type_list=(${type_list_all[*]})
 # type_list=(${type_list_cpu[*]})
@@ -89,9 +83,7 @@ do
             # echo "current_time: "$time_stamp >> ${output_file}_tmp.txt
 
             if [[ $mode == "Polygon" ]]; then
-                destination_ip="10.0."$client_zone".5"
-            # elif [[ $mode == "DNS" ]]; then
-                # destination_ip="10.0."$client_zone".3"
+                destination_ip="10.0."$dispatcher_id".5"
             elif [[ $mode == "Anycast" ]]; then
                 destination_ip="10.0."$des_server_id".3"
             elif [[ $mode == "FastRoute" ]]; then

@@ -14,7 +14,7 @@ do
             mkdir -p ${measurement_result_path}"nload"
         ;;
         z) 
-            client_zone=$OPTARG
+            dispatcher_id=$OPTARG
         ;;
         n)
             server_number=$OPTARG
@@ -30,7 +30,7 @@ do
     ## 刷新间隔，稍微错开一点，防止nload同时跑起来
     refresh_interval=`awk 'BEGIN{print "2000" + ("50" * "'$i'")}'`
     # echo "refresh_interval: " $refresh_interval
-    sudo nload -a 100 -u k -t $refresh_interval -m devices c${client_id}-eth$i > ${measurement_result_path}nload/nload_log_c${client_id}_cz${client_zone}_s${i}.txt &
+    sudo nload -a 100 -u k -t $refresh_interval -m devices c${client_id}-eth$i > ${measurement_result_path}nload/nload_log_c${client_id}_cz${dispatcher_id}_s${i}.txt &
     
     # # 错峰运行nload，防止I/O爆炸
     # temp_time=$((${RANDOM=$i} % 1000)) 

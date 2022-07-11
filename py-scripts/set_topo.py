@@ -76,13 +76,13 @@ dns_links = [[0,2], [1,2], [2,3], [4,2], [5,6], [6,7], [8,9], [9,14], [10,13], [
 dns_outers = [[0,1], [4], [5], [8], [10], [11,12]] 
 
 zone_dispatcher = zone_dispatcher_america[:DISPATCHER_NUMBER] ## 这里修改regional
-client2dispatcher = [0 for _ in range(len(area_all))]
-client2dispatcher[0] = client2dispatcher[1] = client2dispatcher[2] = client2dispatcher[3] =  client2dispatcher[4] = client2dispatcher[5] = client2dispatcher[6] =  client2dispatcher[7] = 0
-client2dispatcher[8] = client2dispatcher[9] = 1
-client2dispatcher[10] = client2dispatcher[11] = client2dispatcher[12] = client2dispatcher[13] = client2dispatcher[14] = client2dispatcher[15] =  client2dispatcher[16] =  2
-client2dispatcher[17] = client2dispatcher[18] = 3
-client2dispatcher[19] = client2dispatcher[20] = 4
-client2dispatcher[21] = client2dispatcher[22] = client2dispatcher[23] = client2dispatcher[24] = client2dispatcher[25] = client2dispatcher[26] = 5
+client2area = [0 for _ in range(len(area_all))]
+client2area[0] = client2area[1] = client2area[2] = client2area[3] =  client2area[4] = client2area[5] = client2area[6] =  client2area[7] = 0
+client2area[8] = client2area[9] = 1
+client2area[10] = client2area[11] = client2area[12] = client2area[13] = client2area[14] = client2area[15] =  client2area[16] =  2
+client2area[17] = client2area[18] = 3
+client2area[19] = client2area[20] = 4
+client2area[21] = client2area[22] = client2area[23] = client2area[24] = client2area[25] = client2area[26] = 5
 
 client_zone = []
 dispatcher_zone = copy.deepcopy(zone_dispatcher)
@@ -166,40 +166,39 @@ for line in csv_reader_level:
     level_topo[des][src] = int(line[-1])
 
 ## level_1
-zone_dispatcher_level1 = ['europe-west3', 'asia-northeast2', 'us-east4', 'us-west1', 'northamerica-northeast2', 'europe-west4']
+zone_dispatcher_level1 = ['us-east1','us-east4','us-west1','us-west2','us-west3','us-west4']
 zone_server_level1 = [
-    ['europe-west3', 'asia-northeast2', 'us-east4', 'us-west1', 'northamerica-northeast2', 'europe-west4','europe-west3', 'asia-northeast2', 'us-east4', 'us-west1', 'northamerica-northeast2', 'europe-west4', 'asia-east2', 'europe-west1', 'asia-southeast2']
+    ['us-east1','us-east4','us-west1','us-west2','us-west3','us-west4','us-east1','us-east4','us-west1','us-west2','us-west3','us-west4','us-east1','us-west1','us-west4']
 ]
 
 ## level_2
-zone_dispatcher_level2 = ['europe-west3', 'asia-northeast2', 'us-east4', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1']
+zone_dispatcher_level2 = ['europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1']
 zone_server_level2 = [
     [
-    'europe-west3', 'asia-northeast2', 'us-east4', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1','europe-west3', 'asia-northeast2', 'us-east4', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1', 'australia-southeast1', 'europe-central2', 'asia-northeast3']
+    'europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1','europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1','europe-west3', 'europe-central2',  'europe-north1']
 ]
 
 ## level_3
-zone_dispatcher_level3 = ['asia-southeast2', 'europe-west6', 'asia-south2', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1']
+zone_dispatcher_level3 = ['southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2']
 zone_server_level3 = [
-    ['asia-southeast2', 'europe-west6', 'asia-south2', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1','asia-southeast2', 'europe-west6', 'asia-south2', 'southamerica-east1', 'northamerica-northeast2', 'europe-north1', 'southamerica-east1', 'australia-southeast2', 'asia-east2']
+    ['southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2','southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2','southamerica-east1', 'southamerica-west1', 'northamerica-northeast2']
 ]
 
 for i in range(0, CLIENT_NUMBER):
-    flag = 0
     while True:
+        flag = 0
         temp_client = random.choice(area_all)
-        for temp_dispatcher in zone_dispatcher_level3: ## 这里修改level
-            if level_topo[zone_map[temp_client]][zone_map[temp_dispatcher]] == 3: ## 这里修改level
-                flag = 1
-                break
+        for temp_dispatcher in zone_dispatcher_level1: ## 这里修改level
+            if level_topo[zone_map[temp_client]][zone_map[temp_dispatcher]] == 1: ## 这里修改level
+                flag += 1
         ## 有DISPATCHER_NUMBER个dispatcher和它属于相同level，则退出
-        if flag == 1:
+        if flag == DISPATCHER_NUMBER:
             client_zone.append(temp_client)
             break
 
-zone_dispatcher = zone_dispatcher_level3[:DISPATCHER_NUMBER] ## 这里修改level
+zone_dispatcher = zone_dispatcher_level1[:DISPATCHER_NUMBER] ## 这里修改level
 dispatcher_zone = copy.deepcopy(zone_dispatcher)
-server_zone = [y for x in zone_server_level3 for y in x] ## 这里修改level
+server_zone = [y for x in zone_server_level1 for y in x] ## 这里修改level
 
 
 ## level相关信息结束。下一段当有level信息时，注释
@@ -211,7 +210,7 @@ server_zone = [y for x in zone_server_level3 for y in x] ## 这里修改level
 #         if temp_sum > i%SERVER_NUMBER:
 #             temp = random.choice(area_zone[j])
 
-#             while (client2dispatcher[zone_map[temp]] >= DISPATCHER_NUMBER):
+#             while (client2area[zone_map[temp]] >= DISPATCHER_NUMBER):
 #                 temp = random.choice(area_zone[j])
 #             client_zone.append(temp)
             
@@ -238,16 +237,15 @@ result['client_zone'] = []
 result['server_zone'] = []
 result['dispatcher_zone'] = []
 for client_area in client_zone:
-    result['client_zone'].append(client2dispatcher[zone_map[client_area]])
+    result['client_zone'].append(client2area[zone_map[client_area]])
 for server_area in server_zone:
-    result['server_zone'].append(client2dispatcher[zone_map[server_area]])
+    result['server_zone'].append(client2area[zone_map[server_area]])
 for dispatcher_area in dispatcher_zone:
-    result['dispatcher_zone'].append(client2dispatcher[zone_map[dispatcher_area]])
+    result['dispatcher_zone'].append(client2area[zone_map[dispatcher_area]])
 
 
 result['bw'] = {}
 result['delay'] = {}
-
 
 result['bw']['client_server'] = [[] for _ in range(CLIENT_NUMBER)]
 result['delay']['client_server'] = [[] for _ in range(CLIENT_NUMBER)]
@@ -276,7 +274,7 @@ for dispatcher_id in range(DISPATCHER_NUMBER):
         result['bw']['dispatcher_server'][dispatcher_id].append(bandwidth_topo[dispatcher_pos][server_pos])
         result['delay']['dispatcher_server'][dispatcher_id].append(latency_topo[dispatcher_pos][server_pos])
     
-json_file = '../json-files/topo.json'
+json_file = '../json-files/topo_temp.json'
 f_out = open(json_file, 'w')
 json.dump(result, f_out, indent=1)
 f_out.close()
