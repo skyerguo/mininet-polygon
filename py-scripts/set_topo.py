@@ -8,7 +8,7 @@ SET_MAX_BW = 5 ## 假设最大的带宽为5MB/s
 CLIENT_NUMBER = 5
 DISPATCHER_NUMBER = 1 # 最多10个
 SERVER_NUMBER = 1
-THREAD_NUMBER = 9 # 每个CLIENT的线程数，请算一下14433+CLIENT_NUMBER*THREAD_NUMBER，是否可能造成冲突
+THREAD_NUMBER = 5 # 每个CLIENT的线程数，请算一下14433+CLIENT_NUMBER*THREAD_NUMBER，是否可能造成冲突
 
 csv_file_path = '../data-prepare/measure.csv'
 f_in = open(csv_file_path, 'r')
@@ -198,7 +198,7 @@ for dispatcher_id in range(DISPATCHER_NUMBER):
         result['bw']['dispatcher_server'][dispatcher_id].append(bandwidth_topo[dispatcher_pos][server_pos])
         result['delay']['dispatcher_server'][dispatcher_id].append(latency_topo[dispatcher_pos][server_pos])
     
-json_file = '../json-files/topo.json'
+json_file = '../json-files/topo_overhead.json'
 f_out = open(json_file, 'w')
 json.dump(result, f_out, indent=1)
 f_out.close()

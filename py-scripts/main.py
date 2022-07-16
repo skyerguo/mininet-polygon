@@ -33,7 +33,7 @@ SERVER_THREAD = 1
 START_PORT = 14433
 MAX_THROUGHPUT = 5 * 1024 ## wondershaper设置的最大带宽
 
-FAKE_SERVER_NUMBER = 1000
+FAKE_SERVER_NUMBER = 10
 
 switch = []
 client = []
@@ -406,29 +406,48 @@ def myNetwork(net):
                                      'mac1': temp_mac, 'mac2': temp_mac,
                                      'zone': str(CLIENT_ZONE[client_id])}
         json.dump(machines, f)
-    
-    ## 输出到ip.conf
-    config = configparser.ConfigParser()
-    config['DNS']={}
-    config['client']={}
-    config['client']['ips'] = ''
-    config['server']={}
-    config['DNS'] = {
-                'inter': '198.22.255.15',
-                'exter': '198.22.255.15'
-            }
-    for client_id in range(CLIENT_NUMBER):
-        config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
-    config['client']['ips'] = config['client']['ips'][:-1]
-    for server_id in range(SERVER_NUMBER):
-        config['server']['s%s'%str(server_id)] = '10.0.%s.3'%str(server_id)
-    config['layer'] = {}
-    for dns_link in DNS_LINKS:
-        config['layer']['s%s'%str(dns_link[0])] = 's%s'%(dns_link[1])
-    with open('../FastRoute-files/ip.conf','w') as cfg:
-        config.write(cfg)
 
-    os.system("cd ../FastRoute-files && nohup sudo python3 dns.py >/users/myzhou/a.txt 2>&1 &")
+    with open('{}/machine_server_fake.json'.format(machine_json_path), 'w') as f:
+        machines = {}
+        for server_id in range(SERVER_NUMBER):
+            server_name = 's%s'%str(server_id)
+            temp_host = net.get(server_name)
+            temp_ip = "10.0.%s.3"%(server_id)
+            temp_mac = temp_host.MAC()
+            machines[server_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
+                                     'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
+                                     'mac1': temp_mac, 'mac2': temp_mac,
+                                     'zone': str(SERVER_ZONE[server_id])}
+            zone2server_ids[SERVER_ZONE[server_id]].append(server_id)
+        for server_id in range(SERVER_NUMBER, SERVER_NUMBER + FAKE_SERVER_NUMBER):
+            server_name = 's%s'%str(server_id)
+            temp_ip = "10.0.%s.3"%(server_id)
+            machines[server_name] = {'external_ip1': temp_ip, 'external_ip2': temp_ip,
+                                     'internal_ip1': temp_ip, 'internal_ip2': temp_ip,
+                                     'zone': '-1'}
+        json.dump(machines, f)
+    # ## 输出到ip.conf
+    # config = configparser.ConfigParser()
+    # config['DNS']={}
+    # config['client']={}
+    # config['client']['ips'] = ''
+    # config['server']={}
+    # config['DNS'] = {
+    #             'inter': '198.22.255.15',
+    #             'exter': '198.22.255.15'
+    #         }
+    # for client_id in range(CLIENT_NUMBER):
+    #     config['client']['ips'] = config['client']['ips'] + '10.0.%s.1'%str(client_id) + ','
+    # config['client']['ips'] = config['client']['ips'][:-1]
+    # for server_id in range(SERVER_NUMBER):
+    #     config['server']['s%s'%str(server_id)] = '10.0.%s.3'%str(server_id)
+    # config['layer'] = {}
+    # for dns_link in DNS_LINKS:
+    #     config['layer']['s%s'%str(dns_link[0])] = 's%s'%(dns_link[1])
+    # with open('../FastRoute-files/ip.conf','w') as cfg:
+    #     config.write(cfg)
+
+    # os.system("cd ../FastRoute-files && nohup sudo python3 dns.py >/users/myzhou/a.txt 2>&1 &")
 
 def measure_start(net):
     os.system("redis-cli -a Hestia123456 -n 0 flushdb") # 清空redis的数据库，0号数据库存储测量结果
@@ -441,7 +460,7 @@ def measure_start(net):
 
     ## 对所有server设置wondershaper，并启动ngtcp2，为了发第一次包测量实际竞争力做准备
     for server_id in range(SERVER_NUMBER):
-        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -m %s -a %s -f %s &" %(str(server_id), str(MAX_THROUGHPUT), str(start_time), str(FAKE_SERVER_NUMBER)))
+        server[server_id].cmdPrint("bash ../bash-scripts/init_measurement_from_server.sh -i %s -m %s -a %s &" %(str(server_id), str(MAX_THROUGHPUT), str(start_time)))
         # os.system("bash ")
         if mode == "FastRoute": ## 开启FastRoute的cpu监控和转移规则
             server[server_id].cmdPrint("cd ../FastRoute-files && sudo python3 LoadMonitor.py %s &"%(str(server_id)))
@@ -517,7 +536,7 @@ def measure_start(net):
         temp_bw = []
         for dispatcher_id in range(DISPATCHER_NUMBER):
             temp_bw.append(bw['dispatcher_server'][dispatcher_id][server_id])
-        server[server_id].cmdPrint("cd ../py-scripts && bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s -m %s &"%(str(server_id), str(temp_bw).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time), str(MAX_THROUGHPUT)))
+        server[server_id].cmdPrint("cd ../py-scripts && bash ../bash-scripts/measurement_from_server.sh -i %s -t %s -r %s -a %s -m %s -f %s &"%(str(server_id), str(temp_bw).replace(", ","+").replace("[","").replace("]",""), str(virtual_machine_ip), str(start_time), str(MAX_THROUGHPUT), str(FAKE_SERVER_NUMBER)))
     
     # 这一块用来周期性记录redis实验数据的，暂时先不启动，会带来一定的overhead
     # time.sleep(10)
