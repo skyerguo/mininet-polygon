@@ -70,7 +70,7 @@ do
     output_fake_latency="${measurement_result_path}server/fake_latency_s${server_id}_d${dispatcher_id}.log"
     for i in `seq $fake_server_number`
     do
-        temp=$((${RANDOM=$date} % 100 - 100)) ## -1 ~ -100随机一个数
+        temp=$((${RANDOM=$date} % 100 + 400)) ## 400 ~ 500随机一个数
         echo "set latency_s${i}_d${dispatcher_id} $temp" >> $output_fake_latency
     done
     todos $output_fake_latency ## 转换成dos格式
