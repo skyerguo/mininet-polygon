@@ -49,6 +49,8 @@ bw_competitiveness=(`echo $raw_bw_competitiveness`) ## 流量竞争力，指每�
 
 output_file="${measurement_result_path}server/server_s$server_id.log"
 
+output_fake_cpu="${measurement_result_path}server/fake_cpu_s$server_id.log"
+
 echo "dispatcher_ips: "${dispatcher_ips[*]} >> $output_file
 echo "dispatcher_bw: "${dispatcher_bw[*]} >> $output_file
 echo "bw_competitiveness: "${bw_competitiveness[*]} >> $output_file
@@ -61,11 +63,34 @@ echo "server_pid: " $server_pid >> $output_file
 
 nload_path=$measurement_result_path"nload/"
 
+## 预先处理好文件吧
+for dispatcher_id in `seq 0 $((${#dispatcher_ips[*]} - 1))`
+do
+    output_fake_throughput="${measurement_result_path}server/fake_throughput_s${server_id}_d${dispatcher_id}.log"
+    output_fake_latency="${measurement_result_path}server/fake_latency_s${server_id}_d${dispatcher_id}.log"
+    for i in `seq $fake_server_number`
+    do
+        temp=$((${RANDOM=$date} % 100 - 100)) ## -1 ~ -100随机一个数
+        echo "set latency_s${i}_d${dispatcher_id} $temp" >> $output_fake_latency
+    done
+    todos $output_fake_latency ## 转换成dos格式
+    for i in `seq $fake_server_number`
+    do
+        temp=$((${RANDOM=$date} % 100 - 100)) ## -1 ~ -100随机一个数
+        echo "set throughput_s${i}_d${dispatcher_id} $temp" >> $output_fake_throughput
+    done
+    todos $output_fake_throughput ## 转换成dos格式
+done
+
+for i in `seq $fake_server_number`
+do
+    temp=$((${RANDOM=$date} % 100 - 100)) ## -1 ~ -100随机一个数
+    echo "set cpu_s${i} $temp" >> $output_fake_cpu
+done
+todos $output_fake_cpu ## 转换成dos格式
+
 while true
 do
-    # cpu_idle_temp=`tail -2 ${measurement_result_path}server/cpu_$server_id.log | head -n 1 |awk -F',' '{print $4}'`
-    # cpu_idle=`echo $cpu_idle_temp | tr -cd "[0-9][.]"` ## 不再使用top记录cpu
-    
     ## 把文件从不可读的ANSI，通过sed替换编码改为可以用cat操作的常规编码
     for file_name in `ls ${nload_path}*$server_id.txt`
     do
@@ -79,6 +104,9 @@ do
             ## 用来记录以server_id和dispatcher_id为关键字的记录文件，以避免多进程并行导致的log记录错乱问题
             output_file_2="${measurement_result_path}server/server_s${server_id}_d${dispatcher_id}.log"
 
+            output_fake_throughput="${measurement_result_path}server/fake_throughput_s${server_id}_d${dispatcher_id}.log"
+            output_fake_latency="${measurement_result_path}server/fake_latency_s${server_id}_d${dispatcher_id}.log"
+
             echo "current_time: "$(date "+%Y%m%d%H%M%S") >> $output_file_2
 
             ## 测量实时latency，并记录到redis中
@@ -86,12 +114,11 @@ do
             echo "latency: "$latency >> $output_file_2
             redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${server_id}_d${dispatcher_id} $latency > /dev/null
 
-            echo "fake_server_number: "$fake_server_number
-            for i in `seq $fake_server_number`
-            do
-                temp_latency=$((${RANDOM=$date} % 100 - 100)) ## -1 ~ -100随机一个数
-                redis-cli -h $redis_ip -a 'Hestia123456' set latency_s${i}_d${dispatcher_id} $temp_latency > /dev/null
-            done
+            ## 添加虚假的latency到redis中
+            todos $output_fake_latency ## 转换成dos格式
+            echo "fake_latency: " >> $output_file_2
+            tail -n $fake_server_number $output_fake_latency | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> $output_file_2
+            # echo "!!!!fake_latency_done"
 
             ## 通过计算所有对应zone的nload，当前的平均带宽
             sum_existing_bw_per_zone=0  
@@ -116,6 +143,12 @@ do
             throughput_value=`awk 'BEGIN{print "'$max_throughput'" * "'$valid_ratio'" / ("'${sum_existing_bw_per_zone}'" + "'${bw_competitiveness[dispatcher_id]}'") * "'${bw_competitiveness[dispatcher_id]}'"}'`
             echo "throughput_value: "$throughput_value >> $output_file_2
             redis-cli -h $redis_ip -a 'Hestia123456' set throughput_s${server_id}_d${dispatcher_id} ${throughput_value} > /dev/null
+
+            ## 添加虚假的throughput到redis中
+            todos $output_fake_throughput ## 转换成dos格式
+            echo "fake_throughput: " >> $output_file_2
+            tail -n $fake_server_number $output_fake_throughput | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> $output_file_2
+            # echo "!!!!fake_throughput_done"
         } &
     done
     
@@ -125,6 +158,12 @@ do
     cpu_idle=`tail -4 ${measurement_result_path}server/s${server_id}_cpu.log | grep "cpu_idle_ratio" | tail -1 | awk '{print $2}'`
     echo "cpu_idle: "$cpu_idle >> $output_file
     redis-cli -h $redis_ip -a 'Hestia123456' set cpu_s${server_id} ${cpu_idle} > /dev/null
+
+    ## 添加虚假的cpu到redis中
+    todos $output_fake_cpu ## 转换成dos格式
+    echo "fake_cpu: " >> $output_file
+    tail -n $fake_server_number $output_fake_cpu | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> $output_file
+    # echo "!!!!fake_cpu_done"
 
     sleep 1.5
 done

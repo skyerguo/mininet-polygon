@@ -33,7 +33,7 @@ SERVER_THREAD = 1
 START_PORT = 14433
 MAX_THROUGHPUT = 5 * 1024 ## wondershaper设置的最大带宽
 
-FAKE_SERVER_NUMBER = 10
+FAKE_SERVER_NUMBER = 1000
 
 switch = []
 client = []
@@ -624,9 +624,9 @@ if __name__ == '__main__':
     print("measure_start! ")
     measure_start(net)
 
-    ## 跑实验
-    run(net)
-    save_config()
+    # ## 跑实验
+    # run(net)
+    # save_config()
 
     CLI(net)
     net.stop()
