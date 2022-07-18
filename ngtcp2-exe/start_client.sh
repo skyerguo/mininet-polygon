@@ -80,7 +80,7 @@ type_list=(${type_list_all[*]})
 for i in `seq $client_thread`
 do
     {
-        for round in `seq 20000`
+        for round in `seq 20`
         do
             time_stamp=$(($(date +%s%N)/1000000))
             port=$(($init_port+$i))
