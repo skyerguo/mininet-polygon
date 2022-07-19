@@ -33,7 +33,7 @@ SERVER_THREAD = 1
 START_PORT = 14433
 MAX_THROUGHPUT = 5 * 1024 ## wondershaper设置的最大带宽
 
-FAKE_SERVER_NUMBER = 120000
+FAKE_SERVER_NUMBER = 15000
 
 switch = []
 client = []
@@ -211,9 +211,9 @@ def myNetwork(net):
 
     print( '*** Add hosts\n')
     for client_id in range(CLIENT_NUMBER):
-        client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
+        client.append(net.addHost('c%s'%str(client_id), cpu=0.01, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
     for server_id in range(SERVER_NUMBER):
-        server.append(net.addHost('s%s'%str(server_id), cpu=0.3, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+        server.append(net.addHost('s%s'%str(server_id), cpu=0.05, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=1, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None))
     
