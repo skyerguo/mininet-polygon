@@ -75,7 +75,7 @@ zone_ratio_america = [0, 0, 0, 4, 2, 9]
 dns_links = [[0,2], [1,2], [2,3], [4,2], [5,6], [6,7], [8,9], [9,14], [10,13], [11,13], [12,13], [13,14]]
 dns_outers = [[0,1], [4], [5], [8], [10], [11,12]] 
 
-zone_dispatcher = zone_dispatcher_america[:DISPATCHER_NUMBER] ## 这里修改regional
+zone_dispatcher = zone_dispatcher[:DISPATCHER_NUMBER] ## 这里修改regional
 client2area = [0 for _ in range(len(area_all))]
 client2area[0] = client2area[1] = client2area[2] = client2area[3] =  client2area[4] = client2area[5] = client2area[6] =  client2area[7] = 0
 client2area[8] = client2area[9] = 1
@@ -86,7 +86,7 @@ client2area[21] = client2area[22] = client2area[23] = client2area[24] = client2a
 
 client_zone = []
 dispatcher_zone = copy.deepcopy(zone_dispatcher)
-server_zone = [y for x in zone_server_america for y in x] ## 这里修改regional
+server_zone = [y for x in zone_server for y in x] ## 这里修改regional
 
 print("dispatcher_zone: ", dispatcher_zone)
 print("server_zone: ", server_zone)
@@ -143,78 +143,78 @@ for line in lines:
 # print(latency_topo)
 # print(bandwidth_topo[0])
 
-## 获得level相关信息
-file_level = '../data-prepare/measure_leveled.csv'
-f_level = open(file_level, 'r')
-csv_reader_level = csv.reader(f_level)
+# ## 获得level相关信息
+# file_level = '../data-prepare/measure_leveled.csv'
+# f_level = open(file_level, 'r')
+# csv_reader_level = csv.reader(f_level)
 
-level_topo = [[0 for _ in range(zone_number)] for _ in range(zone_number)]
+# level_topo = [[0 for _ in range(zone_number)] for _ in range(zone_number)]
 
-temp_cnt = -1
-for line in csv_reader_level:
-    if temp_cnt == -1: ## 跳过第一行
-        temp_cnt = 1
-        continue
+# temp_cnt = -1
+# for line in csv_reader_level:
+#     if temp_cnt == -1: ## 跳过第一行
+#         temp_cnt = 1
+#         continue
 
-    if (line[0][:-2] in zone_ignore) or (line[1][7:-2] in zone_ignore):
-        continue
+#     if (line[0][:-2] in zone_ignore) or (line[1][7:-2] in zone_ignore):
+#         continue
 
-    src = zone_map[line[0][:-2]]
-    des = zone_map[line[1][7:-2]]
+#     src = zone_map[line[0][:-2]]
+#     des = zone_map[line[1][7:-2]]
 
-    level_topo[src][des] = int(line[-1])
-    level_topo[des][src] = int(line[-1])
+#     level_topo[src][des] = int(line[-1])
+#     level_topo[des][src] = int(line[-1])
 
-## level_1
-zone_dispatcher_level1 = ['us-east1','us-east4','us-west1','us-west2','us-west3','us-west4']
-zone_server_level1 = [
-    ['us-east1','us-east4','us-west1','us-west2','us-west3','us-west4','us-east1','us-east4','us-west1','us-west2','us-west3','us-west4','us-east1','us-west1','us-west4']
-]
+# ## level_1
+# zone_dispatcher_level1 = ['us-east1','us-east4','us-west1','us-west2','us-west3','us-west4']
+# zone_server_level1 = [
+#     ['us-east1','us-east4','us-west1','us-west2','us-west3','us-west4','us-east1','us-east4','us-west1','us-west2','us-west3','us-west4','us-east1','us-west1','us-west4']
+# ]
 
-## level_2
-zone_dispatcher_level2 = ['europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1']
-zone_server_level2 = [
-    [
-    'europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1','europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1','europe-west3', 'europe-central2',  'europe-north1']
-]
+# ## level_2
+# zone_dispatcher_level2 = ['europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1']
+# zone_server_level2 = [
+#     [
+#     'europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1','europe-west3', 'europe-west3', 'europe-central2', 'europe-central2', 'europe-north1', 'europe-north1','europe-west3', 'europe-central2',  'europe-north1']
+# ]
 
-## level_3
-zone_dispatcher_level3 = ['southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2']
-zone_server_level3 = [
-    ['southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2','southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2','southamerica-east1', 'southamerica-west1', 'northamerica-northeast2']
-]
+# ## level_3
+# zone_dispatcher_level3 = ['southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2']
+# zone_server_level3 = [
+#     ['southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2','southamerica-east1', 'southamerica-east1', 'southamerica-west1', 'southamerica-west1', 'northamerica-northeast2', 'northamerica-northeast2','southamerica-east1', 'southamerica-west1', 'northamerica-northeast2']
+# ]
 
-for i in range(0, CLIENT_NUMBER):
-    while True:
-        flag = 0
-        temp_client = random.choice(area_all)
-        for temp_dispatcher in zone_dispatcher_level1: ## 这里修改level
-            if level_topo[zone_map[temp_client]][zone_map[temp_dispatcher]] == 1: ## 这里修改level
-                flag += 1
-        ## 有DISPATCHER_NUMBER个dispatcher和它属于相同level，则退出
-        if flag == DISPATCHER_NUMBER:
-            client_zone.append(temp_client)
-            break
+# for i in range(0, CLIENT_NUMBER):
+#     while True:
+#         flag = 0
+#         temp_client = random.choice(area_all)
+#         for temp_dispatcher in zone_dispatcher_level1: ## 这里修改level
+#             if level_topo[zone_map[temp_client]][zone_map[temp_dispatcher]] == 1: ## 这里修改level
+#                 flag += 1
+#         ## 有DISPATCHER_NUMBER个dispatcher和它属于相同level，则退出
+#         if flag == DISPATCHER_NUMBER:
+#             client_zone.append(temp_client)
+#             break
 
-zone_dispatcher = zone_dispatcher_level1[:DISPATCHER_NUMBER] ## 这里修改level
-dispatcher_zone = copy.deepcopy(zone_dispatcher)
-server_zone = [y for x in zone_server_level1 for y in x] ## 这里修改level
+# zone_dispatcher = zone_dispatcher_level1[:DISPATCHER_NUMBER] ## 这里修改level
+# dispatcher_zone = copy.deepcopy(zone_dispatcher)
+# server_zone = [y for x in zone_server_level1 for y in x] ## 这里修改level
 
 
 ## level相关信息结束。下一段当有level信息时，注释
-# ## 定义每个client的位置
-# for i in range(0, CLIENT_NUMBER):
-#     temp_sum = 0
-#     for j in range(len(zone_ratio_america)): ## 这里修改regional
-#         temp_sum += zone_ratio_america[j] ## 这里修改regional
-#         if temp_sum > i%SERVER_NUMBER:
-#             temp = random.choice(area_zone[j])
+## 定义每个client的位置
+for i in range(0, CLIENT_NUMBER):
+    temp_sum = 0
+    for j in range(len(zone_ratio)): ## 这里修改regional
+        temp_sum += zone_ratio[j] ## 这里修改regional
+        if temp_sum > i%SERVER_NUMBER:
+            temp = random.choice(area_zone[j])
 
-#             while (client2area[zone_map[temp]] >= DISPATCHER_NUMBER):
-#                 temp = random.choice(area_zone[j])
-#             client_zone.append(temp)
+            while (client2area[zone_map[temp]] >= DISPATCHER_NUMBER):
+                temp = random.choice(area_zone[j])
+            client_zone.append(temp)
             
-#             break
+            break
 
 result = {}
 result['client_number'] = CLIENT_NUMBER
@@ -227,9 +227,13 @@ result['cpu'] = {}
 # result['cpu']['client'] = .2 * CLIENT_NUMBER
 # result['cpu']['server'] = .2 * SERVER_NUMBER
 # result['cpu']['dispatcher'] = .2 * DISPATCHER_NUMBER
-result['cpu']['client'] = .4
-result['cpu']['server'] = .3
-result['cpu']['dispatcher'] = .3
+result['cpu']['client'] = 16.8
+result['cpu']['server'] = 2.5
+result['cpu']['dispatcher'] = 1.0
+# result['cpu']['server_ratio'] = [1, 2, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1, 2, 2, 1] # case1
+# result['cpu']['server_ratio'] = [1, 1, 2, 1, 3, 1, 1, 1, 1, 1, 3, 1, 2, 1, 1] # case2
+result['cpu']['server_ratio'] = [1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1] # case3
+
 result['dns_links'] = dns_links
 result['dns_outers'] = dns_outers
 
@@ -248,6 +252,10 @@ result['bw'] = {}
 result['delay'] = {}
 
 result['bw']['client_server'] = [[] for _ in range(CLIENT_NUMBER)]
+# result['bw']['server_ratio'] = [1, 2, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1, 2, 2, 1] # case1
+# result['bw']['server_ratio'] = [1, 1, 2, 1, 3, 1, 1, 1, 1, 1, 3, 1, 2, 1, 1] # case2
+result['bw']['server_ratio'] = [1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1] # case3
+
 result['delay']['client_server'] = [[] for _ in range(CLIENT_NUMBER)]
 for client_id in range(CLIENT_NUMBER):
     client_pos = zone_map[client_zone[client_id]]
