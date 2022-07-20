@@ -2,7 +2,7 @@
  "client_number": 105,
  "server_number": 1,
  "dispatcher_number": 1,
- "client_thread": 5,
+ "client_thread": 1,
  "cpu": {
   "client": 0.4,
   "server": 0.3,

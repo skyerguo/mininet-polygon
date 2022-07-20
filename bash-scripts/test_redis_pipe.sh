@@ -1,10 +1,11 @@
+redis-cli -a Hestia123456 -n 0 flushdb
 output_fake_throughput="/users/myzhou/fake_throughput.log"
 rm $output_fake_throughput
 
 fake_server_number=10000
 dispatcher_id=0
 redis_ip="198.22.255.15"
-thread_number=500
+thread_number=1
 for i in `seq $fake_server_number`
 do
     temp=$((${RANDOM=$date} % 100 - 100)) ## -1 ~ -100随机一个数
@@ -12,8 +13,9 @@ do
 done
 
 todos $output_fake_throughput
-tail -n $fake_server_number $output_fake_throughput | redis-cli -h $redis_ip -a 'Hestia123456' --pipe
+cat $output_fake_throughput | redis-cli -h $redis_ip -a 'Hestia123456' --pipe
 
+rm $output_fake_throughput
 for i in `seq $fake_server_number`
 do
     temp=$((${RANDOM=$date} % 100 - 100)) ## -1 ~ -100随机一个数
@@ -31,7 +33,7 @@ do
         # echo "begin_time: "$begin_time "us"
         # output_fake_throughput="/proj/quic-PG0/data/measurement_log/2022-07-17_15:55:40/server/fake_throughput_s0_d0.log"
         todos $output_fake_throughput ## 转换成dos格式
-        tail -n $fake_server_number $output_fake_throughput | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> /dev/null
+        cat $output_fake_throughput | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> /dev/null
         end_time=$(date +%s%N)
         # echo "end_time: "$end_time "us"
         time_duration=$(($end_time - $begin_time))
@@ -42,6 +44,12 @@ do
     } &
 done
 wait
+# todos $output_fake_throughput ## 转换成dos格式
+# begin_time=$(date +%s%N)
+# cat $output_fake_throughput | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> /dev/null
+# end_time=$(date +%s%N)
+# time_duration=$(($end_time - $begin_time))
+# echo $time_duration >> $output_fake_temp
 
 sum_time=0
 while read rows

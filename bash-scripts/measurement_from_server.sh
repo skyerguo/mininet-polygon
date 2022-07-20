@@ -117,7 +117,7 @@ do
             ## 添加虚假的latency到redis中
             todos $output_fake_latency ## 转换成dos格式
             echo "fake_latency: " >> $output_file_2
-            tail -n $fake_server_number $output_fake_latency | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> $output_file_2
+            cat $output_fake_latency | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> /dev/null
             # echo "!!!!fake_latency_done"
 
             ## 通过计算所有对应zone的nload，当前的平均带宽
@@ -147,7 +147,7 @@ do
             ## 添加虚假的throughput到redis中
             todos $output_fake_throughput ## 转换成dos格式
             echo "fake_throughput: " >> $output_file_2
-            tail -n $fake_server_number $output_fake_throughput | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> $output_file_2
+            cat $output_fake_throughput | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> /dev/null
             # echo "!!!!fake_throughput_done"
         } &
     done
@@ -162,7 +162,7 @@ do
     ## 添加虚假的cpu到redis中
     todos $output_fake_cpu ## 转换成dos格式
     echo "fake_cpu: " >> $output_file
-    tail -n $fake_server_number $output_fake_cpu | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> $output_file
+    cat $output_fake_cpu | redis-cli -h $redis_ip -a 'Hestia123456' --pipe >> /dev/null
     # echo "!!!!fake_cpu_done"
 
     sleep 1.5
