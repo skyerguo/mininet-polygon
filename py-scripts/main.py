@@ -16,6 +16,7 @@ import subprocess
 import sys
 import configparser
 import random
+import numpy as np
 
 # SELECT_TOPO = copy.deepcopy(Middleware_client_dispatcher_server_large)
 SELECT_TOPO = json.load(open('../json-files/topo.json', 'r'))
@@ -215,10 +216,18 @@ def myNetwork(net):
         print("switch_gw_pre3[i]: ", switch_gw_pre3[i])
 
     print( '*** Add hosts\n')
+
     for client_id in range(CLIENT_NUMBER):
         client.append(net.addHost('c%s'%str(client_id), cpu=cpu['client']/CLIENT_NUMBER, ip='10.0.%s.1'%str(client_id), defaultRoute=None)) ## cpu占用为 系统的x%/所有client数量
-    for server_id in range(SERVER_NUMBER):
-        server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+    if 'server_ratio' in cpu.keys():
+        total_ratio = np.sum(cpu['server_ratio'])
+        # print("total_ratio: ", total_ratio)
+        for server_id in range(SERVER_NUMBER):
+            server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER*cpu['server_ratio'][i], ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+    else:
+        for server_id in range(SERVER_NUMBER):
+            server.append(net.addHost('s%s'%str(server_id), cpu=cpu['server']/SERVER_NUMBER, ip='10.0.%s.3'%str(server_id), defaultRoute=None))
+
     for dispatcher_id in range(DISPATCHER_NUMBER):
         dispatcher.append(net.addHost('d%s'%str(dispatcher_id), cpu=cpu['dispatcher']/DISPATCHER_NUMBER, ip='10.0.%s.5'%str(dispatcher_id), defaultRoute=None))
     
@@ -265,13 +274,21 @@ def myNetwork(net):
  
     ## C-S
     for server_id in range(SERVER_NUMBER):
+        curr_ratio = 1
+        if 'server_ratio' in bw.keys():
+            curr_ratio = bw['server_ratio'][server_id]
+            # print("curr_ratio: ", curr_ratio)
         for client_id in range(CLIENT_NUMBER):
-            net.addLink(switch[server_id], client[client_id], cls=TCLink, **{'bw':bw['client_server'][client_id][server_id]+1,'delay':str(int(delay['client_server'][client_id][server_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+            net.addLink(switch[server_id], client[client_id], cls=TCLink, **{'bw':(bw['client_server'][client_id][server_id]+1)*curr_ratio,'delay':str(int(delay['client_server'][client_id][server_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
         net.addLink(switch[server_id], server[server_id], cls=None)
     ## D-S
     for server_id in range(SERVER_NUMBER):
+        curr_ratio = 1
+        if 'server_ratio' in bw.keys():
+            curr_ratio = bw['server_ratio'][server_id]
+            # print("curr_ratio: ", curr_ratio)
         for dispatcher_id in range(DISPATCHER_NUMBER):
-            net.addLink(switch[server_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':bw['dispatcher_server'][dispatcher_id][server_id]+1,'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
+            net.addLink(switch[server_id], dispatcher[dispatcher_id], cls=TCLink, **{'bw':(bw['dispatcher_server'][dispatcher_id][server_id]+1)*curr_ratio,'delay':str(int(delay['dispatcher_server'][dispatcher_id][server_id] / 2 + 1))+'ms', 'max_queue_size':1000, 'loss':0, 'use_htb':True})
     ## C-D
     for dispatcher_id in range(DISPATCHER_NUMBER):
         for client_id in range(CLIENT_NUMBER):
